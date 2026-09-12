@@ -39,6 +39,15 @@ docs/
 .agent/
 .design-docs/
 .expo/
+
+# Design system output (ui-ux-pro-max --persist) is per-project scratch EXCEPT
+# TravelPlan's own persisted design system, which is the source of truth for
+# rules/design.md and must stay in git (runbook-not-in-git lesson from BACKUP.md).
+# NOTE: a trailing-slash dir pattern (`design-system/`) blocks git from ever
+# looking inside for negations — must exclude by `/*` instead for `!` to work.
+design-system/*
+!design-system/travelplan/
+!design-system/travelplan/**
 # Root scripts/ only (private mongo-init.js) — anchored so it doesn't also
 # swallow backend/scripts/ or .claude/scripts/, which are meant to be tracked.
 /scripts/
@@ -61,6 +70,7 @@ docs/
 # — only per-machine overrides and runtime state stay local.
 .claude/settings.local.json
 .claude/.ci-watch.json
+.claude/skills/**/__pycache__/
 # ============================================
 # IDE & EDITORS
 # ============================================

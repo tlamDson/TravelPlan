@@ -13,16 +13,16 @@ Các rule chi tiết dưới đây áp dụng luôn, không chỉ khi được h
 - **Mọi thay đổi đi qua PR** — không commit thẳng vào `develop`/`main`. Tạo nhánh → commit → push → mở PR vào `develop`.
 - **`main` do chủ repo quản lý** — Claude không bao giờ merge vào `main` (kể cả `--admin`), không push, không tự mở PR release trừ khi được yêu cầu rõ ràng. Câu nói rộng kiểu "làm hết đi"/"merge luôn" trong hội thoại **không** tính là uỷ quyền bấm merge `main` — chỉ tính khi nói tường minh đúng nghĩa đó. Nếu chủ repo tự merge, phải là merge commit thật, không squash. Chi tiết: `.claude/rules/workflow.md` mục "Quy tắc bất di bất dịch".
 - **Chỉ merge vào `develop` khi CI + test pass hết** — phải xanh **cả 3 job**: `Lint + Unit Tests`, `Typecheck + Build`, `Backend Docker Build`. Claude **được phép tự merge** PR vào `develop` khi cả 3 job đã xanh và test local đã pass, không cần hỏi lại. CI đỏ hoặc đang chạy → không merge, đợi hoặc fix.
-- **TDD bắt buộc** (Red → Green → Refactor) — không commit code mới thiếu test. Chi tiết: `.claude/rules/workflow.md`.
+- **TDD bắt buộc** (Red → Green → Refactor) — không commit code mới thiếu test. Chi tiết: `.claude/rules/tdd.md`.
 - **Cập nhật `CLAUDE.md` + `.claude/rules/*`** khi task làm thay đổi convention, tooling hay quy trình.
-- **Sửa bug quan sát được qua trình duyệt phải verify bằng MCP `chrome-devtools` cả trước lẫn sau khi fix** — không báo "đã fix" nếu chưa tái hiện lại thao tác gây bug sau khi sửa. Chi tiết: `.claude/rules/workflow.md` mục _Debug bug_.
+- **Sửa bug quan sát được qua trình duyệt phải verify bằng MCP `chrome-devtools` cả trước lẫn sau khi fix** — không báo "đã fix" nếu chưa tái hiện lại thao tác gây bug sau khi sửa. Chi tiết: `.claude/rules/debug-chrome-mcp.md`.
 - **Không tạo file `.md` mới ở thư mục gốc** — chỉ `README.md` và `CLAUDE.md`.
 
 ## Trạng thái dự án
 
 Theo `docs/PROGRESS.md`: tiến độ tổng thể ~85%. Đang có thay đổi dở dang chưa commit ở module destinations (`backend/src/features/destinations/`, `frontend/web/src/features/planner/components/wizard/WizardDestinationPickers.tsx`) — xem `git status` trước khi bắt đầu việc gì để không ghi đè.
 
-**Hạ tầng test đã dựng xong 4/4 lớp** (shared + backend unit, frontend unit/component, backend integration, E2E Playwright — đã merge vào `develop`). Backend integration đã mở rộng từ ~4 lên ~30 route. E2E Playwright có nền móng CI-safe (`npm run e2e`, 4 spec, job CI không-bắt-buộc); spec `@live` gọi Gemini/Places thật để đi hết pipeline sinh trip vẫn **chưa có** — để PR riêng vì cần key thật + spawn worker, không chạy trên CI. Chi tiết đầy đủ từng lớp, lệnh chạy, và quy ước → `.claude/rules/tech-defaults.md` mục "Hạ tầng test" + `.claude/rules/workflow.md` mục TDD.
+**Hạ tầng test đã dựng xong 4/4 lớp** (shared + backend unit, frontend unit/component, backend integration, E2E Playwright — đã merge vào `develop`). Backend integration đã mở rộng từ ~4 lên ~30 route. E2E Playwright có nền móng CI-safe (`npm run e2e`, 4 spec, job CI không-bắt-buộc); spec `@live` gọi Gemini/Places thật để đi hết pipeline sinh trip vẫn **chưa có** — để PR riêng vì cần key thật + spawn worker, không chạy trên CI. Chi tiết đầy đủ từng lớp, lệnh chạy, và quy ước → `.claude/rules/tech-defaults.md` mục "Hạ tầng test" + `.claude/rules/tdd.md`.
 
 **Kiến trúc thật khác tài liệu**: `docs/agents/*.md` và `docs/PLAN.md` mô tả layout lý tưởng (`web/`, `api/`, `worker/` tách riêng) không khớp code thật. Layout thật: `backend/` (1 workspace chứa cả API và worker), `frontend/web/`, `frontend/mobile/`, `packages/shared` (tên package `@travelplan/shared`). Chi tiết đầy đủ ở `.claude/rules/tech-defaults.md`.
 
