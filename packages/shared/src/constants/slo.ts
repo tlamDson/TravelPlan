@@ -42,6 +42,19 @@ export const JOB_METRIC_TTL_DAYS = 35;
 export const WORKER_HEARTBEAT_INTERVAL_MS = 15_000;
 
 /**
+ * `consumedRatio` at or above this is "warning" in the reliability
+ * dashboard — three quarters of the error budget gone with the window
+ * still open is worth surfacing before it's fully burned.
+ */
+export const ERROR_BUDGET_WARNING_RATIO = 0.75;
+
+/**
+ * `consumedRatio` at or above this is "critical" — the budget is fully
+ * consumed, meaning the SLO is already missed for this window.
+ */
+export const ERROR_BUDGET_CRITICAL_RATIO = 1;
+
+/**
  * A worker is considered dead once its last heartbeat is older than this.
  * Set to 3x the interval so one delayed beat (GC pause, network jitter)
  * doesn't falsely report a healthy worker as down.

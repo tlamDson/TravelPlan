@@ -21,7 +21,8 @@
     "ensure:vector-index": "tsx scripts/ensure-vector-index.ts",
     "check:services": "tsx scripts/check-services.ts",
     "seed:job-metrics": "tsx scripts/seed-job-metrics.ts",
-    "seed:real-trip-jobs": "tsx scripts/seed-real-trip-jobs.ts"
+    "seed:real-trip-jobs": "tsx scripts/seed-real-trip-jobs.ts",
+    "measure:false-healthy": "tsx scripts/measure-false-healthy.ts"
   },
   "dependencies": {
     "@bull-board/api": "^8.1.0",
