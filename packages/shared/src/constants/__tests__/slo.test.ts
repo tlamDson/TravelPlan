@@ -9,6 +9,8 @@ import {
   JOB_METRIC_TTL_DAYS,
   WORKER_HEARTBEAT_INTERVAL_MS,
   WORKER_LIVENESS_TIMEOUT_MS,
+  ERROR_BUDGET_WARNING_RATIO,
+  ERROR_BUDGET_CRITICAL_RATIO,
 } from "../slo";
 
 describe("SLO_TARGET", () => {
@@ -55,5 +57,21 @@ describe("MIN_EVENTS_FOR_SLI", () => {
 describe("SLO_LATENCY_THRESHOLD_MS", () => {
   it("is positive", () => {
     expect(SLO_LATENCY_THRESHOLD_MS).toBeGreaterThan(0);
+  });
+});
+
+describe("error budget status thresholds", () => {
+  it("critical ratio is 1 — the budget is fully consumed, the SLO is missed this window", () => {
+    expect(ERROR_BUDGET_CRITICAL_RATIO).toBe(1);
+  });
+
+  it("warning ratio is 0.75 — three quarters of the budget gone with the window still open", () => {
+    expect(ERROR_BUDGET_WARNING_RATIO).toBe(0.75);
+  });
+
+  it("warning is strictly below critical", () => {
+    expect(ERROR_BUDGET_WARNING_RATIO).toBeLessThan(
+      ERROR_BUDGET_CRITICAL_RATIO,
+    );
   });
 });

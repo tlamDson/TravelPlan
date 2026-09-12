@@ -28,6 +28,15 @@ export interface SyntheticJobMetric {
   finishedAt: Date;
 }
 
+const DEFAULT_SPREAD_MS = 60 * 60 * 1000;
+
+export interface GenerateSyntheticOutcomesOptions {
+  /** How far back from `now` finishedAt can land. Defaults to 1 hour (prior hardcoded behavior) — pass e.g. SLO_WINDOW_DAYS in ms to spread across a full compliance window. */
+  spreadMs?: number;
+  /** Injectable RNG so a sweep/measurement script can get fully reproducible output instead of `Math.random()`. */
+  rand?: () => number;
+}
+
 /**
  * Generates `n` records whose outcome counts match `distribution` as
  * closely as integer rounding allows. Every jobId is prefixed
@@ -39,8 +48,12 @@ export function generateSyntheticOutcomes(
   n: number,
   distribution: SyntheticOutcomeDistribution = DEFAULT_DISTRIBUTION,
   now: Date = new Date(),
+  options: GenerateSyntheticOutcomesOptions = {},
 ): SyntheticJobMetric[] {
   if (n <= 0) return [];
+
+  const spreadMs = options.spreadMs ?? DEFAULT_SPREAD_MS;
+  const rand = options.rand ?? Math.random;
 
   const completedCount = Math.round(n * distribution.completed);
   const fallbackCount = Math.round(n * distribution.fallback);
@@ -53,11 +66,11 @@ export function generateSyntheticOutcomes(
   ];
 
   return outcomes.map((outcome, i) => {
-    const queueWaitMs = Math.round(200 + Math.random() * 2000);
+    const queueWaitMs = Math.round(200 + rand() * 2000);
     const processingMs =
       outcome === "failed"
-        ? Math.round(500 + Math.random() * 3000)
-        : Math.round(3000 + Math.random() * 15000);
+        ? Math.round(500 + rand() * 3000)
+        : Math.round(3000 + rand() * 15000);
 
     return {
       jobId: `synthetic-${now.getTime()}-${i}`,
@@ -66,7 +79,7 @@ export function generateSyntheticOutcomes(
       processingMs,
       endToEndMs: queueWaitMs + processingMs,
       attemptsMade: outcome === "failed" ? 3 : 1,
-      finishedAt: new Date(now.getTime() - Math.random() * 60 * 60 * 1000),
+      finishedAt: new Date(now.getTime() - rand() * spreadMs),
     };
   });
 }

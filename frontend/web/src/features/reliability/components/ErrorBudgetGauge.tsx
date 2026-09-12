@@ -1,4 +1,8 @@
 import type { ErrorBudget, SliResult } from "@travelplan/shared";
+import {
+  ERROR_BUDGET_WARNING_RATIO,
+  ERROR_BUDGET_CRITICAL_RATIO,
+} from "@travelplan/shared";
 import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -13,13 +17,16 @@ type BudgetStatus = "healthy" | "warning" | "critical";
 
 /**
  * consumedRatio > 1 already means the SLO is missed this window (see
- * errorBudgetSchema's doc comment) — that's "critical". 0.75 is a
- * conventional early-warning line: 3/4 of the budget gone with the
- * window still open is worth surfacing before it's fully burned.
+ * errorBudgetSchema's doc comment) — that's "critical". The warning
+ * ratio is a conventional early-warning line: 3/4 of the budget gone
+ * with the window still open is worth surfacing before it's fully
+ * burned. Thresholds live in packages/shared so the measurement
+ * tooling in backend/scripts can classify a reading exactly the way
+ * this dashboard does, instead of duplicating the literals.
  */
 function statusFromConsumedRatio(consumedRatio: number): BudgetStatus {
-  if (consumedRatio >= 1) return "critical";
-  if (consumedRatio >= 0.75) return "warning";
+  if (consumedRatio >= ERROR_BUDGET_CRITICAL_RATIO) return "critical";
+  if (consumedRatio >= ERROR_BUDGET_WARNING_RATIO) return "warning";
   return "healthy";
 }
 
