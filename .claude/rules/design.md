@@ -10,6 +10,8 @@ python .claude/skills/ui-ux-pro-max/scripts/search.py "<mô tả>" --design-syst
 
 Luôn bắt đầu bằng `--design-system`, rồi bổ sung `--domain ux "<pattern>"` cho interaction cụ thể, `--stack shadcn` vì TravelPlan dùng shadcn/ui.
 
+Design system đã sinh sẵn cho TravelPlan (`--persist`) nằm ở `design-system/travelplan/MASTER.md` — đọc file này **trước** khi chạy lại `search.py`, nó đã được hiệu chỉnh tay để khớp token thật ở `frontend/web/src/index.css` (bảng màu library gốc trong dữ liệu tra cứu chỉ là gợi ý gần nhất, không phải nguồn sự thật). `design-system/pages/<tên-trang>.md` (nếu có) override `MASTER.md` cho đúng trang đó.
+
 ⚠️ Có nhiều đường dẫn cũ mâu thuẫn còn sót trong repo (`docs/agents/frontend.md` ghi `.agent/skills/...`, `.github/prompts/` ghi `.shared/...`) — đường dẫn đúng duy nhất kể từ giờ là `.claude/skills/ui-ux-pro-max/`.
 
 ## Quy ước không thương lượng
