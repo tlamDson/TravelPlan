@@ -3,6 +3,7 @@ import { screen, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { LatencyChart } from "./LatencyChart";
 import type { LatencyStats } from "@travelplan/shared";
+import { resolveChartPalette } from "../lib/chart-colors";
 
 const stats: LatencyStats = {
   count: 42,
@@ -39,5 +40,24 @@ describe("LatencyChart", () => {
     );
 
     expect(screen.getByText(/slo threshold/i)).toBeInTheDocument();
+  });
+
+  it("colors the threshold label from the shared chart-colors warning tone, not raw amber", () => {
+    renderWithProviders(
+      <LatencyChart
+        queueWaitMs={stats}
+        processingMs={stats}
+        endToEndMs={stats}
+      />,
+    );
+
+    const label = screen.getByText(/slo threshold/i);
+    expect(label.className).not.toMatch(/text-amber-600/);
+
+    // jsdom normalizes an assigned hsl(...) color to rgb(...) on readback,
+    // so compare against the same normalization instead of the raw string.
+    const probe = document.createElement("div");
+    probe.style.color = resolveChartPalette(false).statusWarning;
+    expect(label.style.color).toBe(probe.style.color);
   });
 });

@@ -7,6 +7,10 @@ import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useTranslationStore } from "@/stores/useTranslationStore";
+import {
+  STATUS_TONE_STYLES,
+  type StatusTone,
+} from "@/features/planner/lib/statusStyles";
 
 interface ErrorBudgetGaugeProps {
   sli: SliResult;
@@ -34,6 +38,12 @@ const STATUS_ICON: Record<BudgetStatus, typeof CheckCircle2> = {
   healthy: CheckCircle2,
   warning: AlertTriangle,
   critical: XCircle,
+};
+
+const BUDGET_STATUS_TONE: Record<BudgetStatus, StatusTone> = {
+  healthy: "success",
+  warning: "warning",
+  critical: "danger",
 };
 
 export function ErrorBudgetGauge({ sli, errorBudget }: ErrorBudgetGaugeProps) {
@@ -70,11 +80,7 @@ export function ErrorBudgetGauge({ sli, errorBudget }: ErrorBudgetGaugeProps) {
         )
       : 0;
   const statusTextClass =
-    status === "critical"
-      ? "text-destructive"
-      : status === "warning"
-        ? "text-amber-600 dark:text-amber-400"
-        : "text-green-600 dark:text-green-400";
+    STATUS_TONE_STYLES[BUDGET_STATUS_TONE[status]].textClassName;
 
   return (
     <Card>
