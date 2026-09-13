@@ -100,7 +100,7 @@ Connection logic lives in **`backend/src/lib/queue.ts`**.
 
 **Retry:** ioredis `retryStrategy` backoff is configured for transient disconnects.
 
-**Workers** (`backend/src/worker.ts`, insight worker): BullMQ uses `stalledInterval: 30s` and `lockDuration: 60s` to balance long-running AI/IO jobs vs Redis polling load. On shutdown, trip, calendar, and insight workers are closed cleanly.
+**Workers** (`backend/src/worker.ts`, insight worker): use BullMQ's own defaults for `stalledInterval`/`lockDuration` — no custom override. A prior tune (`stalledInterval: 30s`, `lockDuration: 60s`, justified as "fewer stalled checks → fewer Redis commands; lock covers long AI/IO jobs") was measured and reverted: 30s was already BullMQ's default (a no-op), and lock renewal is a JS timer that fires every `lockDuration/2` regardless of job duration as long as the event loop stays free — a longer lock buys nothing for `await`-based jobs (proven with a real BullMQ Worker in `worker-lock-duration.integration.test.ts`), it only slows recovery after a genuinely crashed worker. See `npm run measure:pipeline --workspace=backend -- --report` for real throughput/latency/stall numbers from production. On shutdown, trip, calendar, and insight workers are closed cleanly.
 
 **Billing note:** Serverless Redis products often charge **per command**. BullMQ workers generate steady traffic (EVALSHA, ZRANGE, etc.). For a single small deployment, **one Redis instance on the same host as the app** (e.g. Railway Redis service) avoids per-command surprise bills from a separate vendor.
 

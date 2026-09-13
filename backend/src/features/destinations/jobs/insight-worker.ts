@@ -82,12 +82,17 @@ export async function insightScraperProcessor(
 
 // Worker with rate limiter: max 1 job processed every 2 seconds
 // This protects Serper and Gemini API rate limits.
+//
+// No custom lockDuration/stalledInterval — see the comment above
+// startWorker() in worker.ts for why: this was a copy of the same
+// `{ stalledInterval: 30_000, lockDuration: 60_000 }` that measurement
+// (see B3, worker-lock-duration.integration.test.ts) showed was a no-op
+// plus pure downside. insightScraperProcessor is `await`-only (Serper +
+// Gemini HTTP calls), same shape as trip-generation's processor.
 export const insightWorker = createWorker(
   QUEUE_NAMES.INSIGHT_SCRAPER,
   insightScraperProcessor,
   {
     limiter: { max: 1, duration: 2000 },
-    stalledInterval: 30_000,
-    lockDuration: 60_000,
   },
 );
