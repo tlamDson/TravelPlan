@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Zap, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
+import { STATUS_TONE_STYLES } from "@/features/planner/lib/statusStyles";
 
 export function SubscriptionSettings() {
   const { t } = useTranslationStore();
@@ -61,11 +62,15 @@ export function SubscriptionSettings() {
               {isPro && (
                 <div className="space-y-2 mt-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <CheckCircle2
+                      className={`w-4 h-4 ${STATUS_TONE_STYLES.success.textClassName}`}
+                    />
                     <span>Generate up to 30 days per trip</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <CheckCircle2
+                      className={`w-4 h-4 ${STATUS_TONE_STYLES.success.textClassName}`}
+                    />
                     <span>Priority generation queue</span>
                   </div>
                 </div>
@@ -106,7 +111,7 @@ export function SubscriptionSettings() {
 
           <Progress
             value={isPro ? 0 : usagePercentage}
-            className={`h-2 ${!isPro && usagePercentage >= 100 ? "bg-red-100 dark:bg-red-950/50" : ""}`}
+            className={`h-2 ${!isPro && usagePercentage >= 100 ? "bg-tag-red" : ""}`}
           />
 
           {quotaResetsAt && !isPro && (

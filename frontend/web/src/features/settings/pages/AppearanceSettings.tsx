@@ -26,14 +26,22 @@ export function AppearanceSettings() {
             {t("appr.themeTitle")}
           </h4>
           <p className="text-sm text-muted-foreground">{t("appr.themeDesc")}</p>
+          {/*
+            The mini mockups below (raw white/slate/zinc shades) are a
+            deliberate exception to the no-raw-palette rule: they render a
+            literal preview of what light/dark mode looks like, so they
+            must NOT follow the app's own active theme. Only the outer
+            card's selected/unselected state (border-primary/bg-muted
+            above) follows the theme like normal chrome.
+          */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
             {/* Light Mode */}
             <button
               onClick={() => setTheme("light")}
               className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                 theme === "light"
-                  ? "border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/20"
-                  : "border-transparent bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800"
+                  ? "border-primary bg-primary/10"
+                  : "border-transparent bg-muted hover:bg-muted/80"
               }`}
             >
               <div className="w-full h-24 rounded-md bg-white border shadow-sm flex items-center justify-center p-2">
@@ -53,8 +61,8 @@ export function AppearanceSettings() {
               onClick={() => setTheme("dark")}
               className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                 theme === "dark"
-                  ? "border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/20"
-                  : "border-transparent bg-zinc-100 dark:hover:bg-zinc-700 dark:bg-zinc-800"
+                  ? "border-primary bg-primary/10"
+                  : "border-transparent bg-muted hover:bg-muted/80"
               }`}
             >
               <div className="w-full h-24 rounded-md bg-zinc-950 border border-zinc-800 shadow-sm flex items-center justify-center p-2">
@@ -72,8 +80,8 @@ export function AppearanceSettings() {
               onClick={() => setTheme("system")}
               className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                 theme === "system"
-                  ? "border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/20"
-                  : "border-transparent bg-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 dark:bg-zinc-800"
+                  ? "border-primary bg-primary/10"
+                  : "border-transparent bg-muted hover:bg-muted/80"
               }`}
             >
               <div className="w-full h-24 rounded-md bg-gradient-to-br from-white to-zinc-950 border shadow-sm flex items-center justify-center p-2">
