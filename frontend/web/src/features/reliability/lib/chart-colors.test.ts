@@ -1,31 +1,64 @@
 import { describe, it, expect } from "vitest";
 import { resolveChartPalette } from "./chart-colors";
+import { readCssVar } from "@/test/cssVarFixture";
 
-describe("resolveChartPalette", () => {
+/**
+ * [Guard] resolveChartPalette must mirror the --reliability-* tokens in
+ * index.css, not duplicate hex numbers with no source of truth. Series
+ * colors are themed (different light/dark values); status/grid/axis
+ * roles that are fixed on purpose still resolve to a single token value
+ * that is identical between :root and .dark.
+ */
+
+function expectHsl(actual: string, mode: "root" | "dark", varName: string) {
+  expect(actual).toBe(`hsl(${readCssVar(mode, varName)})`);
+}
+
+describe("resolveChartPalette mirrors --reliability-* tokens in index.css", () => {
   it("returns the light-mode categorical + status hexes when isDark is false", () => {
     const palette = resolveChartPalette(false);
 
-    expect(palette.seriesQueueWait).toBe("#2a78d6");
-    expect(palette.seriesProcessing).toBe("#eb6834");
-    expect(palette.seriesEndToEnd).toBe("#1baf7a");
-    expect(palette.statusGood).toBe("#0ca30c");
-    expect(palette.statusWarning).toBe("#fab219");
-    expect(palette.statusCritical).toBe("#d03b3b");
-    expect(palette.grid).toBe("#e1e0d9");
-    expect(palette.axis).toBe("#898781");
+    expectHsl(palette.seriesQueueWait, "root", "reliability-series-queue-wait");
+    expectHsl(
+      palette.seriesProcessing,
+      "root",
+      "reliability-series-processing",
+    );
+    expectHsl(palette.seriesEndToEnd, "root", "reliability-series-end-to-end");
+    expectHsl(palette.statusGood, "root", "reliability-status-good");
+    expectHsl(palette.statusWarning, "root", "reliability-status-warning");
+    expectHsl(palette.statusCritical, "root", "reliability-status-critical");
+    expectHsl(palette.grid, "root", "reliability-grid");
+    expectHsl(palette.axis, "root", "reliability-axis");
   });
 
   it("returns the dark-mode categorical hexes when isDark is true, status hexes unchanged", () => {
     const palette = resolveChartPalette(true);
 
-    expect(palette.seriesQueueWait).toBe("#3987e5");
-    expect(palette.seriesProcessing).toBe("#d95926");
-    expect(palette.seriesEndToEnd).toBe("#199e70");
-    // Status palette is fixed — never themed (dataviz reference palette rule).
-    expect(palette.statusGood).toBe("#0ca30c");
-    expect(palette.statusWarning).toBe("#fab219");
-    expect(palette.statusCritical).toBe("#d03b3b");
-    expect(palette.grid).toBe("#2c2c2a");
-    expect(palette.axis).toBe("#898781");
+    expectHsl(palette.seriesQueueWait, "dark", "reliability-series-queue-wait");
+    expectHsl(
+      palette.seriesProcessing,
+      "dark",
+      "reliability-series-processing",
+    );
+    expectHsl(palette.seriesEndToEnd, "dark", "reliability-series-end-to-end");
+    // Status/axis palette is fixed — never themed (dataviz reference palette
+    // rule). The token itself carries the same value in :root and .dark.
+    expectHsl(palette.statusGood, "root", "reliability-status-good");
+    expectHsl(palette.statusWarning, "root", "reliability-status-warning");
+    expectHsl(palette.statusCritical, "root", "reliability-status-critical");
+    expectHsl(palette.grid, "dark", "reliability-grid");
+    expectHsl(palette.axis, "root", "reliability-axis");
+  });
+
+  it("keeps status/axis tokens identical between :root and .dark (fixed-palette contract)", () => {
+    for (const name of [
+      "reliability-status-good",
+      "reliability-status-warning",
+      "reliability-status-critical",
+      "reliability-axis",
+    ]) {
+      expect(readCssVar("dark", name)).toBe(readCssVar("root", name));
+    }
   });
 });

@@ -17,6 +17,20 @@ const INDEX_CSS_PATH = path.join(__dirname, "../index.css");
 // class (border-radius scale lives under theme.extend.borderRadius).
 const NON_COLOR_VARS = new Set(["radius"]);
 
+// Vars that are consumed only as literal hsl(...) strings via TS constants
+// (frontend/web/src/features/map/utils/dayColors.ts,
+// frontend/web/src/features/reliability/lib/chart-colors.ts), never as a
+// static `bg-day-1`-style Tailwind class — day markers are picked by a
+// dynamic runtime index, and Mapbox GL paint properties don't support
+// var() at all. Exempt from the "reachable via Tailwind class" check.
+const TAILWIND_EXEMPT_PREFIXES = ["day-", "reliability-"];
+function isTailwindExempt(varName: string): boolean {
+  return (
+    NON_COLOR_VARS.has(varName) ||
+    TAILWIND_EXEMPT_PREFIXES.some((prefix) => varName.startsWith(prefix))
+  );
+}
+
 function extractBlock(source: string, selector: string): string {
   const start = source.indexOf(`${selector} {`);
   if (start === -1) {
@@ -87,9 +101,9 @@ describe("[Guard] design token parity between index.css and tailwind.config.js",
     expect(missingFromDark).toEqual([]);
   });
 
-  it("exposes every non-structural :root var as a reachable Tailwind color class", () => {
+  it("exposes every non-structural, non-exempt :root var as a reachable Tailwind color class", () => {
     const orphans = rootVars.filter(
-      (v) => !NON_COLOR_VARS.has(v) && !referencedVars.has(v),
+      (v) => !isTailwindExempt(v) && !referencedVars.has(v),
     );
 
     expect(orphans).toEqual([]);
