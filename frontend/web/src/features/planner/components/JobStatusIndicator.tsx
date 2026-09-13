@@ -6,10 +6,15 @@
  * NOT just a generic "Loading..." spinner
  */
 
-import { Loader2, CheckCircle, XCircle, Clock, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { JobStatus } from "@/utils/schemas";
+import {
+  STATUS_TONE_STYLES,
+  JOB_STATUS_TONE,
+  JOB_STATUS_ICON,
+} from "../lib/statusStyles";
 
 interface JobStatusIndicatorProps {
   status: JobStatus;
@@ -20,40 +25,13 @@ interface JobStatusIndicatorProps {
   showProgress?: boolean;
 }
 
-const statusConfig: Record<
-  JobStatus,
-  { icon: typeof Loader2; label: string; color: string }
-> = {
-  IDLE: {
-    icon: Clock,
-    label: "Ready",
-    color: "text-muted-foreground",
-  },
-  QUEUED: {
-    icon: Clock,
-    label: "In queue...",
-    color: "text-yellow-500",
-  },
-  PROCESSING: {
-    icon: Loader2,
-    label: "Processing...",
-    color: "text-primary",
-  },
-  COMPLETED: {
-    icon: CheckCircle,
-    label: "Completed",
-    color: "text-green-500",
-  },
-  FAILED: {
-    icon: XCircle,
-    label: "Failed",
-    color: "text-destructive",
-  },
-  CANCELLED: {
-    icon: XCircle,
-    label: "Cancelled",
-    color: "text-muted-foreground",
-  },
+const statusLabel: Record<JobStatus, string> = {
+  IDLE: "Ready",
+  QUEUED: "In queue...",
+  PROCESSING: "Processing...",
+  COMPLETED: "Completed",
+  FAILED: "Failed",
+  CANCELLED: "Cancelled",
 };
 
 export function JobStatusIndicator({
@@ -63,8 +41,9 @@ export function JobStatusIndicator({
   className,
   showProgress = true,
 }: JobStatusIndicatorProps) {
-  const config = statusConfig[status];
-  const Icon = config.icon;
+  const Icon = JOB_STATUS_ICON[status];
+  const textClassName =
+    STATUS_TONE_STYLES[JOB_STATUS_TONE[status]].textClassName;
   const isAnimated = status === "PROCESSING" || status === "QUEUED";
 
   return (
@@ -76,10 +55,12 @@ export function JobStatusIndicator({
       {/* Status Header */}
       <div className="flex items-center gap-2">
         <Icon
-          className={cn("h-5 w-5", config.color, isAnimated && "animate-spin")}
+          className={cn("h-5 w-5", textClassName, isAnimated && "animate-spin")}
           aria-hidden="true"
         />
-        <span className={cn("font-medium", config.color)}>{config.label}</span>
+        <span className={cn("font-medium", textClassName)}>
+          {statusLabel[status]}
+        </span>
       </div>
 
       {/* Current Step - Section 2.2: Display intermediate steps */}
@@ -111,8 +92,9 @@ export function JobStatusBadge({
   status: JobStatus;
   currentStep?: string | null;
 }) {
-  const config = statusConfig[status];
-  const Icon = config.icon;
+  const Icon = JOB_STATUS_ICON[status];
+  const pillClassName =
+    STATUS_TONE_STYLES[JOB_STATUS_TONE[status]].pillClassName;
   const isAnimated = status === "PROCESSING" || status === "QUEUED";
 
   return (
@@ -121,23 +103,14 @@ export function JobStatusBadge({
       data-status={status}
       className={cn(
         "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium",
-        status === "PROCESSING" && "bg-primary/10 text-primary",
-        status === "QUEUED" &&
-          "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-        status === "COMPLETED" &&
-          "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-        status === "FAILED" &&
-          "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-        status === "CANCELLED" &&
-          "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-        status === "IDLE" && "bg-muted text-muted-foreground",
+        pillClassName,
       )}
     >
       <Icon
         className={cn("h-3 w-3", isAnimated && "animate-spin")}
         aria-hidden="true"
       />
-      <span>{currentStep || config.label}</span>
+      <span>{currentStep || statusLabel[status]}</span>
     </div>
   );
 }

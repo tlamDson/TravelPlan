@@ -36,20 +36,12 @@ import type { Trip } from "@/utils/schemas";
 import { getCountryImage } from "@/utils/countryImage";
 import { useDeleteTrip, useUpdateTripLifecycle } from "../hooks/useTrips";
 import { useTranslationStore } from "@/stores/useTranslationStore";
+import { STATUS_TONE_STYLES, TRIP_STATUS_TONE } from "../lib/statusStyles";
 
 interface TripCardProps {
   trip: Trip;
   priority?: boolean;
 }
-
-const AI_STATUS_COLORS: Record<string, string> = {
-  DRAFT: "bg-slate-700/80 text-slate-200",
-  QUEUED: "bg-blue-700/80 text-blue-100",
-  PROCESSING: "bg-amber-600/80 text-amber-100",
-  PROCESSING_STEP_1: "bg-amber-600/80 text-amber-100",
-  PROCESSING_STEP_2: "bg-amber-600/80 text-amber-100",
-  FAILED: "bg-red-700/80 text-red-100",
-};
 
 const LIFECYCLE_OPTIONS = [
   { value: "UPCOMING", labelKey: "trip.lifecycle_upcoming" },
@@ -134,7 +126,8 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
                 <div className="absolute top-3 left-3 flex gap-2 z-10">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium backdrop-blur-sm ${
-                      AI_STATUS_COLORS[trip.status] ?? AI_STATUS_COLORS.DRAFT
+                      STATUS_TONE_STYLES[TRIP_STATUS_TONE[trip.status]]
+                        .overlayPillClassName
                     }`}
                   >
                     {formatStatusLabel(trip.status)}
@@ -145,7 +138,9 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
               {/* ── Failed badge */}
               {isAiFailed && (
                 <div className="absolute top-3 left-3 z-10">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-700/80 text-red-100 backdrop-blur-sm">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium backdrop-blur-sm ${STATUS_TONE_STYLES.danger.overlayPillClassName}`}
+                  >
                     {t("trip.lifecycle_failed")}
                   </span>
                 </div>
