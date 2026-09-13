@@ -31,13 +31,11 @@
  */
 import * as dotenv from "dotenv";
 import mongoose from "mongoose";
-import {
-  buildIncidentTimeline,
-  classifyReading,
-} from "../src/features/reliability/services/incident-timeline";
+import { buildIncidentTimeline } from "../src/features/reliability/services/incident-timeline";
 import { jobMetricRepository } from "../src/features/reliability/repositories/job-metric.repository";
 import { tripStatusRetrospectiveRepository } from "../src/features/reliability/repositories/trip-status-retrospective.repository";
 import { buildSloReport } from "../src/features/reliability/services/slo-report.service";
+import { sweepSloReadings } from "../src/features/reliability/services/slo-sweep.service";
 
 dotenv.config();
 
@@ -136,33 +134,14 @@ async function runSimulation(): Promise<void> {
     i.jobId.startsWith("synthetic-incident-"),
   ).length;
 
-  let firstNonHealthyAt: Date | null = null;
-  let healthyReads = 0;
-  let insufficientReads = 0;
-  let totalReads = 0;
-
-  for (
-    let t = incidentStart.getTime();
-    t <= incidentStart.getTime() + incidentDurationMs;
-    t += pollIntervalMs
-  ) {
-    const pollTime = new Date(t);
-    const report = await buildSloReport({
-      queue: SIMULATION_QUEUE,
-      now: pollTime,
+  const { totalReads, healthyReads, insufficientReads, firstNonHealthyAt } =
+    await sweepSloReadings({
+      start: incidentStart,
+      end: new Date(incidentStart.getTime() + incidentDurationMs),
+      intervalMs: pollIntervalMs,
+      buildReport: (pollTime) =>
+        buildSloReport({ queue: SIMULATION_QUEUE, now: pollTime }),
     });
-    const status = classifyReading(
-      report.windows.compliance.sli,
-      report.windows.compliance.errorBudget,
-    );
-
-    totalReads++;
-    if (status === "healthy") healthyReads++;
-    if (status === "insufficient") insufficientReads++;
-    if (status !== "healthy" && firstNonHealthyAt === null) {
-      firstNonHealthyAt = pollTime;
-    }
-  }
 
   await mongoose.disconnect();
 
