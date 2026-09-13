@@ -132,6 +132,61 @@ describe("jobMetricRepository.countByOutcome", () => {
   });
 });
 
+describe("jobMetricRepository.countByFailureReason", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("aggregates non-completed jobs grouped by failureReason", async () => {
+    mockAggregate.mockResolvedValue([
+      { _id: "AI_QUOTA", count: 4 },
+      { _id: "VALIDATION_FAILED", count: 1 },
+    ]);
+
+    const result = await jobMetricRepository.countByFailureReason(
+      "trip-generation",
+      new Date(0),
+      new Date(1),
+    );
+
+    expect(mockAggregate).toHaveBeenCalledWith([
+      {
+        $match: {
+          queue: "trip-generation",
+          finishedAt: { $gte: new Date(0), $lt: new Date(1) },
+          outcome: { $ne: "completed" },
+        },
+      },
+      { $group: { _id: "$failureReason", count: { $sum: 1 } } },
+    ]);
+    expect(result).toEqual({ AI_QUOTA: 4, VALIDATION_FAILED: 1 });
+  });
+
+  it("labels a missing failureReason as UNKNOWN instead of dropping it", async () => {
+    mockAggregate.mockResolvedValue([{ _id: null, count: 2 }]);
+
+    const result = await jobMetricRepository.countByFailureReason(
+      "trip-generation",
+      new Date(0),
+      new Date(1),
+    );
+
+    expect(result).toEqual({ UNKNOWN: 2 });
+  });
+
+  it("returns an empty object when there are no non-completed jobs", async () => {
+    mockAggregate.mockResolvedValue([]);
+
+    const result = await jobMetricRepository.countByFailureReason(
+      "trip-generation",
+      new Date(0),
+      new Date(1),
+    );
+
+    expect(result).toEqual({});
+  });
+});
+
 describe("jobMetricRepository.countSlowCompleted", () => {
   beforeEach(() => {
     vi.clearAllMocks();

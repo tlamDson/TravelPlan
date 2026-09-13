@@ -208,6 +208,25 @@ describe("normalizeFailureReason", () => {
     expect(code).toBe("UNKNOWN");
   });
 
+  // [BUG] Verified against a real load-test run (npm run measure:achieved-slo,
+  // 2026-09-13): every one of the 8 real `failed` outcomes recorded carried
+  // this exact message from ai-agent.service.ts's retry-exhaustion path, yet
+  // all 8 landed as failureReason=UNKNOWN — even though the run's timing
+  // (retries exhausted right as the Gemini free-tier daily quota wall was
+  // hit) strongly suggests the underlying cause was AI_QUOTA. The message
+  // never surfaces "429"/"quota"/"rate limit" itself (ai-agent.service.ts
+  // wraps the real Gemini error before re-throwing this generic one), so no
+  // FAILURE_PATTERNS regex matches it. This isn't a crash, just a lost
+  // diagnostic signal: countByFailureReason()'s breakdown can't distinguish
+  // "AI is quota-exhausted" from "AI is genuinely broken" for this message
+  // shape, which is the single most common real failure mode observed.
+  it("[BUG] maps the real 'AI failed to generate valid intents' retry-exhaustion message to UNKNOWN, even though it usually means AI_QUOTA", () => {
+    const { code } = normalizeFailureReason(
+      new Error("AI failed to generate valid intents after 4 attempts"),
+    );
+    expect(code).toBe("UNKNOWN");
+  });
+
   it("handles a non-Error thrown value without throwing itself", () => {
     expect(() => normalizeFailureReason("a plain string error")).not.toThrow();
     const { code } = normalizeFailureReason("a plain string error");

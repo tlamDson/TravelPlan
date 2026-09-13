@@ -48,6 +48,35 @@ export class JobMetricRepository {
     return result;
   }
 
+  /** Breakdown of non-completed outcomes by reason — answers "SLI is low
+   * because of what" instead of just "SLI is low". A missing
+   * failureReason (fallback path predates the field, or a bug drops it)
+   * is labeled UNKNOWN rather than silently dropped from the total. */
+  async countByFailureReason(
+    queue: string,
+    since: Date,
+    until: Date,
+  ): Promise<Record<string, number>> {
+    const rows: Array<{ _id: string | null; count: number }> =
+      await JobMetric.aggregate([
+        {
+          $match: {
+            queue,
+            finishedAt: { $gte: since, $lt: until },
+            outcome: { $ne: "completed" },
+          },
+        },
+        { $group: { _id: "$failureReason", count: { $sum: 1 } } },
+      ]);
+
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      const key = row._id ?? "UNKNOWN";
+      result[key] = row.count;
+    }
+    return result;
+  }
+
   /** Projected to only the 3 latency fields + hard limit — never load
    * whole documents or an unbounded window into API memory. */
   findLatencySamples(
