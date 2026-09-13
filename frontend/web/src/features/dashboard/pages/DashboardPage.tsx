@@ -22,6 +22,10 @@ import { useSubscriptionStore } from "@/stores/useSubscriptionStore";
 import { getUserMe, type UserProfile } from "@/features/user/api/user.api";
 import { apiClient } from "@/lib/axios";
 import { toast } from "sonner";
+import {
+  BRAND_GRADIENT_BADGE,
+  BRAND_GRADIENT_BUTTON,
+} from "@/lib/brandGradient";
 
 export default function DashboardPage() {
   const { data: trips, isLoading, error } = useTrips();
@@ -108,7 +112,7 @@ export default function DashboardPage() {
           {Array.from({ length: 80 }).map((_, i) => (
             <span
               key={i}
-              className="absolute h-2 w-2 animate-bounce rounded-full bg-gradient-to-r from-purple-500 to-orange-500"
+              className={`absolute h-2 w-2 animate-bounce rounded-full ${BRAND_GRADIENT_BADGE}`}
               style={{
                 left: `${(i * 13) % 100}%`,
                 top: `${(i * 7) % 30}%`,
@@ -146,7 +150,7 @@ export default function DashboardPage() {
 
           {blockedByFreeLimit ? (
             <Button
-              className="bg-gradient-to-r from-purple-600 to-orange-500 text-white hover:from-purple-700 hover:to-orange-600"
+              className={BRAND_GRADIENT_BUTTON}
               onClick={() => openUpgradeModal("monthly-trip-limit")}
             >
               ✨ Get Pro for Unlimited Trips
