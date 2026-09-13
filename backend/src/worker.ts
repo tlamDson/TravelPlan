@@ -18,12 +18,26 @@ import cron from "node-cron";
 
 initSentry("worker");
 
-/** Fewer stalled checks → fewer Redis commands; lock covers long AI / I/O jobs. */
-const workerThroughputOpts = {
-  stalledInterval: 30_000,
-  lockDuration: 60_000,
-} as const;
-
+// No custom lockDuration/stalledInterval here on purpose — this used to be
+// `{ stalledInterval: 30_000, lockDuration: 60_000 }` ("lock covers long
+// AI/IO jobs"), which was wrong on both counts: 30_000 is BullMQ's own
+// default (a no-op), and lock renewal is a JS timer that fires every
+// lockDuration/2 regardless of how long a job takes, as long as the event
+// loop stays free — it doesn't need a longer lock to survive a long
+// `await`. Verified with a real BullMQ Worker in
+// worker-lock-duration.integration.test.ts: an async job that awaits far
+// longer than the default 30s lock never stalls (scenario 1), and grep
+// over trip.processor.ts/itinerary-builder.ts/itinerary-chunker.service.ts
+// found no synchronous phase anywhere near that long (sanitizeHtml runs
+// per-place-name, JSON.parse runs on ordinary-sized AI responses — both
+// microseconds, not seconds). Production's own p95 processing time (see
+// `npm run measure:pipeline -- --report`, ~106s at n=8 retained jobs) is
+// real but entirely `await`-based (sequential Gemini/Places calls), so it
+// was never at risk from the default lock either way. A longer lock only
+// ever pays a cost: worker-lock-duration.integration.test.ts's scenario 3
+// shows recovery time after a crashed worker scales directly with
+// lockDuration, so the 60s value was pure downside with nothing to show
+// for it.
 const startWorker = async () => {
   try {
     logger.info("Connecting to MongoDB...");
@@ -48,7 +62,6 @@ const startWorker = async () => {
       tripGeneratorProcessor,
       {
         concurrency: QUEUE_CONCURRENCY[QUEUE_NAMES.TRIP_GENERATION]!, // Tier 1: 300 RPM → safely handle 5 simultaneous trips
-        ...workerThroughputOpts,
       },
     );
     attachJobMetrics(worker, QUEUE_NAMES.TRIP_GENERATION);
@@ -91,7 +104,6 @@ const startWorker = async () => {
       calendarSyncProcessor,
       {
         concurrency: QUEUE_CONCURRENCY[QUEUE_NAMES.CALENDAR_SYNC]!,
-        ...workerThroughputOpts,
       },
     );
     attachJobMetrics(calendarWorker, QUEUE_NAMES.CALENDAR_SYNC);

@@ -135,3 +135,5 @@ tsc-output.txt
 eslint_report.json
 backend/tz-test*.js
 backend/test-db.js
+# measure-pipeline.ts --harvest output — may contain harvested production job data
+backend/.pipeline-snapshot.json
