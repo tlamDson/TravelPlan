@@ -16,6 +16,14 @@ describe("AgentLockBanner — fallback branch", () => {
     expect(screen.getByText("Chế độ dự phòng")).toBeInTheDocument();
   });
 
+  it("uses the shared tag-yellow tokens for the fallback banner, not raw yellow", () => {
+    render(<AgentLockBanner isLocked={false} isFallback />);
+    const title = screen.getByText("Chế độ dự phòng");
+
+    expect(title.className).toContain("text-tag-yellow-text");
+    expect(title.className).not.toMatch(/text-yellow-700/);
+  });
+
   it("includes the fallback city when given", () => {
     render(
       <AgentLockBanner isLocked={false} isFallback fallbackCity="Hanoi" />,
