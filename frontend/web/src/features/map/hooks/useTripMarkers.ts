@@ -15,7 +15,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import type { Map as MapboxMap, Marker } from "mapbox-gl";
 import type { ItineraryDay, Activity } from "@/utils/schemas";
-import { getDayColor } from "../utils/dayColors";
+import { getDayColor, withAlpha } from "../utils/dayColors";
 import {
   convertCurrency,
   formatPriceLevel,
@@ -138,7 +138,7 @@ export function useTripMarkers({
     (el: HTMLElement, color: string) => {
       deselect();
       el.style.transform = "scale(1.5)";
-      el.style.boxShadow = `0 0 0 4px ${color}55, 0 6px 16px rgba(0,0,0,0.45)`;
+      el.style.boxShadow = `0 0 0 4px ${withAlpha(color, 0.33)}, 0 6px 16px rgba(0,0,0,0.45)`;
       el.style.zIndex = "100";
       selectedElRef.current = el;
       // Show the inline ping ring

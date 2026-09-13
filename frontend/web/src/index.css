@@ -104,6 +104,42 @@
     --chart-3: var(--tag-orange-text);
     --chart-4: var(--tag-purple-text);
     --chart-5: var(--tag-pink-text);
+
+    /* Map day-marker palette — intentionally NOT re-themed between :root
+       and .dark. Markers render over literal map tile imagery, not app
+       chrome, so they must stay visible/distinct regardless of the app's
+       light/dark setting. Guarded by dayColors.test.ts. */
+    --day-1: 239 84% 67%;
+    --day-2: 142 71% 45%;
+    --day-3: 38 92% 50%;
+    --day-4: 0 84% 60%;
+    --day-5: 217 91% 60%;
+    --day-6: 330 81% 60%;
+    --day-7: 173 80% 40%;
+    --day-8: 25 95% 53%;
+    --day-9: 258 90% 66%;
+    --day-1-light: 226 100% 94%;
+    --day-2-light: 141 84% 93%;
+    --day-3-light: 48 96% 89%;
+    --day-4-light: 0 93% 94%;
+    --day-5-light: 214 95% 93%;
+    --day-6-light: 326 78% 95%;
+    --day-7-light: 167 85% 89%;
+    --day-8-light: 34 100% 92%;
+    --day-9-light: 251 91% 95%;
+
+    /* Reliability dashboard chart palette. Series colors theme with
+       light/dark; status/grid/axis roles are fixed on purpose — a status
+       color must stay recognizable regardless of theme. Guarded by
+       chart-colors.test.ts. */
+    --reliability-series-queue-wait: 213 68% 50%;
+    --reliability-series-processing: 17 82% 56%;
+    --reliability-series-end-to-end: 159 73% 40%;
+    --reliability-grid: 53 12% 87%;
+    --reliability-status-good: 120 86% 34%;
+    --reliability-status-warning: 41 96% 54%;
+    --reliability-status-critical: 0 61% 52%;
+    --reliability-axis: 45 3% 52%;
   }
 
   .dark {
@@ -207,6 +243,37 @@
     --chart-3: var(--tag-orange-text);
     --chart-4: var(--tag-purple-text);
     --chart-5: var(--tag-pink-text);
+
+    /* Map day-marker palette — identical to :root, see :root for rationale */
+    --day-1: 239 84% 67%;
+    --day-2: 142 71% 45%;
+    --day-3: 38 92% 50%;
+    --day-4: 0 84% 60%;
+    --day-5: 217 91% 60%;
+    --day-6: 330 81% 60%;
+    --day-7: 173 80% 40%;
+    --day-8: 25 95% 53%;
+    --day-9: 258 90% 66%;
+    --day-1-light: 226 100% 94%;
+    --day-2-light: 141 84% 93%;
+    --day-3-light: 48 96% 89%;
+    --day-4-light: 0 93% 94%;
+    --day-5-light: 214 95% 93%;
+    --day-6-light: 326 78% 95%;
+    --day-7-light: 167 85% 89%;
+    --day-8-light: 34 100% 92%;
+    --day-9-light: 251 91% 95%;
+
+    /* Reliability dashboard chart palette — see :root for rationale.
+       Series + grid theme; status/axis carry the same value as :root. */
+    --reliability-series-queue-wait: 213 77% 56%;
+    --reliability-series-processing: 17 70% 50%;
+    --reliability-series-end-to-end: 159 73% 36%;
+    --reliability-grid: 60 2% 17%;
+    --reliability-status-good: 120 86% 34%;
+    --reliability-status-warning: 41 96% 54%;
+    --reliability-status-critical: 0 61% 52%;
+    --reliability-axis: 45 3% 52%;
   }
 }
 
