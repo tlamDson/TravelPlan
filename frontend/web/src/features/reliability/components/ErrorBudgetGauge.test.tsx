@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { ErrorBudgetGauge } from "./ErrorBudgetGauge";
 import type { ErrorBudget, SliResult } from "@travelplan/shared";
+import { STATUS_TONE_STYLES } from "@/features/planner/lib/statusStyles";
 
 const healthySli: SliResult = {
   validEvents: 100,
@@ -43,6 +44,18 @@ describe("ErrorBudgetGauge", () => {
     expect(screen.getByText(/healthy/i)).toBeInTheDocument();
   });
 
+  it("uses the shared success tone for a healthy status, not raw green", () => {
+    renderWithProviders(
+      <ErrorBudgetGauge sli={healthySli} errorBudget={healthyBudget} />,
+    );
+
+    const status = screen.getByText(/healthy/i).parentElement!;
+    expect(status.className).toContain(
+      STATUS_TONE_STYLES.success.textClassName,
+    );
+    expect(status.className).not.toMatch(/text-green-600/);
+  });
+
   it("renders an exhausted status (not just a red color) when consumedRatio > 1", () => {
     renderWithProviders(
       <ErrorBudgetGauge
@@ -57,6 +70,23 @@ describe("ErrorBudgetGauge", () => {
     );
 
     expect(screen.getByText(/budget exhausted/i)).toBeInTheDocument();
+  });
+
+  it("uses the shared danger tone (text-destructive) for a critical status", () => {
+    renderWithProviders(
+      <ErrorBudgetGauge
+        sli={{ ...healthySli, sli: 0.7, badEvents: 30, goodEvents: 70 }}
+        errorBudget={{
+          ...healthyBudget,
+          consumedRatio: 1.5,
+          budgetRemaining: 0,
+          burnRate: 1.5,
+        }}
+      />,
+    );
+
+    const status = screen.getByText(/budget exhausted/i).parentElement!;
+    expect(status.className).toContain(STATUS_TONE_STYLES.danger.textClassName);
   });
 
   it("renders the exhaustion projection date when provided", () => {

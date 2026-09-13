@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { GoldenSignalsGrid } from "./GoldenSignalsGrid";
 import type { GoldenSignals } from "@travelplan/shared";
+import { STATUS_TONE_STYLES } from "@/features/planner/lib/statusStyles";
 
 const signals: GoldenSignals = {
   latency: {
@@ -59,5 +60,29 @@ describe("GoldenSignalsGrid", () => {
     );
 
     expect(screen.getByText(/worker down/i)).toBeInTheDocument();
+  });
+
+  it("uses the shared success/danger tones for worker alive/down, not raw green", () => {
+    const { rerender } = renderWithProviders(
+      <GoldenSignalsGrid signals={signals} />,
+    );
+    const aliveStatus = screen.getByText(/worker alive/i);
+    expect(aliveStatus.className).toContain(
+      STATUS_TONE_STYLES.success.textClassName,
+    );
+    expect(aliveStatus.className).not.toMatch(/text-green-600/);
+
+    rerender(
+      <GoldenSignalsGrid
+        signals={{
+          ...signals,
+          saturation: { ...signals.saturation, workerAlive: false },
+        }}
+      />,
+    );
+    const downStatus = screen.getByText(/worker down/i);
+    expect(downStatus.className).toContain(
+      STATUS_TONE_STYLES.danger.textClassName,
+    );
   });
 });

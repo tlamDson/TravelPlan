@@ -64,7 +64,7 @@ export function LatencyChart({
         <p className="text-sm text-muted-foreground">
           {t("reliability.latency.subtitle")}
         </p>
-        <p className="text-xs text-amber-600 dark:text-amber-400">
+        <p className="text-xs" style={{ color: colors.statusWarning }}>
           {t("reliability.latency.thresholdLabel")}
         </p>
       </CardHeader>

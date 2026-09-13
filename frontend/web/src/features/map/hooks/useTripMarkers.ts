@@ -313,6 +313,12 @@ export function useTripMarkers({
             .filter(Boolean)
             .join(" · ");
 
+          // Mapbox GL's built-in popup chrome renders a plain white card
+          // regardless of the app's theme (nothing here overrides its
+          // default CSS), so text-slate-* below is a deliberate fixed
+          // dark-on-white choice, not a raw-palette violation -- the
+          // themed --foreground token would turn white-on-white in dark
+          // mode, since the popup card itself never goes dark.
           let popupHtml = `
             <div class="px-3 py-2.5 max-w-[260px] font-sans">
               <div class="text-[9px] font-bold uppercase tracking-wider mb-1" style="color: ${dayColor};">

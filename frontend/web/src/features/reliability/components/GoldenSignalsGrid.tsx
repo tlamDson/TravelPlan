@@ -2,6 +2,7 @@ import type { GoldenSignals } from "@travelplan/shared";
 import { Activity, AlertOctagon, Gauge, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslationStore } from "@/stores/useTranslationStore";
+import { STATUS_TONE_STYLES } from "@/features/planner/lib/statusStyles";
 
 interface GoldenSignalsGridProps {
   signals: GoldenSignals;
@@ -101,8 +102,8 @@ export function GoldenSignalsGrid({ signals }: GoldenSignalsGridProps) {
           <div
             className={`text-sm font-medium ${
               signals.saturation.workerAlive
-                ? "text-green-600 dark:text-green-400"
-                : "text-destructive"
+                ? STATUS_TONE_STYLES.success.textClassName
+                : STATUS_TONE_STYLES.danger.textClassName
             }`}
           >
             {signals.saturation.workerAlive
