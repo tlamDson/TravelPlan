@@ -24,6 +24,7 @@ import { useSubscriptionStore } from "@/stores/useSubscriptionStore";
 import { useActiveJobStore } from "@/stores/useActiveJobStore";
 import { getUserPreferences } from "@/features/settings/types/user-preferences.types";
 import { getTripDays, buildPreferences } from "./create-trip-dialog.utils";
+import { BRAND_GRADIENT_BUTTON } from "@/lib/brandGradient";
 
 const TOTAL_STEPS = 6;
 const MIN_DAILY_BUDGET = 20;
@@ -202,7 +203,7 @@ export function CreateTripDialog({ trigger }: { trigger: React.ReactNode }) {
               disabled={!stepValid}
               className={
                 stepIndex === 0 && isTripOverFreeCap
-                  ? "bg-gradient-to-r from-purple-600 to-orange-500 text-white hover:from-purple-700 hover:to-orange-600"
+                  ? BRAND_GRADIENT_BUTTON
                   : ""
               }
             >
