@@ -96,6 +96,14 @@
     /* Code */
     --code-inline-text: 0 64% 43%;
     --code-inline-bg: 270 2% 89%;
+
+    /* Chart categorical palette — aliased to existing tag hues so the
+       palette stays internally consistent instead of inventing new colors */
+    --chart-1: var(--tag-blue-text);
+    --chart-2: var(--tag-green-text);
+    --chart-3: var(--tag-orange-text);
+    --chart-4: var(--tag-purple-text);
+    --chart-5: var(--tag-pink-text);
   }
 
   .dark {
@@ -146,20 +154,18 @@
     --destructive: 0 79% 59%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 0%;
-    --sidebar-foreground: 0 0% 95%;
+    /* Sidebar — single declaration per var; previously each of these 4 was
+       declared twice, silently relying on later-wins cascade order. Values
+       below match what the second (winning) declaration used to render,
+       so dark-mode pixels are unchanged. */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 199 79% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 10%;
-    --sidebar-ring: 199 79% 52%;
-    --sidebar: 0 0% 6%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 14.9%;
     --sidebar-accent: 0 0% 14.9%;
     --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 14.9%;
+    --sidebar-ring: 199 79% 52%;
 
     /* Tag Colors - Dark Mode */
     --tag-gray: 0 0% 50% / 0.5;
@@ -194,6 +200,13 @@
     /* Code */
     --code-inline-text: 120 35% 64%;
     --code-inline-bg: 0 0% 0%;
+
+    /* Chart categorical palette — see :root for rationale */
+    --chart-1: var(--tag-blue-text);
+    --chart-2: var(--tag-green-text);
+    --chart-3: var(--tag-orange-text);
+    --chart-4: var(--tag-purple-text);
+    --chart-5: var(--tag-pink-text);
   }
 }
 
