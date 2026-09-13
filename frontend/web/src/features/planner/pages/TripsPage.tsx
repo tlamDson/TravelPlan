@@ -23,63 +23,11 @@ import { Plus, Search, Loader2 } from "lucide-react";
 import { CreateTripDialog } from "@/features/planner/components";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 import { getLocalizedTripTitle } from "@/utils/format";
-
-type FilterStatus =
-  | "all"
-  | "UPCOMING"
-  | "IN_TRIP"
-  | "COMPLETED"
-  | "CANCELLED"
-  | "GENERATING"
-  | "FAILED";
-
-type SortOption = "newest" | "oldest" | "az" | "za";
-
-const getStatusColor = (status: FilterStatus | "sort") => {
-  const baseClasses =
-    "pl-3 [&>span.absolute]:hidden mx-1 my-0.5 font-medium transition-colors";
-
-  if (status === "sort") {
-    // For sort options: generic highlight
-    return `${baseClasses} data-[state=checked]:bg-primary/20 data-[state=checked]:text-primary focus:bg-accent`;
-  }
-
-  // Define background/text colors based on status (similar to TripCard)
-  let specificColors =
-    "data-[state=checked]:bg-primary/20 data-[state=checked]:text-primary";
-  switch (status) {
-    case "UPCOMING":
-      specificColors =
-        "data-[state=checked]:bg-blue-600/80 data-[state=checked]:text-white focus:bg-blue-600/20";
-      break;
-    case "IN_TRIP":
-      specificColors =
-        "data-[state=checked]:bg-emerald-600/80 data-[state=checked]:text-white focus:bg-emerald-600/20";
-      break;
-    case "COMPLETED":
-      specificColors =
-        "data-[state=checked]:bg-slate-600/80 data-[state=checked]:text-white focus:bg-slate-600/20";
-      break;
-    case "CANCELLED":
-      specificColors =
-        "data-[state=checked]:bg-red-700/80 data-[state=checked]:text-white focus:bg-red-700/20";
-      break;
-    case "GENERATING":
-      specificColors =
-        "data-[state=checked]:bg-amber-600/80 data-[state=checked]:text-white focus:bg-amber-600/20";
-      break;
-    case "FAILED":
-      specificColors =
-        "data-[state=checked]:bg-red-700/80 data-[state=checked]:text-white focus:bg-red-700/20";
-      break;
-    case "all":
-    default:
-      specificColors =
-        "data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
-      break;
-  }
-  return `${baseClasses} ${specificColors}`;
-};
+import {
+  getStatusColor,
+  type FilterStatus,
+  type SortOption,
+} from "./tripsPageFilters";
 
 export default function TripsPage() {
   const { data: trips, isLoading, error, refetch } = useTrips();

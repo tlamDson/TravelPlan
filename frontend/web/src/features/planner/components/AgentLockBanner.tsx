@@ -82,12 +82,12 @@ export function AgentLockBanner({
   // Fallback template banner (free user, AI unavailable)
   if (isFallback) {
     return (
-      <Alert className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
-        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-        <AlertTitle className="text-yellow-700 dark:text-yellow-400">
+      <Alert className="border-tag-yellow-text/50 bg-tag-yellow">
+        <AlertTriangle className="h-4 w-4 text-tag-yellow-text" />
+        <AlertTitle className="text-tag-yellow-text">
           Chế độ dự phòng
         </AlertTitle>
-        <AlertDescription className="text-yellow-700/80 dark:text-yellow-400/80">
+        <AlertDescription className="text-tag-yellow-text/80">
           AI đang bảo trì. Đây là lịch trình tiêu chuẩn
           {fallbackCity ? ` cho ${fallbackCity}` : ""}. Một số tính năng bị giới
           hạn.
