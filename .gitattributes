@@ -1,0 +1,3 @@
+# Offline RAG eval snapshot/caches (backend/eval/data/): raw float32 —
+# never let core.autocrlf touch their bytes.
+*.f32 binary

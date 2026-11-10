@@ -16,14 +16,17 @@ function relevanceOf(relevant: RelevanceMap, id: string): number {
   return relevant[id] ?? 0;
 }
 
-/** |relevant ∩ retrieved[:k]| / |relevant|. 0 by convention when the
- * relevant set is empty (0/0 is otherwise undefined). */
+/** |relevant ∩ retrieved[:k]| / |relevant|, where "relevant" means grade
+ * > 0 — an explicit grade-0 label must not inflate the denominator. 0 by
+ * convention when the relevant set is empty (0/0 is otherwise undefined). */
 export function recallAtK(
   retrievedIds: string[],
   relevant: RelevanceMap,
   k: number,
 ): number {
-  const relevantIds = Object.keys(relevant);
+  const relevantIds = Object.keys(relevant).filter(
+    (id) => relevanceOf(relevant, id) > 0,
+  );
   if (relevantIds.length === 0) return 0;
 
   const topK = new Set(retrievedIds.slice(0, k));

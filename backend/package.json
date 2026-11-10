@@ -24,7 +24,8 @@
     "seed:real-trip-jobs": "tsx scripts/seed-real-trip-jobs.ts",
     "measure:false-healthy": "tsx scripts/measure-false-healthy.ts",
     "measure:pipeline": "tsx scripts/measure-pipeline.ts",
-    "measure:achieved-slo": "tsx scripts/measure-achieved-slo.ts"
+    "measure:achieved-slo": "tsx scripts/measure-achieved-slo.ts",
+    "eval:export-snapshot": "tsx scripts/export-rag-snapshot.ts"
   },
   "dependencies": {
     "@bull-board/api": "^8.1.0",

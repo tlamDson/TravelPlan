@@ -26,6 +26,16 @@ describe("recallAtK", () => {
   it("caps k at the retrieved list length without throwing", () => {
     expect(recallAtK(["A"], { A: 1, B: 1 }, 50)).toBeCloseTo(0.5);
   });
+
+  it("ignores grade-0 labels when sizing the relevant set", () => {
+    // B is explicitly labelled irrelevant (grade 0) — it must not count
+    // toward |relevant|, otherwise finding A alone would score 1/2.
+    expect(recallAtK(["A", "X"], { A: 2, B: 0 }, 2)).toBe(1);
+  });
+
+  it("is 0 when every label is grade 0 (no relevant items)", () => {
+    expect(recallAtK(["A"], { A: 0 }, 1)).toBe(0);
+  });
 });
 
 describe("precisionAtK", () => {
