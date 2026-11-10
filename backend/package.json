@@ -28,7 +28,8 @@
     "eval:export-snapshot": "tsx scripts/export-rag-snapshot.ts",
     "eval:validate-golden": "tsx scripts/validate-golden.ts",
     "eval:label-golden": "tsx scripts/label-golden.ts",
-    "eval:embed-queries": "tsx scripts/embed-golden-queries.ts"
+    "eval:embed-queries": "tsx scripts/embed-golden-queries.ts",
+    "eval:rag": "tsx scripts/eval-rag.ts"
   },
   "dependencies": {
     "@bull-board/api": "^8.1.0",
