@@ -8,6 +8,7 @@ import path from "node:path";
 export const EVAL_DIR = path.resolve(__dirname, "..", "..", "..", "eval");
 export const CORPUS_DIR = path.join(EVAL_DIR, "data", "corpus");
 export const QUERY_CACHE_DIR = path.join(EVAL_DIR, "data", "queries");
+export const RAG_RESULTS_DIR = path.join(EVAL_DIR, "results", "rag");
 export const GOLDEN_PATH = path.join(
   EVAL_DIR,
   "golden",
