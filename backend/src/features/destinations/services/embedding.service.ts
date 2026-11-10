@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../../../config/env";
+import { EMBEDDING_MODEL } from "../../../config/gemini-models";
 
-const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMS = 3072; // gemini-embedding-001 outputs 3072 dimensions
 
 let genAI: GoogleGenerativeAI | null = null;

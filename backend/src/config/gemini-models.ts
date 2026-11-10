@@ -46,3 +46,11 @@ export const GEMINI_MODEL = "gemini-3.6-flash";
  * far cheaper failure mode here than it would be for trip generation.
  */
 export const GEMINI_INSIGHT_MODEL = "gemini-3.5-flash-lite";
+
+/**
+ * Embedding model for the RAG corpus (PlaceInsight.embedding) and query
+ * vectors. Lives here (not in embedding.service.ts) so tooling such as
+ * scripts/export-rag-snapshot.ts can record it without importing
+ * config/env — whose envalid fail-fast would demand every API key.
+ */
+export const EMBEDDING_MODEL = "gemini-embedding-001";
