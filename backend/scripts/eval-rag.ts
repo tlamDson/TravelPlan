@@ -16,10 +16,13 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import {
   CORPUS_DIR,
+  DEFAULT_REWRITER_ID,
   GOLDEN_PATH,
   QUERY_CACHE_DIR,
   RAG_RESULTS_DIR,
+  rewritePath,
 } from "../src/lib/rag-eval/eval-paths";
+import { parseRewriteCache } from "../src/lib/rag-eval/rewrite-cache";
 import { loadGoldenSet } from "../src/lib/rag-eval/golden-io";
 import { loadSnapshot } from "../src/lib/rag-eval/snapshot-loader";
 import { loadQueryEmbeddingCache } from "../src/lib/rag-eval/query-embedding-cache";
@@ -100,6 +103,13 @@ async function main() {
   if (ks.some((k) => !Number.isInteger(k) || k < 1))
     throw new Error("--k must be positive integers");
 
+  const configs = list(arg("--configs"), DEFAULT_CONFIGS);
+  const rewriteFile = rewritePath(arg("--rewriter") ?? DEFAULT_REWRITER_ID);
+  const rewrites =
+    configs.includes("hybrid-rewrite") && fs.existsSync(rewriteFile)
+      ? parseRewriteCache(fs.readFileSync(rewriteFile, "utf8"))
+      : undefined;
+
   const now = new Date();
   const runId = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
   const result = runEval({
@@ -108,7 +118,8 @@ async function main() {
     queries,
     retrievers: buildRetrievers(
       snapshot,
-      list(arg("--configs"), DEFAULT_CONFIGS),
+      configs,
+      rewrites ? { rewrites } : {},
     ),
     settings,
     ks,

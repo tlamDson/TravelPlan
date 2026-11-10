@@ -54,19 +54,28 @@ export function scoreRows(
     .sort((a, b) => b.score - a.score || a.row - b.row);
 }
 
+export type DenseRanker = (q: RetrievalQuery, setting: Setting) => number[];
+
+/** Row ranking by exact cosine, with doc norms precomputed once. */
+export function denseRanker(snapshot: CorpusSnapshot): DenseRanker {
+  const norms = new Float64Array(snapshot.meta.count);
+  for (let r = 0; r < snapshot.meta.count; r++)
+    norms[r] = norm(snapshot.vector(r));
+  return (q, setting) =>
+    scoreRows(snapshot, norms, q, setting).map(({ row }) => row);
+}
+
 export function createVectorRetriever(
   snapshot: CorpusSnapshot,
   id = "vector-prod",
 ): Retriever {
-  const norms = new Float64Array(snapshot.meta.count);
-  for (let r = 0; r < snapshot.meta.count; r++)
-    norms[r] = norm(snapshot.vector(r));
+  const rank = denseRanker(snapshot);
   return {
     id,
     params: { similarity: "cosine", exact: true },
     retrieve: (q, setting, k) =>
-      scoreRows(snapshot, norms, q, setting)
+      rank(q, setting)
         .slice(0, k)
-        .map(({ row }) => snapshot.docs[row]!.label),
+        .map((row) => snapshot.docs[row]!.label),
   };
 }
