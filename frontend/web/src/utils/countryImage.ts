@@ -135,49 +135,50 @@ const COUNTRY_IMAGES: Record<CountryKey, string[]> = {
   ],
 };
 
+function hashIndex(
+  seedString: string | undefined,
+  fallback: string,
+  length: number,
+) {
+  if (!seedString) return fallback.length % length;
+  let hash = 0;
+  for (let i = 0; i < seedString.length; i++) {
+    hash = seedString.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % length;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Whole-word match so "usa" does not hit "Busan" and "nice" does not hit "Venice".
+function containsKeyword(text: string, keyword: string): boolean {
+  return new RegExp(
+    `(?<![\\p{L}\\p{N}])${escapeRegExp(keyword)}(?![\\p{L}\\p{N}])`,
+    "u",
+  ).test(text);
+}
+
 /**
- * Detects the country from a trip title string and returns
- * an image path for that country, or null if not matched.
- * Selection is deterministic per title (same title = same image).
- * If a seedString is provided (like an ID), it provides a stable random image for that ID.
+ * Detects the country from a destination/trip title string and returns an
+ * image path for that country, or null when the country is unknown or has no
+ * images (callers render a neutral placeholder; never another country's photo).
+ * Selection is deterministic: the same seed (e.g. trip id) gives the same image.
  */
 export function getCountryImage(
-  tripTitle: string,
+  tripTitle: string | null | undefined,
   seedString?: string,
 ): string | null {
+  if (!tripTitle) return null;
   const lower = tripTitle.toLowerCase();
 
   for (const [country, keywords] of Object.entries(COUNTRY_KEYWORDS)) {
-    if (keywords.some((kw) => lower.includes(kw))) {
+    if (keywords.some((kw) => containsKeyword(lower, kw))) {
       const images = COUNTRY_IMAGES[country as CountryKey];
-
-      let index = 0;
-      if (seedString) {
-        let hash = 0;
-        for (let i = 0; i < seedString.length; i++) {
-          hash = seedString.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        index = Math.abs(hash) % images.length;
-      } else {
-        index = tripTitle.length % images.length;
-      }
-
-      return images[index];
+      return images[hashIndex(seedString, tripTitle, images.length)];
     }
   }
 
-  // Fallback to a random image from all available images if no keyword matches
-  const allImages = Object.values(COUNTRY_IMAGES).flat();
-  let index = 0;
-  if (seedString) {
-    let hash = 0;
-    for (let i = 0; i < seedString.length; i++) {
-      hash = seedString.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    index = Math.abs(hash) % allImages.length;
-  } else {
-    index = tripTitle.length % allImages.length;
-  }
-
-  return allImages[index];
+  return null;
 }
