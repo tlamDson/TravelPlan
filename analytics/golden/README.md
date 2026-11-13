@@ -121,7 +121,7 @@ the mutants against every case (`abkit gate --full`) and the `SIMKIT_GOLDEN_FULL
 rebuild. It is not a required check, and GitHub fires its `schedule` only from `main`.
 
 M10 in `analytics/runs/runs.csv` (`abkit gate --record --pr 15a`): 10 of 10 mutants
-blocked by the ci-fast gate (none without a gate). On every `v2` case, 28/28 G-ref and
+blocked by the ci-fast gate (none without a gate). On every `v2` case, 29/29 G-ref and
 G-public cases pass, and 50/50 G-sim cases (simulated, virtual users) pass.
 
 A mutant whose `old` text no longer occurs exactly once fails
