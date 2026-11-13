@@ -40,7 +40,9 @@ def test_r_testthat_suite_agrees_with_golden_to_1e_8() -> None:
         [RSCRIPT, str(R_DIR / "run.R")],
         cwd=R_DIR,
         capture_output=True,
-        text=True,
+        # testthat prints UTF-8 box characters; the Windows default code page cannot decode them.
+        encoding="utf-8",
+        errors="replace",
         timeout=300,
     )
     assert result.returncode == 0, result.stdout + result.stderr

@@ -24,6 +24,12 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
 - `abkit golden`: runs abkit on every case of a golden dataset (default
   `analytics/golden/v2`) and prints pass/fail by each case's tolerance. Format,
   methods and freezing: `analytics/golden/README.md`.
+- `r/` (optional): an R `testthat` suite that recomputes every G-ref Welch,
+  CUPED and delta case with base R (`t.test`, `cov`, `pnorm`) and requires
+  `|R - golden| <= 1e-8` on every expected key. Needs R with `testthat` and
+  `jsonlite`; run `Rscript analytics/abkit/r/run.R`. `tests/test_r_crosscheck.py`
+  runs it when `Rscript` is found (`ABKIT_RSCRIPT`, `PATH`, or
+  `C:/Program Files/R`) and skips otherwise, so CI (no R) skips it.
 
 ```bash
 python -m venv analytics/.venv
