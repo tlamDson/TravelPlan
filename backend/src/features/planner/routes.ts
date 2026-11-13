@@ -19,7 +19,10 @@ import {
   cancelTrip,
 } from "./controllers/trip.controller";
 import { requireUserAuth } from "../../middlewares/auth";
-import { tripCreationLimiter } from "../../middlewares/rate-limiter";
+import {
+  jobStatusLimiter,
+  tripCreationLimiter,
+} from "../../middlewares/rate-limiter";
 import { idempotencyMiddleware } from "../../middlewares/idempotency.middleware";
 
 const router = Router();
@@ -132,7 +135,7 @@ router.get("/trips", requireUserAuth, getUserTrips);
  *       403:
  *         description: Forbidden (not owner)
  */
-router.get("/jobs/:jobId", requireUserAuth, getJobStatus);
+router.get("/jobs/:jobId", jobStatusLimiter, requireUserAuth, getJobStatus);
 
 /**
  * @swagger

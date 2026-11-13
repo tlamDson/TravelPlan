@@ -397,6 +397,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.myTrips": "My Trips",
     "sidebar.explore": "Explore",
     "sidebar.ai": "AI Assistant",
+    "sidebar.comingSoon": "Coming soon",
 
     // Dropdown Menu
     "menu.account": "Account",
@@ -406,7 +407,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     "trip.itinerary": "Itinerary",
     "trip.noItinerary": "No itinerary yet",
-    "trip.noItineraryDesc": "Use the AI Assistant to generate your trip plan.",
+    "trip.noItineraryDesc":
+      "Create a new trip from My Trips and we'll generate the plan for you.",
+    "trip.noItineraryCta": "Go to My Trips",
     "trip.delete": "Delete trip",
     "trip.deleteConfirmTitle": 'Delete "{name}"?',
     "trip.deleteConfirmDesc":
@@ -922,6 +925,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.myTrips": "Mes Voyages",
     "sidebar.explore": "Explorer",
     "sidebar.ai": "Assistant IA",
+    "sidebar.comingSoon": "Bientôt disponible",
 
     // Dropdown Menu
     "menu.account": "Compte",
@@ -932,7 +936,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.itinerary": "Itinéraire",
     "trip.noItinerary": "Aucun itinéraire pour l'instant",
     "trip.noItineraryDesc":
-      "Utilisez l'assistant IA pour générer votre plan de voyage.",
+      "Créez un nouveau voyage depuis Mes voyages et nous générerons le plan pour vous.",
+    "trip.noItineraryCta": "Aller à Mes voyages",
     "trip.delete": "Supprimer",
     "trip.deleteConfirmTitle": 'Supprimer "{name}" ?',
     "trip.deleteConfirmDesc":
@@ -1443,6 +1448,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.myTrips": "Chuyến đi của tôi",
     "sidebar.explore": "Khám phá",
     "sidebar.ai": "Trợ lý AI",
+    "sidebar.comingSoon": "Sắp ra mắt",
 
     // Dropdown Menu
     "menu.account": "Tài khoản",
@@ -1452,7 +1458,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     "trip.itinerary": "Lịch Trình",
     "trip.noItinerary": "Chưa có lịch trình",
-    "trip.noItineraryDesc": "Dùng Trợ lý AI để tạo kế hoạch chuyến đi của bạn.",
+    "trip.noItineraryDesc":
+      "Tạo chuyến đi mới từ Chuyến đi của tôi và chúng tôi sẽ lập kế hoạch cho bạn.",
+    "trip.noItineraryCta": "Đến Chuyến đi của tôi",
     "trip.delete": "Xóa chuyến đi",
     "trip.deleteConfirmTitle": 'Xóa "{name}"?',
     "trip.deleteConfirmDesc":

@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   useJobPoller,
   useTrip,
@@ -547,6 +547,11 @@ export default function TripDetailPage() {
                   <p className="text-sm text-muted-foreground">
                     {t("trip.noItineraryDesc")}
                   </p>
+                  <Button asChild size="sm" className="mt-4">
+                    <Link to="/trips" data-testid="trip-empty-itinerary-cta">
+                      {t("trip.noItineraryCta")}
+                    </Link>
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-4">

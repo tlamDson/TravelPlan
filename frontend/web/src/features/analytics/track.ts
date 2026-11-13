@@ -6,6 +6,7 @@ import {
   type ClientEventName,
   type ClientEventProperties,
 } from "./lib/analytics-client";
+import { isAnalyticsEnabled } from "./lib/analytics-flag";
 import { createHttpTransport } from "./lib/http-transport";
 import { createSessionIdGetter } from "./lib/session-id";
 import { installUnloadFlush } from "./lib/unload-flush";
@@ -24,14 +25,16 @@ function getClient(): AnalyticsClient {
     client = createAnalyticsClient({
       transport: createHttpTransport({ url: `${API_URL}/analytics/events` }),
       getSessionId: getAnalyticsSessionId,
+      // Debug only: analytics must never add console noise for users.
       onDrop: (events, reason) =>
-        logger.warn(
-          { count: events.length, reason },
-          "analytics events dropped",
-        ),
+        logger.debug(`analytics: dropped ${events.length} event(s): ${reason}`),
       // The report holds the event name and failing paths, never values.
       onInvalid: (report) =>
-        logger.warn(report, "analytics event failed the catalog, not sent"),
+        logger.debug(
+          `analytics: event "${report.name}" failed the catalog, not sent (${report.issues
+            .map((i) => `${i.path}: ${i.code}`)
+            .join(", ")})`,
+        ),
     });
     uninstall = installUnloadFlush(client);
   }
@@ -52,6 +55,7 @@ export function track<N extends ClientEventName>(
   name: N,
   properties: ClientEventProperties<N>,
 ): void {
+  if (!isAnalyticsEnabled()) return;
   getClient().track(name, properties);
 }
 
@@ -73,6 +77,7 @@ export function trackOnce<N extends ClientEventName>(
 
 /** Pass the Clerk userId after sign-in, null after sign-out. */
 export function identify(userId: string | null): void {
+  if (!isAnalyticsEnabled()) return;
   getClient().identify(userId);
 }
 

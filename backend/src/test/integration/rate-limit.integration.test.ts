@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { createApp } from "../../app";
-import { GENERAL_RATE_LIMIT_MAX } from "../../middlewares/rate-limiter";
+import {
+  GENERAL_RATE_LIMIT_MAX,
+  JOB_STATUS_RATE_LIMIT_MAX,
+} from "../../middlewares/rate-limiter";
+import { asUser } from "../integration-fixtures";
 
 const app = createApp();
 
@@ -35,4 +39,33 @@ describe("generalLimiter — mounted globally", () => {
     expect(lastRes!.status).toBe(429);
     expect(lastRes!.body.error).toMatch(/too many requests/i);
   }, 20_000);
+});
+
+describe("job status polling — own limiter, outside the general budget", () => {
+  it("a full generation's worth of polls leaves normal requests under the general limit", async () => {
+    // More polls than the whole general budget — a long generation at the
+    // poller's fastest rate. None of them may spend the general budget.
+    for (let i = 0; i < GENERAL_RATE_LIMIT_MAX + 1; i++) {
+      const poll = await request(app)
+        .get("/api/jobs/does-not-exist-999")
+        .set(asUser("poller-1"));
+      expect(poll.status).toBe(404);
+    }
+
+    const normal = await request(app).get("/");
+    expect(normal.status).toBe(200);
+    expect(Number(normal.headers["ratelimit-remaining"])).toBe(
+      GENERAL_RATE_LIMIT_MAX - 1,
+    );
+  }, 60_000);
+
+  it("still 429s job polls once the job status budget is exhausted", async () => {
+    let last;
+    for (let i = 0; i < JOB_STATUS_RATE_LIMIT_MAX + 1; i++) {
+      last = await request(app)
+        .get("/api/jobs/does-not-exist-999")
+        .set(asUser("poller-2"));
+    }
+    expect(last!.status).toBe(429);
+  }, 120_000);
 });
