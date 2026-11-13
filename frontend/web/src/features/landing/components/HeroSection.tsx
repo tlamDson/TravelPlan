@@ -24,13 +24,12 @@ export function HeroSection() {
 
       {/* Floating destination cards */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
-        {DESTINATION_CARDS.map((dest, i) => (
+        {DESTINATION_CARDS.map((dest) => (
           <div
             key={dest.city}
-            className="absolute rounded-xl p-2 bg-card/90 backdrop-blur shadow-lg hidden lg:block"
+            data-testid="hero-destination-card"
+            className={`absolute rounded-xl p-2 bg-card/90 backdrop-blur shadow-lg hidden xl:block ${dest.position}`}
             style={{
-              left: `${15 + i * 30}%`,
-              top: `${30 + (i % 2) * 20}%`,
               animation: `float 3s ease-in-out infinite`,
               animationDelay: `${dest.delay * 0.5}s`,
             }}
@@ -68,7 +67,7 @@ export function HeroSection() {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-6">
-            Join 10,000+ travelers planning smarter trips
+            AI drafts your itinerary. You stay in control.
           </p>
         </div>
       </div>

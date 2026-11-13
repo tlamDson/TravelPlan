@@ -1,7 +1,7 @@
 /**
  * Landing Page Constants
  *
- * Data for features, testimonials, and other sections
+ * Data for features, highlights, and other sections
  */
 
 import { Sparkles, Map, DollarSign } from "lucide-react";
@@ -53,30 +53,20 @@ export const STEPS = [
   },
 ];
 
-export const TESTIMONIALS = [
+export const WHY_TRAVELPLAN = [
   {
-    name: "Sarah Chen",
-    role: "Digital Nomad",
-    avatar: "SC",
+    title: "Less research",
     content:
-      "This app completely transformed how I plan my trips. The AI suggestions are incredibly accurate and save me hours of research.",
-    rating: 5,
+      "Tell the AI where you are going and what you like. It drafts a day-by-day itinerary that you can edit.",
   },
   {
-    name: "Marcus Williams",
-    role: "Family Traveler",
-    avatar: "MW",
+    title: "Places that exist",
     content:
-      "Planning family vacations used to be stressful. Now I just tell the AI what we need and it handles everything perfectly.",
-    rating: 5,
+      "Suggested places are checked against Google Places and Mapbox before they reach your plan.",
   },
   {
-    name: "Emma Rodriguez",
-    role: "Adventure Seeker",
-    avatar: "ER",
-    content:
-      "The budget tracking feature alone is worth it. I've saved hundreds by having real-time spending insights.",
-    rating: 5,
+    title: "Budget in view",
+    content: "Track expenses and set limits right next to your itinerary.",
   },
 ];
 
@@ -86,17 +76,22 @@ export const DESTINATION_CARDS = [
     country: "France",
     image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300",
     delay: 0,
+    // Anchored to the edge of the centred text column (max-w-3xl = 48rem, so
+    // 24rem from centre) plus a gap, so the card can never reach the text.
+    position: "right-[calc(50%+25.5rem)] top-[28%]",
   },
   {
     city: "Tokyo",
     country: "Japan",
     image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300",
     delay: 1,
+    position: "left-[calc(50%+25.5rem)] top-[40%]",
   },
   {
     city: "New York",
     country: "USA",
     image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=300",
     delay: 2,
+    position: "right-[calc(50%+25.5rem)] top-[58%]",
   },
 ];
