@@ -128,6 +128,19 @@ def test_run_records_are_simulated_rows_of_pr_16(prepared, loaded):
     assert by_metric["sim_driver_readout_estimate_abs_diff"].value == 0.0
     assert by_metric["sim_driver_ingest_throughput"].value == pytest.approx(prepared.sent / 2.0)
     assert by_metric["sim_driver_ingest_throughput"].unit == "events/s"
+    timed = Tally.from_dict({**tally.to_dict(), "send_seconds": 0.5})
+    timed_records = to_run_records(
+        prepared,
+        timed,
+        rec,
+        analyze(prepared, rows),
+        vus=50,
+        load_seconds=2.0,
+        run_at="2026-11-13T00:00:00+00:00",
+        git_sha="abc123",
+    )
+    throughput = next(r for r in timed_records if r.metric == "sim_driver_ingest_throughput")
+    assert throughput.value == pytest.approx(prepared.sent / 0.5), "spawning time excluded"
     assert by_metric["sim_driver_peak_concurrent_vus"].value == 1
     assert by_metric["sim_driver_peak_concurrent_vus"].unit == "users"
     assert all("virtual users" in r.notes and "locust_vus=50" in r.notes for r in records)

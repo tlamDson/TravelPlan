@@ -8,6 +8,7 @@ in the ``export-row.ts`` shape. The live backend is covered by the backend integ
 
 from __future__ import annotations
 
+import copy
 import gzip
 import hashlib
 import hmac
@@ -49,7 +50,7 @@ class FakeIngest:
                 if event["eventId"] in fresh:
                     in_batch += 1
                     continue
-                fresh[event["eventId"]] = event
+                fresh[event["eventId"]] = copy.deepcopy(event)  # stored, not shared
             accepted = 0
             for event_id, event in fresh.items():
                 if event_id not in self.stored:

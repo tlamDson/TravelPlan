@@ -15,7 +15,7 @@ RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
 DEFAULT_MAX_ATTEMPTS = 3
 
 #: Levels, not counts: merging two tallies keeps the larger one.
-_PEAKS = frozenset({"spawned_users", "peak_active"})
+_PEAKS = frozenset({"spawned_users", "peak_active", "send_seconds"})
 
 #: ``post(batch) -> (status, body)``; may raise on a connection error.
 Post = Callable[[Sequence[object]], tuple[int, object]]
@@ -34,6 +34,7 @@ class Tally:
     unsent: int = 0  # events of batches that failed every attempt
     spawned_users: int = 0  # Locust users running when spawning completed
     peak_active: int = 0  # most Locust users sending a script at the same moment
+    send_seconds: float = 0.0  # from "all users spawned" to the last script sent (0: unknown)
     latencies_ms: list[float] = field(default_factory=list)
 
     @property

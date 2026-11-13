@@ -46,6 +46,7 @@ def test_every_locust_user_is_active_at_once_before_the_work_runs_out(tmp_path):
     assert len(scripts) > 8
     assert tally.spawned_users == 8
     assert tally.peak_active == 8
+    assert tally.send_seconds > 0
 
 
 def test_a_5xx_is_retried_with_the_same_event_ids(tmp_path):

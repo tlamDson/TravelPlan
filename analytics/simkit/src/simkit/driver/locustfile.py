@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from collections import deque
 from pathlib import Path
 
@@ -31,11 +32,13 @@ QUEUE = deque(SCRIPTS)
 TALLY = Tally()
 ALL_SPAWNED = Event()
 ACTIVE = 0  # Locust users inside send_script right now (one gevent thread: no lock needed)
+RELEASED_AT = [0.0]  # perf_counter() when every user had spawned
 
 
 @events.spawning_complete.add_listener
 def _all_spawned(user_count, **_kwargs):
     TALLY.spawned_users = user_count
+    RELEASED_AT[0] = time.perf_counter()
     ALL_SPAWNED.set()
 
 
@@ -72,6 +75,7 @@ class SimulatedVirtualUser(HttpUser):
         finally:
             ACTIVE -= 1
         if TALLY.scripts == len(SCRIPTS):
+            TALLY.send_seconds = time.perf_counter() - RELEASED_AT[0]
             self.environment.runner.quit()
 
 

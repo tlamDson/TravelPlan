@@ -87,11 +87,15 @@ def to_run_records(
     pr: str = PR,
 ) -> list[RunRecord]:
     p95 = tally.latency_ms(0.95)
+    # Sending time once every Locust user is up; the whole Locust run (spawning included) only
+    # when the tally has no timing.
+    seconds = tally.send_seconds or load_seconds
     notes = (
         f"virtual users={prepared.users} (simulated) locust_vus={vus} days={prepared.days} "
         f"start={prepared.start.isoformat()} sent={prepared.sent} batches={tally.batches} "
         f"retries={tally.retries} failed_batches={tally.failed_batches} "
         f"spawned_locust_users={tally.spawned_users} peak_concurrent={tally.peak_active} "
+        f"send_seconds={seconds:.3f} "
         f"experiment={prepared.experiment.definition.key} path=locust->POST /api/analytics/sim/"
         f"events->mongo->analytics:export->abkit"
     )
@@ -146,7 +150,7 @@ def to_run_records(
         (
             "bench",
             "sim_driver_ingest_throughput",
-            tally.received / load_seconds if load_seconds > 0 else 0.0,
+            _share(tally.received, seconds) if seconds > 0 else 0.0,
             "events/s",
             tally.received,
             notes,
