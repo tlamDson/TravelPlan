@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "source": "hand-counted from input.json; not computed by any TravelPlan or abkit code",
+  "rules": [
+    "Each event is validated on its own against analyticsEventSchema; one bad event never rejects the batch.",
+    "An event that fails validation is quarantined (it is never deduplicated, even if its eventId repeats).",
+    "A valid event whose eventId was already accepted earlier in the batch (or stored before) is a duplicate and is not stored again.",
+    "received = accepted + duplicates + quarantined."
+  ],
+  "expected": {
+    "received": 15,
+    "accepted": 7,
+    "duplicates": 2,
+    "quarantined": 6
+  },
+  "cases": [
+    { "index": 0, "outcome": "accepted", "note": "wizard_started" },
+    { "index": 1, "outcome": "accepted", "note": "trip_generation_requested" },
+    { "index": 2, "outcome": "accepted", "note": "trip_generation_completed" },
+    { "index": 3, "outcome": "duplicate", "note": "same eventId as index 0" },
+    { "index": 4, "outcome": "accepted", "note": "trip_saved" },
+    {
+      "index": 5,
+      "outcome": "quarantined",
+      "reason": "wrong_type",
+      "issuePath": "properties.durationDays",
+      "note": "durationDays is the string \"5\""
+    },
+    {
+      "index": 6,
+      "outcome": "quarantined",
+      "reason": "missing_field",
+      "issuePath": "properties.tripId",
+      "note": "trip_viewed without tripId"
+    },
+    {
+      "index": 7,
+      "outcome": "quarantined",
+      "reason": "missing_field",
+      "issuePath": "sessionId",
+      "note": "envelope without sessionId"
+    },
+    {
+      "index": 8,
+      "outcome": "quarantined",
+      "reason": "unknown_event",
+      "issuePath": "name",
+      "note": "trip_deleted is not in the catalog"
+    },
+    {
+      "index": 9,
+      "outcome": "accepted",
+      "note": "experiment_exposure from server"
+    },
+    {
+      "index": 10,
+      "outcome": "quarantined",
+      "reason": "wrong_source",
+      "issuePath": "source",
+      "note": "experiment_exposure sent from web; exposure is server-only"
+    },
+    {
+      "index": 11,
+      "outcome": "duplicate",
+      "note": "client retry of index 4 with the same eventId"
+    },
+    { "index": 12, "outcome": "accepted", "note": "itinerary_edited" },
+    {
+      "index": 13,
+      "outcome": "quarantined",
+      "reason": "wrong_type",
+      "issuePath": "eventId",
+      "note": "eventId is not a UUID"
+    },
+    { "index": 14, "outcome": "accepted", "note": "calendar_synced" }
+  ]
+}
