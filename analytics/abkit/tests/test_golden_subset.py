@@ -14,7 +14,8 @@ from abkit.golden.subsets import SUBSETS_FILE, load_subset
 
 G_REF_GROUPS = {"welch", "delta", "cuped", "srm", "power", "bh"}
 #: G-public (PR 11: Hillstrom) is not part of the ci-fast gate (B2 plan: G-ref, G-event, G-sim).
-G_PUBLIC_GROUPS = {"hillstrom", "public"}  # Hillstrom (PR 11), LaLonde (PR 17)
+# Hillstrom (PR 11), LaLonde (PR 17), Criteo (PR 20)
+G_PUBLIC_GROUPS = {"hillstrom", "public", "criteo"}
 G_SIM_GROUPS = {
     "sim-aa",
     "sim-effect",
