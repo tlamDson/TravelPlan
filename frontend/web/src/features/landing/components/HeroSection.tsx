@@ -63,8 +63,17 @@ export function HeroSection() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg">
-              Watch Demo
+            <Button
+              variant="outline"
+              size="lg"
+              data-testid="hero-how-it-works-cta"
+              onClick={() =>
+                document
+                  .getElementById("how-it-works")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              See How It Works
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-6">
