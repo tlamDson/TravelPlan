@@ -5,9 +5,11 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 import { HERO_IMAGE, DESTINATION_CARDS } from "../constants";
 
 export function HeroSection() {
+  const { t } = useTranslationStore();
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background Image */}
@@ -67,7 +69,7 @@ export function HeroSection() {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-6">
-            AI drafts your itinerary. You stay in control.
+            {t("landing.hero.tagline")}
           </p>
         </div>
       </div>

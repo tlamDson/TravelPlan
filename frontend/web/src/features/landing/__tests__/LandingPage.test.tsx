@@ -1,4 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
+import {
+  useTranslationStore,
+  TRANSLATIONS,
+} from "@/stores/useTranslationStore";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import LandingPage from "../pages/LandingPage";
@@ -52,4 +56,24 @@ describe("HeroSection floating destination cards", () => {
       expect(card.className).not.toContain("lg:block");
     }
   });
+});
+
+describe("LandingPage translations", () => {
+  afterEach(() => {
+    useTranslationStore.setState({ language: "English (US)" });
+  });
+
+  it.each(["French", "Vietnamese"] as const)(
+    "renders the new hero tagline and highlights in %s",
+    (language) => {
+      useTranslationStore.setState({ language });
+      renderWithProviders(<LandingPage />);
+      const dict = TRANSLATIONS[language];
+      expect(screen.getByText(dict["landing.hero.tagline"])).toBeTruthy();
+      expect(screen.getByText(dict["landing.highlights.title"])).toBeTruthy();
+      expect(
+        screen.queryByText("AI drafts your itinerary. You stay in control."),
+      ).toBeNull();
+    },
+  );
 });

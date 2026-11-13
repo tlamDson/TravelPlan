@@ -53,21 +53,11 @@ export const STEPS = [
   },
 ];
 
+/** Copy lives in useTranslationStore under `landing.highlights.<key>.*`. */
 export const WHY_TRAVELPLAN = [
-  {
-    title: "Less research",
-    content:
-      "Tell the AI where you are going and what you like. It drafts a day-by-day itinerary that you can edit.",
-  },
-  {
-    title: "Places that exist",
-    content:
-      "Suggested places are checked against Google Places and Mapbox before they reach your plan.",
-  },
-  {
-    title: "Budget in view",
-    content: "Track expenses and set limits right next to your itinerary.",
-  },
+  { key: "research" },
+  { key: "places" },
+  { key: "budget" },
 ];
 
 export const DESTINATION_CARDS = [
