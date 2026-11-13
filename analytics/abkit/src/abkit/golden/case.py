@@ -33,6 +33,7 @@ KNOWN_METHODS: frozenset[str] = frozenset(
         "mde_ttest_ind",
         "sample_size_proportions",
         "bh_fdr",
+        "readout",
         "naive_diff",
         "ipw",
         "aipw",

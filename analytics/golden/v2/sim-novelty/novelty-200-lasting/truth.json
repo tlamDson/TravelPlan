@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "sim-novelty/novelty-200-lasting",
+  "method": "readout",
+  "description": "Novelty boost of +200% (half-life 1 day) with a lasting +100%; decide on days 7-14 after exposure.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "srm_threshold": 0.0005,
+    "expected_shares": {
+      "control": 0.5,
+      "treatment": 0.5
+    },
+    "metric": {
+      "kind": "mean",
+      "column": "saves_late"
+    },
+    "early_metric": {
+      "kind": "mean",
+      "column": "saves_early"
+    }
+  },
+  "expected": {
+    "srm": false,
+    "estimate": 2.847450110864745,
+    "early_estimate": 4.464745011086475
+  },
+  "decision": "ship",
+  "tolerance": {
+    "default": {
+      "abs": 0.0,
+      "rel": 0.0
+    },
+    "estimate": {
+      "abs": 1.81586,
+      "rel": 0.0
+    },
+    "early_estimate": {
+      "abs": 1.91329,
+      "rel": 0.0
+    }
+  },
+  "source": {
+    "tool": "simkit",
+    "version": "0.1.0",
+    "call": "simkit.golden_truth.observe: the same simulated users run in both arms; estimate = mean over enrolled users of Y(treatment) - Y(control) (ratio: sum Y_num / sum Y_den per arm); tolerance = 4 x the standard error of the observed difference",
+    "generator": "simkit.freeze_golden",
+    "seed": 35000,
+    "simulated": true,
+    "injected": {
+      "experiment": {
+        "definition": {
+          "key": "golden-sim-novelty-novelty-200-lasting",
+          "salt": "golden",
+          "holdoutBuckets": 0,
+          "variants": [
+            {
+              "key": "control",
+              "weight": 5000
+            },
+            {
+              "key": "treatment",
+              "weight": 5000
+            }
+          ]
+        },
+        "target": "trip_saved",
+        "relativeLift": {
+          "treatment": {
+            "browser": 1.0,
+            "planner": 1.0,
+            "power": 1.0
+          }
+        },
+        "noveltyLift": {
+          "treatment": 2.0
+        },
+        "noveltyHalfLifeDays": 1.0,
+        "exposureStates": [
+          "trip_generation_completed",
+          "trip_viewed"
+        ],
+        "exposureLoss": {}
+      },
+      "users": 9000,
+      "days": 21,
+      "window_days": 14,
+      "start": "2026-11-01",
+      "enrolled": 2255
+    },
+    "screening": {
+      "first_seed": 35000,
+      "attempts": 1,
+      "reference": "scipy 1.14.1: chi-square SRM, then Welch or delta-method z",
+      "verdict": "ship",
+      "srm_p_value": 0.6891,
+      "p_value": 1.493e-10,
+      "early": {
+        "estimate": 4.485,
+        "p_value": 1.905e-20
+      }
+    },
+    "frozen_at": "2026-11-13"
+  }
+}
