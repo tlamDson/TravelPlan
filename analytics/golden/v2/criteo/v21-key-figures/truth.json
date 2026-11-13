@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "id": "criteo/v21-key-figures",
+  "method": "uplift_arm_summary",
+  "description": "Criteo Uplift v2.1 (un-biased): rows, treatment share and pooled visit and conversion rates from the arm totals of the full file.",
+  "data": "data.csv",
+  "params": {},
+  "expected": {
+    "n_total": 13979592,
+    "visit_rate": 0.046992,
+    "conversion_rate": 0.00292,
+    "treatment_ratio": 0.85
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 0.0,
+      "rel": 0.0
+    },
+    "visit_rate": {
+      "abs": 5e-07,
+      "rel": 0.0
+    },
+    "conversion_rate": {
+      "abs": 5e-06,
+      "rel": 0.0
+    },
+    "treatment_ratio": {
+      "abs": 0.005,
+      "rel": 0.0
+    }
+  },
+  "source": {
+    "tool": "published",
+    "version": "Criteo AI Lab page, key figures of the un-biased file (v2.1)",
+    "call": "n_total = n_c + n_t; treatment_ratio = n_t / n_total; visit_rate and conversion_rate pooled over both arms",
+    "url": "https://ailab.criteo.com/criteo-uplift-prediction-dataset/",
+    "paper_url": "https://arxiv.org/abs/2111.10106",
+    "paper_table": "Diemert et al. (2021), Table 1, CRITEO-UPLIFTv2: size 13,979,592; treatment ratio .85; avg. positive outcome visit / conversion 4.70 / 0.29 %",
+    "not_used": "Table 1 Relative Avg. Uplift (visit / conversion) 68.7 / 37.2 %: the file gives 27.1 / 59.4 % as (treated - control) / control",
+    "license": "CC BY-NC-SA 4.0 (Criteo page); data.csv holds only the arm totals",
+    "data_url": "http://go.criteo.net/criteo-research-uplift-v2.1.csv.gz",
+    "data_mirror_url": "https://huggingface.co/datasets/criteo/criteo-uplift/resolve/main/criteo-research-uplift-v2.1.csv.gz",
+    "data_sha256": "2716e1bf0fd157a93b5bf86924d9088419dfbac2022c6cd90030220634f616dc",
+    "generator": "abkit.golden.freeze_criteo",
+    "frozen_at": "2026-11-13"
+  }
+}
