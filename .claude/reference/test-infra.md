@@ -41,6 +41,10 @@ Metric thuần (`recallAtK`, `precisionAtK`, `mrr`, `ndcgAtK`, `hitRate`, test t
 
 G-sim (`v1/sim-*`, 50 case mô phỏng) đóng băng bằng `python -m simkit.freeze_golden` (cài simkit sau abkit): quyết định đúng lấy từ tham số cài sẵn, ước lượng đúng là hiệu ứng thật tính từ cả hai potential outcome của cùng user ảo; seed được sàng bằng readout scipy độc lập và số lần thử ghi ở `source.screening`. `--subset ci-fast` (`v1/subsets.json`) là tập con cho cổng CI; `SIMKIT_GOLDEN_FULL=1` dựng lại cả 50 case (chạy đêm).
 
+## Driver Locust `simkit` (B2 PR 16)
+
+`analytics/.venv/Scripts/python -m simkit.driver --users 1000 --vus 1000 [--duplicate N ...] [--dry-run]` (cài `analytics/simkit[load]`, cần `docker compose up -d mongodb redis`). Driver tự xoá rồi ghi DB local `travelplan_sim*` (từ chối host không phải loopback hay tên DB khác), tự boot backend bằng `node --import tsx src/index.ts` với key giả và `ANALYTICS_SIM_INGEST=true` (route `POST /api/analytics/sim/events`: không rate limit, cho exposure `source: "server"`, chỉ nhận userId `sim-`; boot crash nếu `NODE_ENV=production`). Locust chạy process riêng (gevent monkey-patch), plan/tally qua `SIMKIT_PLAN`/`SIMKIT_TALLY`. Sau đó `analytics:export` từng ngày, đối chiếu sent/ingest/Mongo/export với manifest lỗi, so readout `abkit` trên export với readout trên event mô phỏng; ghi dòng `simulated=true` vào `runs.csv`, exit 1 nếu lệch. Test pytest dùng `tests/fake_ingest.py` thay backend; route thật có integration test `analytics-sim-ingest*.integration.test.ts`.
+
 ## Script đo (`backend/scripts/`, chỉ đọc trừ khi ghi khác)
 
 | Lệnh                                                                                   | Đo                                                                                                                                                                                                                     |

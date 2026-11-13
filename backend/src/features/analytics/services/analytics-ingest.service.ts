@@ -13,6 +13,7 @@ import { clientPolicyViolation } from "./client-event-policy";
 import { hashUserId } from "./pseudonymize";
 import { pseudonymizeEvent } from "./pseudonymize-event";
 import { classifyQuarantine } from "./quarantine-reason";
+import { simPolicyViolation } from "./sim-event-policy";
 
 type Violation = ReturnType<typeof classifyQuarantine>;
 /** Extra rule applied to a schema-valid event; null means allowed. */
@@ -143,4 +144,17 @@ export function ingestClientEvents(
     (event) => clientPolicyViolation(event, authUserId),
     now,
   );
+}
+
+/**
+ * Events from the simkit load driver (POST /api/analytics/sim/events, a
+ * local-only route): the trusted path's rules — so the server-sourced
+ * exposures simkit writes are accepted — but only for simulated (`sim-`)
+ * userIds (sim-event-policy.ts).
+ */
+export function ingestSimulatedEvents(
+  rawEvents: readonly unknown[],
+  now: Date = new Date(),
+): Promise<AnalyticsIngestResult> {
+  return ingest(rawEvents, simPolicyViolation, now);
 }

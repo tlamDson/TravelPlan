@@ -1,6 +1,7 @@
 from datetime import date
 
 import pytest
+from fake_ingest import FakeIngest
 
 from simkit.driver.client import Tally, send_script
 from simkit.driver.exported import read_export
@@ -14,15 +15,17 @@ from simkit.driver.run import (
     to_run_records,
 )
 
-from fake_ingest import FakeIngest
-
 START = date(2026, 11, 1)
 
 
 @pytest.fixture(scope="module")
 def prepared():
     return prepare(
-        users=300, days=10, seed=11, start=START, experiment=DEFAULT_EXPERIMENT,
+        users=300,
+        days=10,
+        seed=11,
+        start=START,
+        experiment=DEFAULT_EXPERIMENT,
         faults={"duplicate": 40, "wrong_type": 4},
     )
 

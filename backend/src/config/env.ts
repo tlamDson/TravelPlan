@@ -84,6 +84,11 @@ export const env = cleanEnv(process.env, {
    * refuses to boot with ANALYTICS_ENABLED=true and no valid secret. Keep it
    * stable per environment — rotating it splits every user's history. */
   ANALYTICS_HASH_SECRET: str({ default: "" }),
+  /** When exactly "true" (and ANALYTICS_ENABLED), POST
+   * /api/analytics/sim/events is mounted for the simkit Locust driver
+   * (simulated users only, unmetered). Local load tests only: the app
+   * refuses to boot with it under NODE_ENV=production (staging included). */
+  ANALYTICS_SIM_INGEST: str({ default: "" }),
   /** When exactly "true", /api/experiments/* is mounted (B2 assignment +
    * exposure logging). Off everywhere by default. Exposures are stored as
    * analytics events with hashed userIds, so it also needs

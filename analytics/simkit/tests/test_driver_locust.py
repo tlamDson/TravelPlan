@@ -4,13 +4,13 @@ tests start it against an in-process fake ingest instead of importing it here.""
 import json
 from datetime import date
 
+from fake_ingest import FakeIngest, serve
+
 from simkit.driver.client import Tally
 from simkit.driver.plan import build_plan, write_plan
 from simkit.driver.stack import run_locust
 from simkit.faults import inject_faults
 from simkit.generator import simulate
-
-from fake_ingest import FakeIngest, serve
 
 
 def _run(tmp_path, fake, vus):
