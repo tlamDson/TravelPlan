@@ -137,3 +137,5 @@ backend/tz-test*.js
 backend/test-db.js
 # measure-pipeline.ts --harvest output — may contain harvested production job data
 backend/.pipeline-snapshot.json
+# analytics:export output (hashed, but event logs stay out of git)
+analytics/data/

@@ -30,7 +30,8 @@
     "eval:label-golden": "tsx scripts/label-golden.ts",
     "eval:embed-queries": "tsx scripts/embed-golden-queries.ts",
     "eval:rag": "tsx scripts/eval-rag.ts",
-    "eval:rewrite-queries": "tsx scripts/rewrite-golden-queries.ts"
+    "eval:rewrite-queries": "tsx scripts/rewrite-golden-queries.ts",
+    "analytics:export": "tsx scripts/export-analytics-events.ts"
   },
   "dependencies": {
     "@bull-board/api": "^8.1.0",

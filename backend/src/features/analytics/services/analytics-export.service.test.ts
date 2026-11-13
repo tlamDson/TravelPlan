@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../../../config/env", () => ({
   env: { ANALYTICS_HASH_SECRET: "test-analytics-hash-secret-32-chars!" },
 }));
-const stream = vi.fn();
+const stream = vi.hoisted(() => vi.fn());
 vi.mock("../repositories/analytics-event.repository", () => ({
   analyticsEventRepository: { streamOccurredBetween: stream },
 }));

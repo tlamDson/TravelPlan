@@ -6,7 +6,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import AnalyticsEvent from "../../features/analytics/models/AnalyticsEvent";
 import { ingestTrustedEvents } from "../../features/analytics/services/analytics-ingest.service";
 import { exportAnalyticsDay } from "../../features/analytics/services/analytics-export.service";
-import { EMAIL_PATTERN } from "../../features/analytics/services/export-row";
+import {
+  EMAIL_PATTERN,
+  type AnalyticsExportRow,
+} from "../../features/analytics/services/export-row";
 import { hashUserId } from "../../features/analytics/services/pseudonymize";
 
 const goldenDir = resolve(
@@ -20,7 +23,10 @@ const truth = JSON.parse(
   readFileSync(resolve(goldenDir, "truth.json"), "utf8"),
 );
 
-function readFile(file: string): { text: string; rows: any[] } {
+function readFile(file: string): {
+  text: string;
+  rows: AnalyticsExportRow[];
+} {
   const text = gunzipSync(readFileSync(file)).toString("utf8");
   const rows = text
     .split("\n")
@@ -80,7 +86,7 @@ describe("analytics daily export (Mongo → JSONL.gz)", () => {
     expect(count).toBe(1);
     expect(text).not.toMatch(EMAIL_PATTERN);
     expect(text).not.toContain("user_legacy_raw");
-    expect(rows[0].userId).toBe(hashUserId("user_legacy_raw"));
+    expect(rows[0]?.userId).toBe(hashUserId("user_legacy_raw"));
     expect(rows[0]).not.toHaveProperty("_id");
   });
 });
