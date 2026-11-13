@@ -23,6 +23,7 @@ const AnalyticsEventSchema = new Schema<IAnalyticsEvent>(
     name: { type: String, required: true },
     occurredAt: { type: Date, required: true },
     sessionId: { type: String, required: true },
+    /** HMAC of the Clerk userId (services/pseudonymize.ts), never raw. */
     userId: { type: String, default: null },
     source: { type: String, required: true },
     properties: { type: Schema.Types.Mixed, required: true },

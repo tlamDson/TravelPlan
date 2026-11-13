@@ -6,17 +6,17 @@ import {
 } from "../services/quarantine-reason";
 
 /**
- * An event that failed `analyticsEventSchema`. The raw payload is kept as
- * JSON text (capped, see analytics-ingest.service.ts) rather than as a
- * document: untrusted keys such as `$where` or `a.b` can't break the
- * insert, and an oversized event can't blow the 16 MB document limit.
- * Quarantined events are never deduplicated.
+ * An event that failed `analyticsEventSchema` or the client policy. No raw
+ * payload is kept — an invalid event can carry anything, PII included —
+ * only id-shaped identifiers (null when not id-shaped), the HMAC of the
+ * claimed userId and the validation issues. Never deduplicated.
  */
 export interface IAnalyticsQuarantine {
   reason: QuarantineReason;
   issues: QuarantineIssue[];
-  raw: string;
-  rawTruncated: boolean;
+  eventId: string | null;
+  eventName: string | null;
+  userIdHash: string | null;
   receivedAt: Date;
 }
 
@@ -33,8 +33,9 @@ const AnalyticsQuarantineSchema = new Schema<IAnalyticsQuarantine>(
   {
     reason: { type: String, enum: QUARANTINE_REASONS, required: true },
     issues: { type: [IssueSchema], default: [] },
-    raw: { type: String, required: true },
-    rawTruncated: { type: Boolean, required: true },
+    eventId: { type: String, default: null },
+    eventName: { type: String, default: null },
+    userIdHash: { type: String, default: null },
     receivedAt: { type: Date, required: true },
   },
   { collection: "analytics_quarantine", versionKey: false },

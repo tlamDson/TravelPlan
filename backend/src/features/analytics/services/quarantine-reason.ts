@@ -10,6 +10,9 @@ export const QUARANTINE_REASONS = [
   "missing_field",
   "unknown_field",
   "wrong_type",
+  // Set only by client-event-policy.ts (schema-valid, but claims a userId
+  // that is not the signed-in user).
+  "user_mismatch",
 ] as const;
 export type QuarantineReason = (typeof QUARANTINE_REASONS)[number];
 

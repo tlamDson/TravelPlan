@@ -79,6 +79,11 @@ export const env = cleanEnv(process.env, {
    * ingest). Off everywhere by default, including local dev — stored events
    * use Atlas free-tier storage, so each environment opts in deliberately. */
   ANALYTICS_ENABLED: str({ default: "" }),
+  /** HMAC key for userIds stored in analytics_events/analytics_quarantine
+   * (PII is hashed before it is stored for analysis). Min 32 chars; the app
+   * refuses to boot with ANALYTICS_ENABLED=true and no valid secret. Keep it
+   * stable per environment — rotating it splits every user's history. */
+  ANALYTICS_HASH_SECRET: str({ default: "" }),
 });
 
 /** Which environment this process is actually running as — APP_ENV if set
