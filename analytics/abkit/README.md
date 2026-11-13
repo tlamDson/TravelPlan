@@ -18,6 +18,11 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   checks its SHA-256. The raw file lives under `D:\data\b2\`, not in git.
 - `abkit.cuped_check`: bootstraps CUPED on Hillstrom (Mens E-Mail vs No E-Mail,
   1,000 resamples) and logs metric M4 to `runs.csv`.
+- `abkit.causal`: naive difference, IPW and AIPW (doubly robust) for the ATE or ATT, with
+  logistic propensity and OLS outcome models from term lists (`age`, `age^2`,
+  `u74*black`). `python -m abkit.causal.m6` measures M6: the ATE error of each method on
+  biased resamples of the Hillstrom RCT (real file outside the repo, e.g.
+  `D:/data/b2/hillstrom/hillstrom.csv`) and on the G-public LaLonde NSW/PSID cases.
 - `abkit.runs`: the `analytics/runs/runs.csv` ledger. Every number quoted in a
   README must come from a row in that file.
 - `abkit.bench`: runs a named benchmark and appends its result to `runs.csv`.
