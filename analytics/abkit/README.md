@@ -33,6 +33,17 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   `u74*black`). `python -m abkit.causal.m6` measures M6: the ATE error of each method on
   biased resamples of the Hillstrom RCT (real file outside the repo, e.g.
   `D:/data/b2/hillstrom/hillstrom.csv`) and on the G-public LaLonde NSW/PSID cases.
+- `abkit.readout` (PR 15): one experiment readout and its one-page Markdown memo. The
+  SRM chi-square check runs first; when it fails (`p < 0.0005`) the memo says
+  CONCLUSION BLOCKED, shows the counts per arm and withholds every effect. Otherwise the
+  primary metric (Welch for a mean, delta method for a ratio) is tested once at the
+  planned horizon: SHIP when `p < alpha` and the effect is positive, else NO SHIP (a
+  significant drop is called out as harm). Interim looks are listed but never decided on,
+  the early window is shown as a novelty check, and `by_persona` adds a persona table with
+  Cochran's Q. It answers the 50 G-sim cases (`readout` method). A memo of simulated data
+  always carries the "virtual users" banner. `abkit readout PATH` prints the memo of a
+  golden case directory, or of a CSV with `--params params.json` and `--simulated` /
+  `--real`; the Streamlit app (`[app]` extra) shows the same memo.
 - `abkit.runs`: the `analytics/runs/runs.csv` ledger. Every number quoted in a
   README must come from a row in that file.
 - `abkit.bench`: runs a named benchmark and appends its result to `runs.csv`.
@@ -65,6 +76,9 @@ cd analytics/abkit && ../.venv/Scripts/python -m ruff check . && ../.venv/Script
 analytics/.venv/Scripts/python -m abkit.bench assignment --pr 9
 analytics/.venv/Scripts/python -m abkit.peeking --pr 12   # 10,000 A/A x 14 days; --dry-run to print only
 analytics/.venv/Scripts/python -m abkit golden   # latest golden version; --strict: MISSING fails too; --subset ci-fast
+analytics/.venv/Scripts/python -m abkit readout analytics/golden/v2/sim-srm/loss-15-aa   # memo; --out memo.md
+analytics/.venv/Scripts/python -m pip install -e "analytics/abkit[app]"   # Streamlit; CI skips the app tests
+analytics/.venv/Scripts/python -m streamlit run analytics/abkit/src/abkit/readout/app.py
 analytics/.venv/Scripts/python -m abkit.cuped_check D:/data/b2/hillstrom.csv --pr 11   # M4
 analytics/.venv/Scripts/python -m simkit.generate --seed 42 --users 1000 --days 112 --out analytics/data/simulated/m9
 analytics/.venv/Scripts/python -m abkit.forecast analytics/data/simulated/m9/events.jsonl     --simulated --pr 21 --seed 42 --initial 56 --step 1 --horizon 7   # appends M9 rows; --dry-run
