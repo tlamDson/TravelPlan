@@ -33,7 +33,7 @@ def _kappa(args: argparse.Namespace) -> int:
     result = agreement(args.dir, _labels(args), partial=args.partial)
     print(result.format())
     if args.record:
-        for record in to_run_records(result):
+        for record in to_run_records(result, rater=args.rater):
             append_run(record, args.runs_csv)
     return 0
 
@@ -69,3 +69,4 @@ def add_decide(commands) -> None:
             cmd.add_argument("--partial", action="store_true", help="allow unlabelled readouts")
             cmd.add_argument("--record", action="store_true", help="append M11 rows to runs.csv")
             cmd.add_argument("--runs-csv", type=Path, default=RUNS_CSV_PATH)
+            cmd.add_argument("--rater", default="Lam", help="rater label written to the M11 notes")
