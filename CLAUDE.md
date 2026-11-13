@@ -1,100 +1,100 @@
-# TravelPlan — luật cho Claude Code
+# TravelPlan — rules for Claude Code
 
-File này và `.claude/rules/*` được nạp vào **mọi** phiên, nên chỉ chứa định nghĩa project và luật. Kiến thức chỉ cần cho một số việc nằm ở `.claude/reference/` (bảng cuối file) — chỉ đọc khi việc đang làm cần tới.
+This file and `.claude/rules/*` are loaded into **every** session, so they hold only the project definition and the rules. Knowledge needed for only some tasks lives in `.claude/reference/` (table at the end of this file) — read it only when the task at hand needs it.
 
 @.claude/rules/git-pr.md
 @.claude/rules/tdd.md
 
-## Phần 1 — Định nghĩa project
+## Part 1 — Project definition
 
-**TravelPlan** là trình lập lịch trình du lịch có agent: người dùng tạo trip qua wizard, worker gọi Gemini sinh ý định địa điểm, đối chiếu qua Google Places/Mapbox, gom cụm theo địa lý rồi dựng lịch trình theo ngày.
+**TravelPlan** is an agentic travel itinerary planner: the user creates a trip through a wizard, a worker calls Gemini to generate place intents, verifies them through Google Places/Mapbox, clusters them geographically, and builds a day-by-day itinerary.
 
-**Stack:** monorepo TypeScript (npm workspaces + turbo, Node ≥ 20). Backend Express 5 + Mongoose 9 + BullMQ/ioredis, Zod, Pino, Clerk (`@clerk/express`), Gemini (không phải OpenAI; model pin cứng ở `backend/src/config/gemini-models.ts`). Web React 19 + Vite 7 SPA (không phải Next.js), react-router v7, TanStack Query, Zustand, Tailwind + shadcn/ui, Mapbox GL. MongoDB Atlas, Redis. Python (`analytics/`, `services/`) dùng venv riêng.
+**Stack:** TypeScript monorepo (npm workspaces + turbo, Node ≥ 20). Backend Express 5 + Mongoose 9 + BullMQ/ioredis, Zod, Pino, Clerk (`@clerk/express`), Gemini (not OpenAI; the model is pinned in `backend/src/config/gemini-models.ts`). Web React 19 + Vite 7 SPA (not Next.js), react-router v7, TanStack Query, Zustand, Tailwind + shadcn/ui, Mapbox GL. MongoDB Atlas, Redis. Python (`analytics/`, `services/`) uses its own venv.
 
-**Layout thật** (`docs/agents/*.md`, `docs/PLAN.md` mô tả layout khác — đừng tìm `web/`, `api/`, `worker/`):
+**Actual layout** (`docs/agents/*.md` and `docs/PLAN.md` describe a different layout — do not look for `web/`, `api/`, `worker/`):
 
-| Thư mục            | Nội dung                                                                                                     |
-| ------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `backend/`         | Một workspace chứa cả API (`src/index.ts` → `createApp()` ở `src/app.ts`) và worker BullMQ (`src/worker.ts`) |
-| `frontend/web/`    | SPA chính                                                                                                    |
-| `frontend/mobile/` | Expo/React Native, giai đoạn sớm                                                                             |
-| `packages/shared/` | `@travelplan/shared`: Zod schema, type, constant dùng chung (build bằng `tsup`)                              |
-| `analytics/`       | Python: `abkit` (experimentation), `simkit` (mô phỏng), `runs/runs.csv` (nguồn mọi số đo B2) — B2 xong       |
-| `services/`        | Python service của B3 — thêm dần                                                                             |
-| `e2e/`             | Playwright, không thuộc workspace npm nào                                                                    |
+| Directory          | Contents                                                                                                                    |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `backend/`         | One workspace holding both the API (`src/index.ts` → `createApp()` in `src/app.ts`) and the BullMQ worker (`src/worker.ts`) |
+| `frontend/web/`    | Main SPA                                                                                                                    |
+| `frontend/mobile/` | Expo/React Native, early stage                                                                                              |
+| `packages/shared/` | `@travelplan/shared`: shared Zod schemas, types, constants (built with `tsup`)                                              |
+| `analytics/`       | Python: `abkit` (experimentation), `simkit` (simulation), `runs/runs.csv` (source of every B2 measurement) — B2 is done     |
+| `services/`        | Python services for B3 — added incrementally                                                                                |
+| `e2e/`             | Playwright, not part of any npm workspace                                                                                   |
 
-**Các lớp backend:** controller mỏng (validate Zod → gọi service → trả JSON), service chứa business logic, repository chỉ chạm DB và không có logic. Controller chạm thẳng Mongoose là lỗi review.
+**Backend layers:** thin controllers (validate Zod → call service → return JSON), services hold business logic, repositories only touch the DB and hold no logic. A controller that touches Mongoose directly is a review error.
 
-- **Fire & Listen:** `POST /api/trips` validate → `tripQueue.add()` → trả `{ jobId }` ngay; controller không bao giờ `await` việc sinh trip. Worker gọi `job.updateProgress()` ở từng bước, lưu kết quả từng phần.
-- **Trip state machine:** `DRAFT → QUEUED → PROCESSING → COMPLETED` (↘ `FAILED`); worker kiểm `Trip.status` trước mỗi bước (idempotent).
-- **AI là service không tin cậy:** AI không gọi API ngoài trực tiếp, chỉ qua tool ở `backend/src/features/planner/tools/`; mọi place AI sinh phải đối chiếu qua `searchPlaces`; circuit breaker `opossum` bọc Places/Mapbox; retry AI tối đa 3 lần rồi fail gracefully.
-- Pipeline lịch trình (6 bước cố định): xem skill `itinerary-builder`.
+- **Fire & Listen:** `POST /api/trips` validates → `tripQueue.add()` → returns `{ jobId }` immediately; the controller never `await`s trip generation. The worker calls `job.updateProgress()` at each step and saves partial results.
+- **Trip state machine:** `DRAFT → QUEUED → PROCESSING → COMPLETED` (↘ `FAILED`); the worker checks `Trip.status` before each step (idempotent).
+- **AI is an untrusted service:** AI never calls external APIs directly, only through tools in `backend/src/features/planner/tools/`; every place the AI generates must be verified through `searchPlaces`; an `opossum` circuit breaker wraps Places/Mapbox; AI retries at most 3 times, then fails gracefully.
+- Itinerary pipeline (6 fixed steps): see the `itinerary-builder` skill.
 
-**Shared Kernel:** `packages/shared` là nguồn sự thật duy nhất của data contract — chỉ Zod schema, TS type, error code, constant; cấm UI, business logic, model DB. Thay đổi chéo lớp đi theo thứ tự `packages/shared` → backend → frontend (chạy `npm run build:shared` sau khi sửa shared). Sửa catalog analytics (`schemas/analytics.schema.ts`) thì chạy `npm run export:json-schema -w packages/shared` để cập nhật `packages/shared/json-schema/` (Python đọc file này; test parity chặn nếu lệch). Event web mới trong catalog phải có call site `track()`/`trackOnce()` từ `@/features/analytics` trong `frontend/web` — `tracking-coverage.test.ts` chặn nếu thiếu. Sửa thuật toán gán nhóm (`backend/src/features/experiments/services/assignment.ts`) thì chạy `npm run generate:assignment-vectors -w backend` để cập nhật `packages/shared/fixtures/assignment-vectors.json` (TS và Python cùng đối chiếu).
+**Shared Kernel:** `packages/shared` is the single source of truth for the data contract — only Zod schemas, TS types, error codes, constants; no UI, business logic or DB models. Cross-layer changes go in the order `packages/shared` → backend → frontend (run `npm run build:shared` after changing shared). When you change the analytics catalog (`schemas/analytics.schema.ts`), run `npm run export:json-schema -w packages/shared` to update `packages/shared/json-schema/` (Python reads that file; a parity test blocks drift). A new web event in the catalog must have a `track()`/`trackOnce()` call site from `@/features/analytics` in `frontend/web` — `tracking-coverage.test.ts` blocks it otherwise. When you change the group-assignment algorithm (`backend/src/features/experiments/services/assignment.ts`), run `npm run generate:assignment-vectors -w backend` to update `packages/shared/fixtures/assignment-vectors.json` (TS and Python both check against it).
 
-**Repository Symmetry:** mỗi domain có mặt đối xứng ở `frontend/web/src/features/<domain>/`, `backend/src/features/<domain>/` và (khi có contract chung) `packages/shared/src/schemas/<domain>.ts`.
+**Repository Symmetry:** every domain has a mirrored presence in `frontend/web/src/features/<domain>/`, `backend/src/features/<domain>/` and (when there is a shared contract) `packages/shared/src/schemas/<domain>.ts`.
 
-**Env:** biến mới khai trong `backend/src/config/env.ts` (envalid, crash lúc boot nếu thiếu biến bắt buộc) **và** `.env.example` — test `env-example-parity.test.ts` chặn nếu thiếu. Logging bằng Pino (`backend/src/lib/logger.ts`), không `console.log`; `logger.error({ err }, "msg")`.
+**Env:** declare a new variable in `backend/src/config/env.ts` (envalid, crashes at boot if a required variable is missing) **and** in `.env.example` — the `env-example-parity.test.ts` test blocks it otherwise. Log with Pino (`backend/src/lib/logger.ts`), never `console.log`; `logger.error({ err }, "msg")`.
 
-**4 lớp test** (chi tiết setup: `.claude/reference/test-infra.md`):
+**4 test layers** (setup details: `.claude/reference/test-infra.md`):
 
-| Lớp                     | Lệnh                                                         | Ghi chú                                                                             |
-| ----------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| Shared + backend unit   | `npm run test -w packages/shared`, `npm run test -w backend` | Mock repository/queue bằng `vi.mock()`, không gọi AI/Places thật                    |
-| Frontend unit/component | `npm run test -w frontend/web`                               | MSW, `renderWithProviders`                                                          |
-| Backend integration     | `npm run test:integration -w backend`                        | Mongo/Redis thật (`docker compose up -d mongodb redis`), DB chung `travelplan_test` |
-| E2E Playwright          | `npm run e2e`                                                | Cần `.env.e2e`; job CI không bắt buộc                                               |
+| Layer                   | Command                                                      | Notes                                                                                |
+| ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Shared + backend unit   | `npm run test -w packages/shared`, `npm run test -w backend` | Mock repository/queue with `vi.mock()`, never call real AI/Places                    |
+| Frontend unit/component | `npm run test -w frontend/web`                               | MSW, `renderWithProviders`                                                           |
+| Backend integration     | `npm run test:integration -w backend`                        | Real Mongo/Redis (`docker compose up -d mongodb redis`), shared DB `travelplan_test` |
+| E2E Playwright          | `npm run e2e`                                                | Needs `.env.e2e`; CI job is not required                                             |
 
-Gate chung: `npm run lint`, `npm run typecheck`, `npm run build` (chạy `build:shared` trước nếu sửa shared).
-Python `analytics/abkit` và `analytics/simkit` (cài abkit trước): job CI `abkit Lint + Test` (`ruff check`, `ruff format --check`, `pytest -q` cho từng package; chỉ cài core + dev), kèm cổng golden `abkit golden --subset ci-fast --strict` + `abkit gate` (10 mutant phải bị chặn; xem `analytics/golden/README.md`). Bảng kết quả trong `analytics/abkit/README.md` và `docs/results.md` sinh từ `runs.csv` bằng `python -m abkit.readme_results --write` (test chặn nếu lệch); bullet resume ở `analytics/runs/resume-bullets.md`, mọi số phải có trong bảng nguồn ở cuối file.
+Common gate: `npm run lint`, `npm run typecheck`, `npm run build` (run `build:shared` first if you changed shared).
+Python `analytics/abkit` and `analytics/simkit` (install abkit first): CI job `abkit Lint + Test` (`ruff check`, `ruff format --check`, `pytest -q` for each package; installs only core + dev), plus the golden gate `abkit golden --subset ci-fast --strict` + `abkit gate` (all 10 mutants must be blocked; see `analytics/golden/README.md`). The results tables in `analytics/abkit/README.md` and `docs/results.md` are generated from `runs.csv` by `python -m abkit.readme_results --write` (a test blocks drift); the resume bullets in `analytics/runs/resume-bullets.md` — every number must appear in the source table at the end of that file.
 
-**Môi trường:** `develop` → staging (Railway env `staging` + Vercel Preview), `main` → production. 3 check bắt buộc trên PR: `Lint + Unit Tests`, `Typecheck + Build`, `Backend Docker Build`. Chi tiết hạ tầng: `.claude/reference/deploy-ops.md`.
+**Environments:** `develop` → staging (Railway env `staging` + Vercel Preview), `main` → production. 3 required checks on a PR: `Lint + Unit Tests`, `Typecheck + Build`, `Backend Docker Build`. Infrastructure details: `.claude/reference/deploy-ops.md`.
 
-## Phần 2 — Luật
+## Part 2 — Rules
 
-**Quyền** (theo `Conductor/docs/authority.md` — `D:\Desktop\Conductor\docs\authority.md` trên máy của Lam):
+**Authority** (per `Conductor/docs/authority.md` — `D:\Desktop\Conductor\docs\authority.md` on Lam's machine):
 
-- Mọi thay đổi đi qua PR vào `develop`; không commit/push thẳng `develop` hay `main`.
-- PR vào `develop` được tự merge khi 3 check bắt buộc xanh **và** review độc lập PASS (squash).
-- Release `develop` → `main` theo điều lệ trên; ngoài điều lệ đó thì `main` là của chủ repo — câu rộng kiểu "làm hết đi" không phải uỷ quyền merge `main`. Merge `main` là merge commit thật, không squash.
-- **Chi phí tối đa $0:** không bật dịch vụ trả phí, không vượt free tier/credit. Không chắc có tốn tiền không thì coi như có và không làm.
+- Every change goes through a PR into `develop`; never commit/push directly to `develop` or `main`.
+- A PR into `develop` may be self-merged when the 3 required checks are green **and** an independent review PASSes (squash).
+- Releasing `develop` → `main` follows the charter above; outside that charter `main` belongs to the repo owner — a broad phrase like "do it all" is not authorization to merge `main`. A `main` merge is a real merge commit, not a squash.
+- **Maximum cost $0:** do not enable paid services, do not exceed the free tier/credits. If you are unsure whether something costs money, assume it does and do not do it.
 
-**Hai loại phiên:**
+**Two kinds of session:**
 
-- **Phiên headless của conductor:** làm trong worktree được giao (không `EnterWorktree`), không `/pr`, `/ci-watch`, `ScheduleWakeup`, không merge, không chờ CI. Commit → push → mở PR → dừng, dòng cuối in đúng một trong `RESULT: pushed <số PR>`, `RESULT: failed <lý do>`, `RESULT: blocked <việc chủ repo phải làm>`. Không sửa `.claude/settings*.json`, `.claude/scripts/`, hook.
-- **Phiên tay:** gọi `EnterWorktree` trước khi sửa file đầu tiên, đưa nhánh về `origin/develop` (xem `.claude/rules/git-pr.md`). `/pr` và `/ci-watch` dùng khi muốn, không bắt buộc.
+- **Conductor headless session:** work in the assigned worktree (no `EnterWorktree`); no `/pr`, `/ci-watch`, `ScheduleWakeup`; no merging; no waiting for CI. Commit → push → open PR → stop; the last line prints exactly one of `RESULT: pushed <PR number>`, `RESULT: failed <reason>`, `RESULT: blocked <what the repo owner must do>`. Do not edit `.claude/settings*.json`, `.claude/scripts/` or hooks.
+- **Manual session:** call `EnterWorktree` before editing the first file, move the branch to `origin/develop` (see `.claude/rules/git-pr.md`). `/pr` and `/ci-watch` are optional.
 
-**TDD:** commit đầu tiên chỉ chứa test đỏ; chạy và thấy đỏ đúng lý do; PR có mục `## RED` dán output đỏ đó. Không commit code mới thiếu test. Chi tiết: `.claude/rules/tdd.md`.
+**TDD:** the first commit contains only red tests; run them and see them fail for the right reason; the PR has a `## RED` section pasting that red output. Never commit new code without tests. Details: `.claude/rules/tdd.md`.
 
-**Kích thước file:** mỗi file một trách nhiệm; tách khi file trộn nhiều việc hoặc dài quá khoảng 300 dòng. Không còn trần cứng — file cũ dài hơn không phải nợ phải trả ngay.
+**File size:** one responsibility per file; split when a file mixes several jobs or grows past about 300 lines. There is no hard cap any more — an older, longer file is not debt that must be paid down right away.
 
-**An toàn dữ liệu:**
+**Data safety:**
 
-- Zod ở mọi biên vào (request, response API, output AI, file đọc vào).
-- Output AI: `sanitize-html` trước khi ghi MongoDB, `DOMPurify` trước khi render; cấm `dangerouslySetInnerHTML` trần.
-- Không đọc, in hay commit secret (`.env*`, key, token).
-- Test không bao giờ chạm DB production — chỉ `travelplan_test`, `travelplan_e2e`, Docker local hoặc dữ liệu offline.
-- PII (email, userId Clerk, IP…) phải băm trước khi vào tầng phân tích (`analytics/`, event lưu để phân tích).
+- Zod at every inbound boundary (request, API response, AI output, files read in).
+- AI output: `sanitize-html` before writing to MongoDB, `DOMPurify` before rendering; bare `dangerouslySetInnerHTML` is forbidden.
+- Never read, print or commit secrets (`.env*`, keys, tokens).
+- Tests never touch the production DB — only `travelplan_test`, `travelplan_e2e`, local Docker or offline data.
+- PII (email, Clerk userId, IP…) must be hashed before it enters the analytics layer (`analytics/`, events stored for analysis).
 
-**Trung thực số đo:** mọi con số trong README phải có trong `analytics/runs/runs.csv`. Người dùng mô phỏng luôn ghi "simulated"/"virtual users" và đếm riêng với người dùng thật; kết quả mô phỏng viết theo hướng "recovered a known injected effect".
+**Honest measurements:** every number in a README must appear in `analytics/runs/runs.csv`. Simulated users are always labeled "simulated"/"virtual users" and counted separately from real users; simulation results are worded as "recovered a known injected effect".
 
-**Python trong `analytics/` và `services/`:** venv riêng mỗi worktree (`analytics/.venv`, cài bằng `pip install -e ".[dev]"`), ghim phiên bản dependency, `ruff check`, `ruff format --check`, `pytest -q` xanh trước khi push.
+**Python in `analytics/` and `services/`:** a separate venv per worktree (`analytics/.venv`, installed with `pip install -e ".[dev]"`), pin dependency versions, `ruff check`, `ruff format --check`, `pytest -q` green before pushing.
 
-**Tiết kiệm token:** chỉ chạy test liên quan tới thay đổi với reporter gọn (`npx vitest run <files> --reporter=dot`, `pytest -q`); full lint/typecheck/test một lần trước khi push. Chỉ đọc file trong `.claude/reference/` khi việc cần tới. Không dán lại plan hay tóm tắt dài.
+**Token economy:** run only the tests related to the change, with a compact reporter (`npx vitest run <files> --reporter=dot`, `pytest -q`); run full lint/typecheck/test once before pushing. Read files in `.claude/reference/` only when the task needs them. Do not paste the plan or long summaries back.
 
-**Nợ kỹ thuật:** bug gặp ngoài phạm vi việc đang làm thì không tự sửa — viết test khẳng định hành vi hiện tại kèm `[BUG]`, rồi ghi vào `.claude/reference/tech-debt.md` đủ 3 phần: triệu chứng, nguyên nhân kèm `file:line`, điều kiện kích hoạt. Sửa xong thì xoá mục đó trong cùng commit.
+**Tech debt:** a bug found outside the scope of the current work is not fixed on the spot — write a test asserting the current behavior marked `[BUG]`, then record it in `.claude/reference/tech-debt.md` with all 3 parts: symptom, cause with `file:line`, trigger condition. When it is fixed, delete the entry in the same commit.
 
-**Giữ luật cập nhật:** việc làm đổi convention, tooling hay quy trình thì sửa `CLAUDE.md`/`.claude/rules/*` (luật) hoặc `.claude/reference/*` (kiến thức) trong cùng PR. Lịch sử PR không ghi vào đây — đã có trong git. Không tạo file `.md` mới ở thư mục gốc (chỉ `README.md`, `CLAUDE.md`). Test `backend/src/config/claude-docs-parity.test.ts` giữ phần nạp tự động dưới 24 KB.
+**Keep the rules current:** work that changes a convention, tooling or process updates `CLAUDE.md`/`.claude/rules/*` (rules) or `.claude/reference/*` (knowledge) in the same PR. PR history does not go here — git already has it. Do not create new `.md` files in the root (only `README.md`, `CLAUDE.md`). The test `backend/src/config/claude-docs-parity.test.ts` keeps the auto-loaded part under 24 KB.
 
-## Tham khảo theo nhu cầu (`.claude/reference/`, không nạp tự động)
+## Reference on demand (`.claude/reference/`, not auto-loaded)
 
-| File                                 | Đọc khi                                                                                                    |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `.claude/reference/pitfalls.md`      | Đụng BullMQ/Redis, Mongoose, Pino, CORS, Gemini quota, CI workflow, MCP/OAuth, Docker local, Windows shell |
-| `.claude/reference/tech-debt.md`     | Trước khi sửa một module (xem nó có bug đã biết không); khi ghi nợ mới                                     |
-| `.claude/reference/deploy-ops.md`    | Railway, Vercel, staging, Sentry, backup Mongo, billing/quota GCP, `railway.toml`                          |
-| `.claude/reference/test-infra.md`    | Dựng/sửa test integration, E2E Playwright, RAG eval, golden `abkit`, các script đo (`measure:*`)           |
-| `.claude/reference/ui-design.md`     | Mọi thay đổi UI ở `frontend/web`: pre-flight `ui-ux-pro-max`, quy ước UI, i18n 3 ngôn ngữ, `data-testid`   |
-| `.claude/reference/debug-browser.md` | Sửa bug quan sát được qua trình duyệt (verify bằng `chrome-devtools` trước và sau khi sửa)                 |
+| File                                 | Read when                                                                                                              |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `.claude/reference/pitfalls.md`      | Touching BullMQ/Redis, Mongoose, Pino, CORS, Gemini quota, CI workflows, MCP/OAuth, local Docker, Windows shell        |
+| `.claude/reference/tech-debt.md`     | Before changing a module (check for known bugs); when recording new debt                                               |
+| `.claude/reference/deploy-ops.md`    | Railway, Vercel, staging, Sentry, Mongo backup, GCP billing/quota, `railway.toml`                                      |
+| `.claude/reference/test-infra.md`    | Setting up/changing integration tests, Playwright E2E, RAG eval, `abkit` golden, the measurement scripts (`measure:*`) |
+| `.claude/reference/ui-design.md`     | Any UI change in `frontend/web`: `ui-ux-pro-max` pre-flight, UI conventions, 3-language i18n, `data-testid`            |
+| `.claude/reference/debug-browser.md` | Fixing bugs observable in the browser (verify with `chrome-devtools` before and after the fix)                         |
 
-Skills ở `.claude/skills/` (`itinerary-builder`, `rag-destinations`, `travelplan-devops`, `ui-ux-pro-max`, `ui-styling`) tự nạp theo mô tả. MCP: `github`, `chrome-devtools` khai ở `.mcp.json` (cạm bẫy OAuth ở `pitfalls.md`).
+Skills in `.claude/skills/` (`itinerary-builder`, `rag-destinations`, `travelplan-devops`, `ui-ux-pro-max`, `ui-styling`) load automatically by description. MCP: `github`, `chrome-devtools` declared in `.mcp.json` (OAuth pitfalls in `pitfalls.md`).

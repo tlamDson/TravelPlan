@@ -1,17 +1,17 @@
 ---
 name: rag-destinations
-description: Dùng khi sửa module destinations của TravelPlan — backend/src/features/destinations/**, world destinations list, embedding, insight scraping, Country/PlaceInsight model, hoặc frontend/web wizard destination picker. Đây là module đang có thay đổi dở dang, kiểm git status trước khi bắt đầu.
+description: Use when changing TravelPlan's destinations module — backend/src/features/destinations/**, world destinations list, embedding, insight scraping, Country/PlaceInsight model, or the frontend/web wizard destination picker. This module has unfinished changes in flight; check git status before starting.
 ---
 
 # RAG Destinations Pipeline
 
-Chuyển từ 3 nước hardcode sang danh sách 25+ nước lấy từ DB, kèm pipeline scrape insight qua Serper API + BullMQ rồi inject vào RAG prompt cho trip generation. Tài liệu gốc: `docs/implementation/rag-destinations-pipeline.md`.
+Moves from 3 hardcoded countries to a list of 25+ countries loaded from the DB, with a pipeline that scrapes insights through the Serper API + BullMQ and injects them into the RAG prompt for trip generation. Source document: `docs/implementation/rag-destinations-pipeline.md`.
 
-## ⚠️ Module đang có WIP
+## ⚠️ This module has WIP
 
-Kiểm `git status` trước khi động vào file trong `backend/src/features/destinations/` hoặc `frontend/web/src/features/planner/components/wizard/WizardDestinationPickers.tsx` — có thể đang có thay đổi chưa commit của người dùng. Không ghi đè mà không hỏi trước.
+Check `git status` before touching files in `backend/src/features/destinations/` or `frontend/web/src/features/planner/components/wizard/WizardDestinationPickers.tsx` — the user may have uncommitted changes. Do not overwrite them without asking first.
 
-## Cấu trúc thật (đã đối chiếu code)
+## Actual structure (checked against the code)
 
 ```
 backend/src/features/destinations/
@@ -20,7 +20,7 @@ backend/src/features/destinations/
 ├── models/Country.ts, PlaceInsight.ts
 ├── jobs/insight-queue.ts, insight-worker.ts       # BullMQ scrape pipeline
 └── services/
-    ├── world-destinations.builder.ts               # đang WIP
+    ├── world-destinations.builder.ts               # WIP
     ├── destination-list.service.ts
     ├── destination-list.mappers.ts    (+ .test.ts)
     ├── destination-list.merge.ts      (+ .test.ts)
@@ -31,17 +31,17 @@ backend/src/features/destinations/
     └── place-insight-retrieval.service.ts
 ```
 
-**Đây là module duy nhất trong backend có test** (3 file `.test.ts` liệt kê ở trên) — dùng làm pattern tham khảo khi viết test mới cho module khác.
+**This is the only module in the backend with tests** (the 3 `.test.ts` files listed above) — use it as the reference pattern when writing new tests for other modules.
 
-## Lệnh liên quan
+## Related commands
 
 ```bash
 npm run seed:destinations -w backend    # tsx scripts/seed-destinations.ts
 ```
 
-## Ghi chú kiến trúc
+## Architecture notes
 
-- Serper API dùng để search insight cho từng destination, chạy qua BullMQ (`insight-queue.ts` enqueue, `insight-worker.ts` xử lý) — không gọi Serper đồng bộ trong request path.
-- Embedding (`embedding.service.ts`) phục vụ RAG retrieval khi generate trip — kết quả được inject vào prompt AI, không phải AI tự nhớ.
-- Khi sửa `world-destinations.builder.ts` hoặc `destination-list.merge.ts`, chạy lại 3 test hiện có trước — chúng bảo vệ đúng phần invariant dễ vỡ nhất (danh sách nước không trùng, không thiếu field bắt buộc).
-- Tuân theo thứ tự thay đổi chéo lớp (`CLAUDE.md` mục Shared Kernel): nếu đổi shape dữ liệu trả về cho frontend, kiểm `packages/shared` trước, rồi `frontend/web/src/features/planner/components/wizard/WizardDestinationPickers.tsx` và `frontend/web/src/features/planner/utils/destination-parser.ts`.
+- The Serper API is used to search insights for each destination, running through BullMQ (`insight-queue.ts` enqueues, `insight-worker.ts` processes) — never call Serper synchronously in the request path.
+- Embedding (`embedding.service.ts`) supports RAG retrieval during trip generation — the results are injected into the AI prompt, the AI does not remember them on its own.
+- When changing `world-destinations.builder.ts` or `destination-list.merge.ts`, rerun the 3 existing tests first — they guard exactly the most fragile invariants (the country list has no duplicates and no missing required fields).
+- Follow the cross-layer change order (`CLAUDE.md`, Shared Kernel section): if you change the shape of the data returned to the frontend, check `packages/shared` first, then `frontend/web/src/features/planner/components/wizard/WizardDestinationPickers.tsx` and `frontend/web/src/features/planner/utils/destination-parser.ts`.

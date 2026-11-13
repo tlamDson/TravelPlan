@@ -1,45 +1,45 @@
-# Nợ kỹ thuật đã xác minh
+# Verified technical debt
 
-Không tự sửa khi chưa được giao. Mỗi mục đủ 3 phần: **triệu chứng**, **nguyên nhân** (`file:line`), **điều kiện kích hoạt**. Sửa xong thì xoá mục trong cùng commit. Số dòng có thể lệch theo thời gian — grep theo tên hàm.
+Do not fix on your own unless assigned. Each entry has 3 parts: **symptom**, **cause** (`file:line`), **trigger condition**. When it is fixed, delete the entry in the same commit. Line numbers may drift over time — grep by function name.
 
 ## Backend
 
-- **`intent-parser.service.ts`'s `extractJson()` hỏng với JSON array trần**
-  - Triệu chứng: response AI dạng array không bọc code fence bị cắt sai, parse fail, rơi vào retry/fallback.
-  - Nguyên nhân: `backend/src/features/planner/services/intent-parser.service.ts:61` — nhánh fallback chỉ cắt theo `{`…`}`, dù `coerceRoot()` có nhánh xử lý array.
-  - Kích hoạt: Gemini trả array trần không có ` ```json `.
-- **`activity-regen.service.ts`'s `recalcDayDistances()` trả 500 khi activity thiếu toạ độ**
-  - Triệu chứng: `PATCH /trips/:id/reorder-activities` hoặc `POST /trips/:id/regen-activity` trả 500 (`CastError` khi `Trip.save()`).
-  - Nguyên nhân: `backend/src/features/planner/services/activity-regen.service.ts:47` — guard coi `coordinates: []` là có toạ độ (`[]` truthy); Mongoose tự set mảng rỗng → `validateDistance()` ra `NaN`.
-  - Kích hoạt: `validationService` không tìm được toạ độ cho activity thay thế. Test: `trip-activities.integration.test.ts`.
-- **`redis-options.ts` bỏ qua db-index của `REDIS_URL`**
-  - Triệu chứng: `redis://host:6379/1` nối vào db 0.
-  - Nguyên nhân: `backend/src/lib/redis-options.ts:44` — `buildRedisConnectionOptions()` không đọc `u.pathname`.
-  - Kích hoạt: muốn cô lập môi trường bằng db-index trên cùng Redis (vd E2E/load-test cạnh dev). Test: `redis-options.test.ts` (`[BUG] REDIS_URL db-index is dropped`).
-- **`job-outcome.ts`'s `normalizeFailureReason()` map lỗi phổ biến nhất thành `UNKNOWN`**
-  - Triệu chứng: breakdown lỗi trên `/reliability` không tách được "AI cạn quota" khỏi "AI hỏng thật".
-  - Nguyên nhân: `backend/src/features/reliability/services/job-outcome.ts:55` — `FAILURE_PATTERNS` không khớp `"AI failed to generate valid intents after 4 attempts"`; `ai-agent.service.ts` re-throw mà bỏ chuỗi gốc (chứa "429"/"quota").
-  - Kích hoạt: quota Gemini cạn khiến `generateIntents()` hết retry. Test: `job-outcome.test.ts` (`[BUG] maps the real 'AI failed…'`).
-- **`trip.processor.ts` (~450 dòng) và `ai-agent.service.ts` (~330 dòng) trộn nhiều trách nhiệm**
-  - Triệu chứng: khó test riêng từng bước pipeline; sửa một bước dễ chạm bước khác.
-  - Nguyên nhân: `backend/src/features/planner/jobs/trip.processor.ts`, `backend/src/features/planner/services/ai-agent.service.ts`.
-  - Kích hoạt: mọi thay đổi pipeline sinh trip. Tách theo mẫu đã làm cho `trip.controller.ts` (7 file theo use case) nếu được giao.
-- **Nhiều `any` ở backend**, phần lớn `catch (error: any)` (ESLint đang để warn, xem `backend/eslint.config.mjs`). Kích hoạt: lỗi type bị che khi refactor.
+- **`intent-parser.service.ts`'s `extractJson()` breaks on a bare JSON array**
+  - Symptom: an AI response shaped as an array without a code fence is cut wrongly, parsing fails, and it falls into retry/fallback.
+  - Cause: `backend/src/features/planner/services/intent-parser.service.ts:61` — the fallback branch only cuts on `{`…`}`, even though `coerceRoot()` has a branch that handles arrays.
+  - Trigger: Gemini returns a bare array without ` ```json `.
+- **`activity-regen.service.ts`'s `recalcDayDistances()` returns 500 when an activity has no coordinates**
+  - Symptom: `PATCH /trips/:id/reorder-activities` or `POST /trips/:id/regen-activity` returns 500 (`CastError` on `Trip.save()`).
+  - Cause: `backend/src/features/planner/services/activity-regen.service.ts:47` — the guard treats `coordinates: []` as having coordinates (`[]` is truthy); Mongoose sets an empty array itself → `validateDistance()` yields `NaN`.
+  - Trigger: `validationService` cannot find coordinates for the replacement activity. Test: `trip-activities.integration.test.ts`.
+- **`redis-options.ts` ignores the db-index of `REDIS_URL`**
+  - Symptom: `redis://host:6379/1` connects to db 0.
+  - Cause: `backend/src/lib/redis-options.ts:44` — `buildRedisConnectionOptions()` does not read `u.pathname`.
+  - Trigger: wanting to isolate environments by db-index on the same Redis (e.g. E2E/load-test next to dev). Test: `redis-options.test.ts` (`[BUG] REDIS_URL db-index is dropped`).
+- **`job-outcome.ts`'s `normalizeFailureReason()` maps the most common error to `UNKNOWN`**
+  - Symptom: the error breakdown on `/reliability` cannot separate "AI quota exhausted" from "AI really broken".
+  - Cause: `backend/src/features/reliability/services/job-outcome.ts:55` — `FAILURE_PATTERNS` does not match `"AI failed to generate valid intents after 4 attempts"`; `ai-agent.service.ts` re-throws and drops the original string (which contains "429"/"quota").
+  - Trigger: the Gemini quota runs out and `generateIntents()` exhausts its retries. Test: `job-outcome.test.ts` (`[BUG] maps the real 'AI failed…'`).
+- **`trip.processor.ts` (~450 lines) and `ai-agent.service.ts` (~330 lines) mix several responsibilities**
+  - Symptom: hard to test each pipeline step on its own; changing one step easily touches another.
+  - Cause: `backend/src/features/planner/jobs/trip.processor.ts`, `backend/src/features/planner/services/ai-agent.service.ts`.
+  - Trigger: any change to the trip-generation pipeline. If assigned, split following the pattern already used for `trip.controller.ts` (7 files by use case).
+- **Many `any` in the backend**, mostly `catch (error: any)` (ESLint currently only warns, see `backend/eslint.config.mjs`). Trigger: type errors get hidden during a refactor.
 
 ## Frontend
 
-- **`LatencyChart.tsx` vẽ bar chart rỗng ở lần load đầu của `/reliability`**
-  - Triệu chứng: trục, legend, `ReferenceLine` đúng nhưng 9 `<Bar>` cao 0px; console Recharts `"width(-1) and height(-1)…"`. Resize viewport thì bar hiện ra.
-  - Nguyên nhân (nghi vấn): `frontend/web/src/features/reliability/components/LatencyChart.tsx:73` — `ResponsiveContainer` đo trước khi layout cha ổn định, animation mount cache chiều cao 0.
-  - Kích hoạt: mở trang với dữ liệu latency thật. Không tái hiện được trong jsdom (polyfill `ResizeObserver` chỉ là stub) — verify bằng `chrome-devtools`.
-- **19 component shadcn trong `frontend/web/src/components/ui/` chưa được import** (accordion, breadcrumb, carousel, chart, table, tabs, sheet, sidebar, menubar, drawer, pagination, scroll-area, collapsible, context-menu, hover-card, input-otp, navigation-menu, aspect-ratio, resizeable). Cố ý giữ; đừng `npx shadcn add` thêm nếu chưa dùng ngay.
+- **`LatencyChart.tsx` draws an empty bar chart on the first load of `/reliability`**
+  - Symptom: the axes, legend and `ReferenceLine` are right but the 9 `<Bar>`s are 0px tall; Recharts console `"width(-1) and height(-1)…"`. Resizing the viewport makes the bars appear.
+  - Cause (suspected): `frontend/web/src/features/reliability/components/LatencyChart.tsx:73` — `ResponsiveContainer` measures before the parent layout is stable, and the mount animation caches a height of 0.
+  - Trigger: opening the page with real latency data. Not reproducible in jsdom (the `ResizeObserver` polyfill is only a stub) — verify with `chrome-devtools`.
+- **19 shadcn components in `frontend/web/src/components/ui/` are not imported** (accordion, breadcrumb, carousel, chart, table, tabs, sheet, sidebar, menubar, drawer, pagination, scroll-area, collapsible, context-menu, hover-card, input-otp, navigation-menu, aspect-ratio, resizeable). Kept deliberately; do not `npx shadcn add` more unless they are used right away.
 
-## Hạ tầng
+## Infrastructure
 
-- **Redis production chỉ giữ lịch sử job theo `DEFAULT_JOB_RETENTION`** (complete 7 ngày, fail 30 ngày) — `measure-pipeline.ts --harvest` không đo được gì cũ hơn cửa sổ đó. Nguồn lâu dài là `Trip.generationMeta`/`JobMetric` trong Mongo.
-- **Code reliability (`backend/src/features/reliability/`) chưa lên `main`** tại lần kiểm cuối — production chưa ghi `JobMetric`; kiểm lại bằng `git ls-tree origin/main backend/src/features/reliability`.
+- **Production Redis keeps job history only per `DEFAULT_JOB_RETENTION`** (complete 7 days, fail 30 days) — `measure-pipeline.ts --harvest` cannot measure anything older than that window. The long-term source is `Trip.generationMeta`/`JobMetric` in Mongo.
+- **The reliability code (`backend/src/features/reliability/`) was not on `main`** at the last check — production does not write `JobMetric` yet; recheck with `git ls-tree origin/main backend/src/features/reliability`.
 
-## Đã kiểm, không phải bug (đừng điều tra lại)
+## Checked, not a bug (do not investigate again)
 
-- `PATCH /api/users/me` với `{ tier: "pro" }` không nâng cấp được user — Zod `updateUserSchema` strip field lạ (`users.integration.test.ts`).
-- `budget-validator.service.ts`'s `convertToUSD` nhân với tỷ giá **có vẻ đúng**: bảng `rates` là USD trên một đơn vị ngoại tệ (JPY `0.0067`, 3000 JPY ≈ $20). Test `budget-validator.service.test.ts`'s `[BUG #8]` vẫn gọi đây là bug — cần người quyết trước khi "sửa" chiều quy đổi.
+- `PATCH /api/users/me` with `{ tier: "pro" }` does not upgrade the user — the Zod `updateUserSchema` strips unknown fields (`users.integration.test.ts`).
+- `budget-validator.service.ts`'s `convertToUSD` multiplying by the rate **looks correct**: the `rates` table is USD per one unit of foreign currency (JPY `0.0067`, 3000 JPY ≈ $20). The test `budget-validator.service.test.ts`'s `[BUG #8]` still calls this a bug — a person has to decide before "fixing" the conversion direction.

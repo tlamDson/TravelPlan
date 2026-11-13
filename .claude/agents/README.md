@@ -1,26 +1,26 @@
 # Custom Subagents — TravelPlan
 
-## Agent hiện có
+## Existing agents
 
-| Agent (`name`) | File | Model | Tools | Dùng khi |
-|---|---|---|---|---|
-| `code-reviewer` | `code-reviewer.md` | sonnet | Read, Grep, Glob, Bash | Review diff trước khi commit/mở PR — TDD compliance, kích thước/trách nhiệm file, layer violation, commit convention, security, Python, an toàn dữ liệu. |
-| `researcher` | `researcher.md` | sonnet | Read, Grep, Glob | Khám phá codebase (planner, itinerary builder, destinations RAG, calendar sync...) trước khi lập kế hoạch hoặc sửa code. |
-| `qa-testing` | `qa-testing.md` | sonnet | Read, Grep, Glob, Bash, Edit, Write | Viết/chạy test theo TDD Red-Green-Refactor, backend (Vitest) và frontend (Vitest/RTL, MSW, Playwright). |
+| Agent (`name`)  | File               | Model  | Tools                               | Use when                                                                                                                                                     |
+| --------------- | ------------------ | ------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `code-reviewer` | `code-reviewer.md` | sonnet | Read, Grep, Glob, Bash              | Review a diff before committing/opening a PR — TDD compliance, file size/responsibility, layer violations, commit convention, security, Python, data safety. |
+| `researcher`    | `researcher.md`    | sonnet | Read, Grep, Glob                    | Explore the codebase (planner, itinerary builder, destinations RAG, calendar sync...) before planning or changing code.                                      |
+| `qa-testing`    | `qa-testing.md`    | sonnet | Read, Grep, Glob, Bash, Edit, Write | Write/run tests with TDD Red-Green-Refactor, backend (Vitest) and frontend (Vitest/RTL, MSW, Playwright).                                                    |
 
 ## Convention
 
-Mỗi subagent là 1 file `.md` trong thư mục này. **Định danh thật của agent là field `name` trong frontmatter, không phải tên file** — tên file chỉ để dễ tìm, có thể khác `name`.
+Each subagent is one `.md` file in this directory. **The real identity of an agent is the `name` field in the frontmatter, not the file name** — the file name only makes it easy to find and may differ from `name`.
 
-Frontmatter tối thiểu:
+Minimal frontmatter:
 
 ```markdown
 ---
-name: agent-slug              # bắt buộc — định danh dùng khi gọi qua Agent tool
-description: Mô tả ngắn gọn agent này làm gì và khi nào nên dùng nó.
-tools: Read, Grep, Glob        # tuỳ chọn — chuỗi phân tách dấu phẩy, KHÔNG phải YAML list. Bỏ trống = kế thừa toàn bộ tool.
-model: sonnet                  # tuỳ chọn — alias hợp lệ: sonnet, opus, haiku, fable (hoặc full model ID)
+name: agent-slug # required — the identifier used when calling through the Agent tool
+description: A short description of what this agent does and when to use it.
+tools: Read, Grep, Glob # optional — a comma-separated string, NOT a YAML list. Omit to inherit all tools.
+model: sonnet # optional — valid aliases: sonnet, opus, haiku, fable (or a full model ID)
 ---
 
-Nội dung system prompt của agent, viết như hướng dẫn cho một đồng nghiệp mới nhận việc.
+The agent's system prompt, written like instructions for a new colleague taking over the work.
 ```

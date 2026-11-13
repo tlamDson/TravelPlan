@@ -1,41 +1,41 @@
 ---
 name: travelplan-devops
-description: Dùng khi sửa Dockerfile, docker-compose.yml, .github/workflows/**, railway.toml, vercel.json, biến môi trường, hoặc bất kỳ thứ gì liên quan tới deploy/CI của TravelPlan.
+description: Use when changing a Dockerfile, docker-compose.yml, .github/workflows/**, railway.toml, vercel.json, environment variables, or anything related to TravelPlan's deploy/CI.
 ---
 
 # DevOps — TravelPlan
 
-## Nguyên tắc
+## Principles
 
-- **Multi-stage Docker build bắt buộc** — giữ image nhỏ, tách build stage khỏi runtime stage.
-- **Tách secret theo least-privilege**: web chỉ cần `VITE_MAPBOX_ACCESS_TOKEN`/`VITE_CLERK_PUBLISHABLE_KEY`/`VITE_API_URL`; api cần `MONGO_URI`+`CLERK_SECRET_KEY`+…; worker cần AI key + DB, không cần secret của web.
-- **Container phải crash khi thiếu env bắt buộc** — đã làm qua `envalid` ở `backend/src/config/env.ts`, giữ nguyên pattern này khi thêm biến mới.
-- **IaC only** — không chỉnh cấu hình qua UI của Railway/Vercel mà không phản ánh lại trong repo (`railway.toml`, `vercel.json`). Lưu ý: Railway chỉ đọc `[build]`/`[deploy]` từ `railway.toml` — không có `[[services]]`; start command/healthcheck riêng từng service là cấu hình dashboard (mỗi service, mỗi environment).
-- **BullBoard `/admin/queues` phải có Basic Auth** nếu bật ở production/staging — không bao giờ để mở public.
+- **Multi-stage Docker builds are mandatory** — keep the image small and separate the build stage from the runtime stage.
+- **Split secrets by least privilege**: web only needs `VITE_MAPBOX_ACCESS_TOKEN`/`VITE_CLERK_PUBLISHABLE_KEY`/`VITE_API_URL`; the api needs `MONGO_URI`+`CLERK_SECRET_KEY`+…; the worker needs the AI key + DB, not the web's secrets.
+- **The container must crash when a required env var is missing** — already done through `envalid` in `backend/src/config/env.ts`; keep this pattern when adding new variables.
+- **IaC only** — do not change configuration through the Railway/Vercel UI without reflecting it back in the repo (`railway.toml`, `vercel.json`). Note: Railway only reads `[build]`/`[deploy]` from `railway.toml` — there is no `[[services]]`; the start command/healthcheck of each service is dashboard configuration (per service, per environment).
+- **BullBoard `/admin/queues` must have Basic Auth** if enabled in production/staging — never leave it publicly open.
 
-## CI thật của repo (khác tài liệu cũ)
+## The repo's real CI (differs from the old docs)
 
-`.github/workflows/ci-pr.yml` — chạy trên `pull_request` vào `develop`/`main`. **Tên job chính là required status check trên GitHub** — không được đổi tên, không được thêm `paths:` vào `on: pull_request`, không được đặt `if:` ở cấp job cho 3 job required (gate ở cấp step bằng biến env như `SHOULD_BUILD`). Chi tiết đầy đủ ở `.claude/rules/git-pr.md`.
+`.github/workflows/ci-pr.yml` — runs on `pull_request` into `develop`/`main`. **The job names are the required status checks on GitHub** — do not rename them, do not add `paths:` to `on: pull_request`, and do not put a job-level `if:` on the 3 required jobs (gate at the step level with an env variable such as `SHOULD_BUILD`). Full detail in `.claude/rules/git-pr.md`.
 
-| Job       | Tên (= required check)                                                               |
-| --------- | ------------------------------------------------------------------------------------ |
-| `changes` | Detect changed paths (không required, chỉ để dorny/paths-filter output cho job khác) |
-| `ci`      | Lint + Unit Tests                                                                    |
-| `quality` | Typecheck + Build                                                                    |
-| `docker`  | Backend Docker Build                                                                 |
+| Job       | Name (= required check)                                                                         |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| `changes` | Detect changed paths (not required, only produces the dorny/paths-filter output for other jobs) |
+| `ci`      | Lint + Unit Tests                                                                               |
+| `quality` | Typecheck + Build                                                                               |
+| `docker`  | Backend Docker Build                                                                            |
 
-`.github/workflows/ci-main.yml` — chạy trên `push` vào `main`, một job `Full CI + Unit Tests` chạy tuần tự lint → typecheck → build → test.
+`.github/workflows/ci-main.yml` — runs on `push` to `main`, a single job `Full CI + Unit Tests` that runs lint → typecheck → build → test in sequence.
 
-`.github/workflows/data-pipeline.yml` — cron ETL hàng tháng (city cost scraper), không phải PR check, không đụng vào trừ khi được giao rõ ràng.
+`.github/workflows/data-pipeline.yml` — a monthly ETL cron (city cost scraper), not a PR check; do not touch it unless explicitly assigned.
 
-## Môi trường
+## Environments
 
-`develop` → staging, `main` → production. **Staging đã dựng xong**: Railway environment `staging` có `travelplan-api-staging` (API, domain vẫn giữ tên lịch sử `travelplan-web-staging-staging.up.railway.app` — rename service không đổi domain tự sinh), `travelplan-worker-staging`, `Redis-hGhE`; MongoDB là Atlas database `travelplan_staging` riêng (không phải Railway-hosted); Vercel scope `VITE_*` theo `Preview` + `git-branch=develop`. Chi tiết đầy đủ + toàn bộ cạm bẫy dựng hạ tầng (Railway `ServiceInstance` không tự sinh, `checkSuites` treo vĩnh viễn, `redeploy` dùng snapshot cũ...) ở `.claude/reference/deploy-ops.md`. Bootstrap 1 service mới trong environment mới (nếu cần thêm) **không có đường API/CLI thuần** — phải qua dashboard "+ New" → "GitHub Repo", xem công thức đầy đủ ở đó trước khi tự đoán.
+`develop` → staging, `main` → production. **Staging is already set up**: the Railway environment `staging` has `travelplan-api-staging` (the API, whose domain keeps the historical name `travelplan-web-staging-staging.up.railway.app` — renaming the service does not change the auto-generated domain), `travelplan-worker-staging`, `Redis-hGhE`; MongoDB is a separate Atlas database `travelplan_staging` (not Railway-hosted); Vercel scopes `VITE_*` to `Preview` + `git-branch=develop`. Full detail plus all the infrastructure-setup pitfalls (a Railway `ServiceInstance` is not auto-created, `checkSuites` hanging forever, `redeploy` using an old snapshot...) are in `.claude/reference/deploy-ops.md`. Bootstrapping a new service in a new environment (if one is needed) **has no pure API/CLI path** — it must go through the dashboard "+ New" → "GitHub Repo"; see the full recipe there before guessing.
 
 ## Health check
 
-`GET /health` — kiểm tra process còn sống. `GET /ready` — kiểm tra Mongo + Redis đã connect. Dùng cho readiness probe của Railway/Docker, đừng gộp hai endpoint này làm một.
+`GET /health` — checks that the process is alive. `GET /ready` — checks that Mongo + Redis are connected. Used for the Railway/Docker readiness probe; do not merge these two endpoints into one.
 
 ## Redis TLS
 
-`backend/src/lib/queue.ts` tự nhận diện `redis://` vs `rediss://` từ `REDIS_URL`, cộng heuristic theo host (`railway.internal`/`localhost`/`127.0.0.1`/`redis` → không TLS). Khi thêm managed Redis provider mới, kiểm lại logic này thay vì hardcode thêm case riêng.
+`backend/src/lib/queue.ts` detects `redis://` vs `rediss://` from `REDIS_URL`, plus a host heuristic (`railway.internal`/`localhost`/`127.0.0.1`/`redis` → no TLS). When adding a new managed Redis provider, recheck this logic instead of hardcoding another special case.

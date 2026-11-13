@@ -4,28 +4,28 @@ argument-hint: [pr title]
 allowed-tools: Bash(git status *), Bash(git diff *), Bash(git log *), Bash(git branch *), Bash(git rev-parse *), Bash(git checkout -b *), Bash(git add *), Bash(git commit *), Bash(git push *), Bash(gh pr create *), Bash(gh pr view *), Bash(gh pr checks *), Bash(gh pr merge *), Bash(gh run list *), Bash(gh run view *), Read, Write, Edit
 ---
 
-Lệnh tuỳ chọn cho **phiên tay** — phiên headless của conductor không dùng lệnh này (dừng ở push, xem `CLAUDE.md` mục "Hai loại phiên").
+An optional command for **manual sessions** — the conductor's headless sessions do not use this command (they stop at push, see the "Two kinds of session" section in `CLAUDE.md`).
 
-Bạn đang thực thi quy trình mở PR đầy đủ cho TravelPlan, theo `.claude/rules/git-pr.md`. Làm tuần tự, không hỏi lại người dùng trừ khi bị chặn cứng (auth thiếu, conflict không tự giải quyết được).
+You are running the full PR-opening procedure for TravelPlan, per `.claude/rules/git-pr.md`. Work sequentially, and do not ask the user again unless you are hard-blocked (missing auth, a conflict you cannot resolve yourself).
 
 ## 1. Preflight
 
-`gh auth status` — nếu chưa login, dừng ngay và báo rõ lý do, không cố tiếp.
-`git status --porcelain` và `git rev-parse --abbrev-ref HEAD` để biết đang ở đâu.
+`gh auth status` — if not logged in, stop immediately and say why; do not try to continue.
+`git status --porcelain` and `git rev-parse --abbrev-ref HEAD` to see where you are.
 
 ## 2. Branch
 
-Nếu đang ở `main` hoặc `develop`, tạo branch mới từ `develop` hiện tại (không phải `main`):
+If on `main` or `develop`, create a new branch from the current `develop` (not `main`):
 
 ```
 git checkout -b <type>/<kebab-case-description>
 ```
 
-`<type>` một trong `feature/fix/test/docs/chore`, suy từ nội dung thay đổi hoặc từ `$ARGUMENTS`. Không bao giờ commit thẳng vào `develop`/`main`.
+`<type>` is one of `feature/fix/test/docs/chore`, inferred from the content of the change or from `$ARGUMENTS`. Never commit directly to `develop`/`main`.
 
 ## 3. Commit
 
-Chỉ `git add` đúng những file liên quan tới thay đổi thật (không dùng `git add -A` tuỳ tiện nếu có file lạ không rõ nguồn gốc trong working tree — kiểm `git status` trước). Review bằng `git diff --cached --stat`. Commit theo convention ở `.claude/rules/git-pr.md`: imperative mood, một dòng, không prefix `feat:`/`fix:`. Kết thúc message bằng trailer:
+`git add` only the files that belong to the real change (do not use `git add -A` casually if the working tree has stray files of unknown origin — check `git status` first). Review with `git diff --cached --stat`. Commit following the convention in `.claude/rules/git-pr.md`: imperative mood, one line, no `feat:`/`fix:` prefix. End the message with the trailer:
 
 ```
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
@@ -37,23 +37,23 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 git push -u origin <branch>
 ```
 
-## 5. Tạo PR
+## 5. Create the PR
 
 ```
-gh pr create --base develop --title "<type>: <mô tả ngắn>" --body "..."
+gh pr create --base develop --title "<type>: <short description>" --body "..."
 ```
 
-Body theo template PR trong `.claude/rules/git-pr.md` (Summary + RED + Test plan + Assumptions). Thêm footer `🤖 Generated with [Claude Code](https://claude.com/claude-code)`. Lấy số PR từ URL trả về.
+The body follows the PR template in `.claude/rules/git-pr.md` (Summary + RED + Test plan + Assumptions). Add the footer `🤖 Generated with [Claude Code](https://claude.com/claude-code)`. Take the PR number from the returned URL.
 
-## 6. Arm guard — bước này BẮT BUỘC làm trước khi chờ
+## 6. Arm the guard — this step is MANDATORY before waiting
 
-Ghi file `.claude/.ci-watch.json`:
+Write the file `.claude/.ci-watch.json`:
 
 ```json
 { "pr": <n>, "branch": "<branch>", "armed_at_epoch": <unix now>, "deadline_epoch": <now + 3600>, "attempts": 0, "max_attempts": 6, "last_status": "pending" }
 ```
 
-## 7. Chờ check đăng ký
+## 7. Wait for checks to register
 
 ```bash
 n=0
@@ -62,9 +62,9 @@ until [ "$(gh pr view <n> --json statusCheckRollup --jq '.statusCheckRollup|leng
 done
 ```
 
-## 8. Watch có giới hạn — KHÔNG kết thúc lượt giữa các vòng
+## 8. Bounded watch — do NOT end the turn between rounds
 
-Bash tool, timeout 540000 (9 phút):
+Bash tool, timeout 540000 (9 minutes):
 
 ```bash
 gh pr checks <n> --watch --fail-fast --interval 20 >/dev/null 2>&1
@@ -72,29 +72,29 @@ echo "watch_exit=$?"
 gh pr checks <n> --json bucket,name,state,link --jq '.[] | "\(.bucket)\t\(.name)\t\(.link)"' || true
 ```
 
-Nếu timeout, gọi lại đúng lệnh này (tối đa 5 vòng ≈ 45 phút). Không dừng lượt giữa các vòng gọi.
+If it times out, call exactly this command again (at most 5 rounds ≈ 45 minutes). Do not stop the turn between calls.
 
-## 9. Phân loại
+## 9. Classify
 
 ```bash
 gh pr checks <n> --json bucket --jq 'if any(.[]; .bucket=="pending") then "PENDING" elif any(.[]; .bucket=="fail" or .bucket=="cancel") then "FAILED" else "PASSED" end'
 ```
 
-## 10. Nếu FAILED
+## 10. If FAILED
 
 ```bash
 gh run list --branch <branch> --workflow "CI - PR Check" --limit 1 --json databaseId,conclusion
 gh run view <id> --log-failed
 ```
 
-Chẩn đoán, sửa, commit, push, quay lại bước 7 (guard vẫn đang armed, không cần arm lại).
+Diagnose, fix, commit, push, go back to step 7 (the guard is still armed, no need to arm again).
 
-## 11. Nếu PASSED hoặc hết deadline
+## 11. If PASSED or the deadline is reached
 
-Xoá `.claude/.ci-watch.json`. Nếu PASSED và PR target là `develop`: merge (`gh pr merge <n> --squash`) chỉ khi đã có review độc lập PASS (luật quyền trong `CLAUDE.md`); chưa có review thì báo cáo PR sẵn sàng chờ review. Nếu PR target là `main`: **không bao giờ tự merge**, chỉ báo cáo PR đã sẵn sàng để chủ repo tự quyết định. Nếu hết deadline mà chưa PASSED thì không merge — báo cáo trạng thái. Luôn báo cáo: PR URL, bảng check (tên + bucket), kết quả merge (đã merge / để chủ repo tự merge), và nhắc rõ **lint/test hiện đã thật sự chặn CI** (không còn `|| echo`) nên xanh nghĩa là test pass thật.
+Delete `.claude/.ci-watch.json`. If PASSED and the PR targets `develop`: merge (`gh pr merge <n> --squash`) only if an independent review has already PASSed (the authority rule in `CLAUDE.md`); if there is no review yet, report the PR as ready and waiting for review. If the PR targets `main`: **never merge on your own**, only report that the PR is ready for the repo owner to decide. If the deadline passes without PASSED, do not merge — report the status. Always report: the PR URL, the check table (name + bucket), the merge result (merged / left for the repo owner to merge), and state clearly that **lint/test now really block CI** (no more `|| echo`), so green means the tests truly pass.
 
-## 12. Nếu hết deadline mà vẫn PENDING
+## 12. If the deadline passes and it is still PENDING
 
-Disarm, rồi arm lại dưới dạng background task (`run_in_background: true` trên `gh pr checks <n> --watch`) để người dùng vẫn được báo khi xong, và nói rõ đã chuyển sang chế độ nền.
+Disarm, then re-arm as a background task (`run_in_background: true` on `gh pr checks <n> --watch`) so the user is still notified when it finishes, and say clearly that you have switched to background mode.
 
-⚠️ Không interpolate `$ARGUMENTS` vào block `` !`…` `` — không được shell-escape, truyền dưới dạng prose để dùng trong Bash tool call.
+⚠️ Do not interpolate `$ARGUMENTS` into a `` !`…` `` block — it is not shell-escaped; pass it as prose to use in the Bash tool call.

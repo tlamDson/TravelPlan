@@ -1,61 +1,61 @@
 # UI/UX, i18n, state boundaries (`frontend/web`)
 
-## Pre-flight bắt buộc trước mọi thay đổi UI
+## Mandatory pre-flight before any UI change
 
-Layout, component, interaction, màu, spacing hay animation đều phải chạy skill `ui-ux-pro-max` trước:
+Any layout, component, interaction, color, spacing or animation change must first run the `ui-ux-pro-max` skill:
 
 ```bash
-python .claude/skills/ui-ux-pro-max/scripts/search.py "<mô tả>" --design-system
+python .claude/skills/ui-ux-pro-max/scripts/search.py "<description>" --design-system
 ```
 
-Bổ sung `--domain ux "<pattern>"` cho interaction cụ thể và `--stack shadcn`. Đọc `design-system/travelplan/MASTER.md` trước khi chạy lại `search.py` — file này đã hiệu chỉnh tay theo token thật ở `frontend/web/src/index.css`. `design-system/pages/<trang>.md` (nếu có) override cho trang đó. Đường dẫn skill đúng duy nhất là `.claude/skills/ui-ux-pro-max/` (bỏ qua `.agent/skills/…`, `.shared/…` trong tài liệu cũ).
+Add `--domain ux "<pattern>"` for a specific interaction and `--stack shadcn`. Read `design-system/travelplan/MASTER.md` before rerunning `search.py` — that file was hand-tuned to the real tokens in `frontend/web/src/index.css`. `design-system/pages/<page>.md` (if present) overrides it for that page. The only correct skill path is `.claude/skills/ui-ux-pro-max/` (ignore `.agent/skills/…`, `.shared/…` in old docs).
 
-## Quy ước
+## Conventions
 
-- Không action chỉ hiện khi hover — luôn có affordance ở trạng thái nghỉ.
-- Action phá huỷ (xoá, huỷ trip, huỷ subscription) có confirm dialog.
-- `cursor-pointer` trên phần tử click được; hover/focus 150–300ms (`transition-colors duration-200`).
-- Icon SVG (Lucide), không emoji làm icon.
-- Contrast ≥ 4.5:1 cả light lẫn dark; không chỉ dùng màu để phân biệt trạng thái.
-- Responsive 375 / 768 / 1024 / 1440, không tràn ngang.
-- Không magic value kiểu `w-[342px]` — dùng scale Tailwind.
-- Tôn trọng `prefers-reduced-motion`; focus state rõ khi tab.
+- No action that appears only on hover — always provide an affordance in the resting state.
+- Destructive actions (delete, cancel trip, cancel subscription) have a confirm dialog.
+- `cursor-pointer` on clickable elements; hover/focus 150–300ms (`transition-colors duration-200`).
+- SVG icons (Lucide), no emoji as icons.
+- Contrast ≥ 4.5:1 in both light and dark; do not distinguish states by color alone.
+- Responsive at 375 / 768 / 1024 / 1440, no horizontal overflow.
+- No magic values like `w-[342px]` — use the Tailwind scale.
+- Respect `prefers-reduced-motion`; a clear focus state when tabbing.
 
 ## State boundaries
 
-| Loại state | Dùng            | Ghi chú                                 |
-| ---------- | --------------- | --------------------------------------- |
-| Server     | TanStack Query  | Không bao giờ nhét data API vào Zustand |
-| Client/UI  | Zustand         | Store nhỏ, theo feature                 |
-| URL        | React Router    | "Tôi đang ở đâu" thuộc về URL           |
-| Form       | React Hook Form | Không đẩy lên global store trước submit |
+| Kind of state | Use             | Notes                                       |
+| ------------- | --------------- | ------------------------------------------- |
+| Server        | TanStack Query  | Never put API data into Zustand             |
+| Client/UI     | Zustand         | Small stores, per feature                   |
+| URL           | React Router    | "Where am I" belongs to the URL             |
+| Form          | React Hook Form | Do not lift to a global store before submit |
 
-Polling job: exponential backoff 1s → tối đa 10s, hiển thị tiến độ dạng bước. Optimistic update có rollback + toast khi request fail.
+Job polling: exponential backoff 1s → at most 10s, showing progress as steps. Optimistic updates have a rollback + toast when the request fails.
 
-## Bảo mật render
+## Render security
 
-Cấm `dangerouslySetInnerHTML` trần. Output AI: raw → `DOMPurify.sanitize()` → render (hoặc `react-markdown`). Response API parse qua Zod trước khi dùng trong component.
+Bare `dangerouslySetInnerHTML` is forbidden. AI output: raw → `DOMPurify.sanitize()` → render (or `react-markdown`). Parse API responses through Zod before using them in a component.
 
 ## Mapbox
 
-`React.lazy` cho component bản đồ; ≤ 50 marker thô cùng lúc (dùng `supercluster`); `map.remove()` trong cleanup của `useEffect`.
+`React.lazy` for the map component; ≤ 50 raw markers at a time (use `supercluster`); `map.remove()` in the `useEffect` cleanup.
 
 ## i18n
 
-Không viết chuỗi thẳng trong component — `const { t } = useTranslationStore()` (`frontend/web/src/stores/useTranslationStore.ts`). Mỗi chuỗi mới có đủ English (US), French, Vietnamese (`useTranslationStore.test.ts` kiểm).
+Do not write strings directly in components — `const { t } = useTranslationStore()` (`frontend/web/src/stores/useTranslationStore.ts`). Every new string has all of English (US), French, Vietnamese (`useTranslationStore.test.ts` checks).
 
-## `data-testid` cho E2E
+## `data-testid` for E2E
 
-- `data-testid="<feature>-<component>-<element>"`, kebab-case, tiếng Anh, không lấy từ copy hiển thị. Instance động thêm id: `trip-card-${tripId}`, `itinerary-day-${dayIndex}`.
-- Component mang trạng thái (`JobStatusIndicator`, `JobStatusBadge`, `TripStatusBadge`, `AgentLockBanner`) kèm `data-status`/`data-state` là giá trị máy (`"COMPLETED"`), test assert theo đó thay vì text.
-- Không thêm testid khi đã có handle ổn định (`id`, `aria-label`).
-- Literal viết thẳng trong component; bản mirror phía test ở `e2e/support/testids.ts`.
-- Chỉ thêm attribute thì không cần pre-flight `ui-ux-pro-max`.
+- `data-testid="<feature>-<component>-<element>"`, kebab-case, English, not derived from the displayed copy. Dynamic instances add an id: `trip-card-${tripId}`, `itinerary-day-${dayIndex}`.
+- Stateful components (`JobStatusIndicator`, `JobStatusBadge`, `TripStatusBadge`, `AgentLockBanner`) also carry `data-status`/`data-state` with a machine value (`"COMPLETED"`), and tests assert on that instead of text.
+- Do not add a testid when a stable handle already exists (`id`, `aria-label`).
+- The literal is written directly in the component; the test-side mirror is in `e2e/support/testids.ts`.
+- Adding only an attribute does not need the `ui-ux-pro-max` pre-flight.
 
-## Đặt component
+## Where to put a component
 
-Có business logic (vd tự kiểm job status) → `features/<domain>/components/`. Chỉ nhận props → `components/` dùng chung.
+Has business logic (e.g. checks job status itself) → `features/<domain>/components/`. Takes only props → shared `components/`.
 
-## Skills liên quan
+## Related skills
 
-`ui-ux-pro-max` (bắt buộc trước thay đổi UI), `ui-styling` (pattern shadcn/Tailwind), `itinerary-builder` (pipeline lịch trình), `rag-destinations` (module destinations), `travelplan-devops` (Docker, CI, deploy).
+`ui-ux-pro-max` (mandatory before UI changes), `ui-styling` (shadcn/Tailwind patterns), `itinerary-builder` (itinerary pipeline), `rag-destinations` (destinations module), `travelplan-devops` (Docker, CI, deploy).
