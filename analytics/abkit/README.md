@@ -17,5 +17,5 @@ python -m venv analytics/.venv
 analytics/.venv/Scripts/python -m pip install -e "analytics/abkit[dev]"   # bin/ on Linux/macOS
 cd analytics/abkit && ../.venv/Scripts/python -m ruff check . && ../.venv/Scripts/python -m ruff format --check . && ../.venv/Scripts/python -m pytest -q
 analytics/.venv/Scripts/python -m abkit.bench assignment --pr 9
-analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1   # --strict: MISSING fails too
+analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1   # --strict: MISSING fails too; --subset ci-fast
 ```

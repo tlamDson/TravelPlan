@@ -6,6 +6,7 @@ never vouch for itself (B2 plan, "Golden dataset").
 ```bash
 analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1            # report, exit 1 on FAIL/ERROR
 analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1 --strict   # MISSING fails too
+analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1 --subset ci-fast   # CI gate subset
 ```
 
 Statuses: `PASS` (every expected key within tolerance, decision equal),
@@ -57,8 +58,40 @@ control. Decisions: `reject_null` when `p_value < alpha`, else `fail_to_reject`.
 | `mde_ttest_ind`           | —                                                        | `nobs1`, `power`, `ratio`, `alpha`, `alternative`                    | `effect_size` (Cohen's d)                                                                         | —                |
 | `sample_size_proportions` | —                                                        | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                | —                |
 | `bh_fdr`                  | `hypothesis`, `p_value`                                  | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                        | —                |
+| `readout`                 | `variant`, `persona`, metric columns (see below)         | see below                                                            | `srm`, `estimate`, plus `early_estimate` / `estimate_<persona>`                                   | see below        |
 
 The exact formula behind each case is in its `source.call`.
+
+### `readout` (G-sim)
+
+One row per enrolled user (observed arm only). `params`:
+
+- `alpha` (0.05), `srm_threshold` (0.0005), `expected_shares` (`{control, treatment}`).
+- `metric`: `{"kind": "mean", "column": c}` (difference of per-user means) or
+  `{"kind": "ratio", "numerator": n, "denominator": d}` (difference of
+  `sum(n) / sum(d)` per arm, delta method).
+- `early_metric` (novelty cases): the first half of each user's window. Report
+  its effect as `early_estimate`, but **decide on `metric`** (the late half).
+- `by_persona: true`: also report `estimate_<persona>` for `browser`,
+  `planner`, `power`.
+- `looks` + `window_days` (peeking cases): interim days someone already peeked
+  at. A look at day `d` sees users with `exposure_day < d - window_days`. Looks
+  must not change the decision: decide once, at the planned horizon (all rows),
+  or with a test that stays valid under continuous monitoring.
+
+Decision: `invalid` when the chi-square SRM test on row counts per variant has
+`p < srm_threshold` (output `srm: true`, nothing else is compared); otherwise
+`ship` when the primary metric's `p < alpha` and `estimate > 0`, else
+`no_ship`. `estimate` keys are compared to the **true** effect, so their
+tolerance is wide (see G-sim).
+
+## Subsets
+
+`v<N>/subsets.json` names subsets of a dataset:
+`{"<name>": {"description": "...", "entries": [...]}}`. An entry is a whole
+group (`welch`) or one case id (`sim-aa/aa-01`), and must match at least one
+case. `ci-fast` is the required CI gate: every G-ref case plus one G-sim case
+per group. The full dataset runs nightly (B2 plan, PR 15a).
 
 ## G-ref (`v1`, 22 cases)
 
@@ -76,3 +109,36 @@ analytics/.venv/Scripts/python -m abkit.golden.freeze_ref analytics/golden/v2   
 `tests/test_golden_reference.py` regenerates the data and recomputes the truth
 of every committed case; the statsmodels cases skip where the `[golden]` extra
 is not installed (CI installs core + dev only).
+
+## G-sim (`v1`, 50 cases, simulated)
+
+SIMULATED experiments (virtual users, `simkit`), 50/50 on `trip_saved`:
+`sim-aa` ×10, `sim-effect` ×15 (some lifts only for some personas, some
+harmful), `sim-srm` ×5 (a share of treatment exposures never logged),
+`sim-novelty` ×5 (a boost that halves every day, with or without a lasting
+lift), `sim-ratio` ×5 (saves per trip view), `sim-peeking` ×5 (A/A where a
+naive interim look would ship), `sim-long-tail` ×5 (lognormal booking value).
+
+- **Decision** comes from the planted parameters only
+  (`simkit/golden_cases.py`): exposure loss → `invalid`; a lasting lift > 0 →
+  `ship`; < 0 or none → `no_ship`.
+- **Estimates** are the true effect in the sample: `simkit.golden_truth` runs
+  the same simulated users in both arms (each user has their own RNG stream and
+  behaves identically until first exposure) and averages
+  `Y(treatment) − Y(control)`. Tolerance is 4 standard errors of the observed
+  difference, since a correct readout sees only one arm per user.
+- **Screening:** one seeded draw can disagree with its planted decision by
+  chance. The freezer tries seeds from `first_seed` until an independent scipy
+  readout (`simkit/golden_reference.py`) agrees with the planted decision,
+  every estimate is within tolerance, and the trap is present (novelty: the
+  early window would ship; peeking: an interim look would ship).
+  `source.screening` records the attempts, so the selection is visible.
+
+```bash
+analytics/.venv/Scripts/python -m pip install -e "analytics/simkit[dev]"   # after abkit
+analytics/.venv/Scripts/python -m simkit.freeze_golden analytics/golden/v2   # refuses to overwrite without --force
+```
+
+`simkit/tests/test_golden_sim.py` re-screens every committed case from its
+`data.csv` and rebuilds the `ci-fast` ones byte for byte from their seed;
+`SIMKIT_GOLDEN_FULL=1` rebuilds all 50 (minutes, nightly).

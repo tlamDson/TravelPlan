@@ -27,6 +27,10 @@ server-side exposure, and faults that map one-to-one onto the G-event ingest out
   `unknown_field`, `unknown_event`, `wrong_source`. The manifest lists every fault with its
   expected outcome and the expected `received / accepted / duplicates / quarantined`, derived
   from the fault list alone (input must be clean).
+- **G-sim golden** (`simkit.golden_cases`, `golden_truth`, `golden_reference`,
+  `freeze_golden`): freezes the 50 simulated cases of `analytics/golden/v1/sim-*` with the
+  true effect from both potential outcomes and the decision implied by the planted parameters
+  (`analytics/golden/README.md`).
 - **Export:** canonical JSONL (`to_jsonl`, sorted keys, `\n`), and typed Parquet
   (`write_parquet`, schema-valid events only, `properties` as JSON text; `[parquet]` extra).
 
