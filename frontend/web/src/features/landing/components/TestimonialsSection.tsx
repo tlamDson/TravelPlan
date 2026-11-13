@@ -6,7 +6,7 @@ import { useTranslationStore } from "@/stores/useTranslationStore";
 import { WHY_TRAVELPLAN } from "../constants";
 
 export function TestimonialsSection() {
-  const { t } = useTranslationStore();
+  const t = useTranslationStore((state) => state.t);
   return (
     <section className="py-20 bg-muted/50">
       <div className="container mx-auto px-4">
