@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { describe, it, expect } from "vitest";
+import { resolveAutoLoaded } from "../test/claude-context";
 
 /**
  * [Guard] Claude Code session context for this repo.
@@ -11,6 +12,11 @@ import { describe, it, expect } from "vitest";
  * lives in `.claude/reference/` and is read on demand — CLAUDE.md keeps a
  * table of which file holds what. This guard stops the old drift back:
  * ~118 KB of PR history auto-loaded into every session.
+ *
+ * "Auto-loaded" = CLAUDE.md + every `.claude/rules/**.md`, plus everything
+ * they @import, followed recursively (Claude Code resolves nested imports
+ * relative to the importing file) — so a rule file cannot pull reference
+ * docs back in, or blow the budget, through a second-level import.
  */
 
 const REPO_ROOT = path.join(__dirname, "../../..");
@@ -44,15 +50,8 @@ function listMarkdown(relDir: string): string[] {
   });
 }
 
-function claudeImports(source: string): string[] {
-  const matches = source.matchAll(/^@(\S+)\s*$/gm);
-  return [...matches].map((m) => m[1]).filter((p): p is string => !!p);
-}
-
 function autoLoadedFiles(): string[] {
-  const rules = listMarkdown(".claude/rules");
-  const imports = claudeImports(read("CLAUDE.md"));
-  return [...new Set(["CLAUDE.md", ...rules, ...imports])];
+  return resolveAutoLoaded(REPO_ROOT).files;
 }
 
 function docFilesWithPointers(): string[] {
@@ -64,9 +63,8 @@ function docFilesWithPointers(): string[] {
 }
 
 describe("[Guard] CLAUDE.md + .claude/rules stay a small rule set", () => {
-  it("resolves every @import in CLAUDE.md", () => {
-    const missing = claudeImports(read("CLAUDE.md")).filter((p) => !exists(p));
-    expect(missing).toEqual([]);
+  it("resolves every @import reachable from CLAUDE.md and rules", () => {
+    expect(resolveAutoLoaded(REPO_ROOT).unresolved).toEqual([]);
   });
 
   it(`keeps auto-loaded context under ${AUTOLOAD_BUDGET_BYTES} bytes`, () => {
