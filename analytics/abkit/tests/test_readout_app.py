@@ -56,6 +56,7 @@ def test_app_reads_a_csv_with_params(tmp_path: Path) -> None:
 def test_app_reports_bad_input_without_crashing(tmp_path: Path) -> None:
     at = _app()
     at.sidebar.radio(key="source").set_value("CSV + params").run()
-    at.sidebar.text_input(key="csv").set_value(str(tmp_path / "missing.csv")).run()
+    at.sidebar.text_input(key="csv").set_value(str(tmp_path / "missing.csv"))
+    at.sidebar.text_input(key="params").set_value(str(tmp_path / "params.json")).run()
     assert not at.exception
-    assert at.warning or at.error
+    assert at.error and "missing.csv" in at.error[0].value

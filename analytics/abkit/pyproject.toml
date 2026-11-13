@@ -20,6 +20,10 @@ forecast = [
   "pandas==2.2.3",
   "statsmodels==0.14.4",
 ]
+# The Streamlit readout app (abkit/readout/app.py); CI skips its tests.
+app = [
+  "streamlit==1.40.2",
+]
 # dev includes forecast so the CI job (core + dev) runs the forecast tests.
 dev = [
   "pandas==2.2.3",
