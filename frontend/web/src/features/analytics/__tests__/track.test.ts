@@ -1,7 +1,12 @@
 import { analyticsEventSchema } from "@travelplan/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API_URL } from "@/config/env";
-import { identify, resetAnalyticsForTests, track } from "../track";
+import {
+  identify,
+  resetAnalyticsForTests,
+  track,
+  trackOnce,
+} from "../track";
 import { blobText } from "./blob-text";
 
 const sendBeacon = vi.fn<(url: string, body: Blob) => boolean>(() => true);
@@ -69,5 +74,50 @@ describe("track()", () => {
     window.dispatchEvent(new Event("pagehide"));
 
     expect(sendBeacon).not.toHaveBeenCalled();
+  });
+});
+
+describe("trackOnce()", () => {
+  it("sends one event per key for the life of the page", async () => {
+    const props = {
+      jobId: "job-1",
+      tripId: "t1",
+      outcome: "completed",
+      durationMs: 1200,
+    } as const;
+    trackOnce("trip_generation_completed", props, "job-1");
+    trackOnce("trip_generation_completed", props, "job-1");
+    trackOnce("trip_generation_completed", { ...props, jobId: "job-2" }, "job-2");
+
+    window.dispatchEvent(new Event("pagehide"));
+
+    const { body } = await beaconBody();
+    expect(
+      body.events.map((e: { properties: { jobId: string } }) => e.properties.jobId),
+    ).toEqual(["job-1", "job-2"]);
+  });
+
+  it("keeps the same key apart for different event names", async () => {
+    trackOnce("trip_viewed", { tripId: "t1" }, "t1");
+    trackOnce("trip_saved", { tripId: "t1" }, "t1");
+
+    window.dispatchEvent(new Event("pagehide"));
+
+    const { body } = await beaconBody();
+    expect(body.events.map((e: { name: string }) => e.name)).toEqual([
+      "trip_viewed",
+      "trip_saved",
+    ]);
+  });
+
+  it("forgets its keys on reset, like a fresh page load", async () => {
+    trackOnce("trip_viewed", { tripId: "t1" }, "t1");
+    resetAnalyticsForTests();
+    trackOnce("trip_viewed", { tripId: "t1" }, "t1");
+
+    window.dispatchEvent(new Event("pagehide"));
+
+    const { body } = await beaconBody();
+    expect(body.events).toHaveLength(1);
   });
 });
