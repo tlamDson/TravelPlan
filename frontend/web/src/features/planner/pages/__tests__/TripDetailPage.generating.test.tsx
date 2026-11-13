@@ -40,7 +40,7 @@ function renderTrip(overrides: Parameters<typeof makeTrip>[0]) {
 }
 
 describe("TripDetailPage (empty itinerary)", () => {
-  it.each([
+  it.each<[string, Parameters<typeof makeTrip>[0]]>([
     ["queued before the worker takes the lock", { status: "QUEUED" }],
     ["processing", { status: "PROCESSING", isAgentProcessing: true }],
   ])(
