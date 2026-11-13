@@ -4,7 +4,7 @@ import { ANALYTICS_BATCH_MAX_EVENTS } from "@travelplan/shared";
 
 const mockIngest = vi.fn();
 vi.mock("../services/analytics-ingest.service", () => ({
-  ingestEvents: (...args: unknown[]) => mockIngest(...args),
+  ingestClientEvents: (...args: unknown[]) => mockIngest(...args),
 }));
 
 vi.mock("../../../lib/logger", () => ({
@@ -13,8 +13,9 @@ vi.mock("../../../lib/logger", () => ({
 
 import { postAnalyticsEvents } from "./analytics.controller";
 
-function makeReq(body: unknown): Request {
-  return { body } as Request;
+function makeReq(body: unknown, userId?: string | null): Request {
+  if (userId === undefined) return { body } as Request;
+  return { body, auth: () => ({ userId }) } as unknown as Request;
 }
 
 function makeRes() {
@@ -38,9 +39,21 @@ describe("postAnalyticsEvents", () => {
     mockIngest.mockResolvedValue(okResult);
     const res = makeRes();
     await postAnalyticsEvents(makeReq({ events: [{ a: 1 }, 2] }), res);
-    expect(mockIngest).toHaveBeenCalledWith([{ a: 1 }, 2]);
+    expect(mockIngest).toHaveBeenCalledWith([{ a: 1 }, 2], null);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(okResult);
+  });
+
+  it("passes the Clerk session's userId so events cannot claim another user", async () => {
+    mockIngest.mockResolvedValue(okResult);
+    await postAnalyticsEvents(makeReq({ events: [{}] }, "user_1"), makeRes());
+    expect(mockIngest).toHaveBeenCalledWith([{}], "user_1");
+  });
+
+  it("treats a signed-out Clerk session as anonymous", async () => {
+    mockIngest.mockResolvedValue(okResult);
+    await postAnalyticsEvents(makeReq({ events: [{}] }, null), makeRes());
+    expect(mockIngest).toHaveBeenCalledWith([{}], null);
   });
 
   it.each([

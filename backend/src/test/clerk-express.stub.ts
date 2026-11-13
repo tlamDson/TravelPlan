@@ -21,9 +21,16 @@ type StubRequest = {
 };
 type StubResponse = { status: (n: number) => { json: (b: unknown) => void } };
 
+// Like the real clerkMiddleware, populates req.auth for routes that are
+// public but identity-aware (e.g. POST /api/analytics/events). Only when the
+// header is present, so header-less requests keep `req.auth` undefined —
+// every pre-existing auth-dependent route sits behind requireAuth anyway.
 export const clerkMiddleware =
-  () => (_req: StubRequest, _res: StubResponse, next: Next) =>
+  () => (req: StubRequest, _res: StubResponse, next: Next) => {
+    const userId = req.headers["x-test-user-id"];
+    if (userId) req.auth = () => ({ userId });
     next();
+  };
 
 export const requireAuth =
   () => (req: StubRequest, res: StubResponse, next: Next) => {
