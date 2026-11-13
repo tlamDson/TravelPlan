@@ -91,6 +91,7 @@ def test_proportions_sample_size_inverts_power() -> None:
     [
         (lambda: sample_size_ttest_ind(0.2, power=0.8, alternative="less"), "cannot reach"),
         (lambda: sample_size_ttest_ind(0.0, power=0.8), "effect_size"),
+        (lambda: sample_size_ttest_ind(50.0, power=0.8), "already reached"),
         (lambda: sample_size_ttest_ind(0.2, power=0.01), "power"),
         (lambda: sample_size_ttest_ind(0.2, power=1.0), "power"),
         (lambda: power_ttest_ind(0.2, 0.5), "nobs1"),
