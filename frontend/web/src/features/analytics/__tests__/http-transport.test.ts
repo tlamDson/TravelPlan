@@ -1,6 +1,7 @@
 import type { AnalyticsEvent } from "@travelplan/shared";
 import { describe, expect, it, vi } from "vitest";
 import { createHttpTransport } from "../lib/http-transport";
+import { blobText } from "./blob-text";
 
 const URL = "https://api.example.test/api/analytics/events";
 
@@ -152,7 +153,7 @@ describe("beacon()", () => {
     const [url, body] = sendBeacon.mock.calls[0] as unknown as [string, Blob];
     expect(url).toBe(URL);
     expect(body.type).toBe("text/plain;charset=utf-8");
-    expect(JSON.parse(await body.text())).toEqual({ events: [event] });
+    expect(JSON.parse(await blobText(body))).toEqual({ events: [event] });
   });
 
   it("returns false when the browser refuses the beacon", () => {

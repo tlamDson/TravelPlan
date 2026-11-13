@@ -18,11 +18,16 @@ function fakeTransport(results: SendResult[] = []) {
   const beacons: AnalyticsEvent[][] = [];
   let beaconAccepts = true;
   const transport: AnalyticsTransport = {
-    send: vi.fn(async (events, opts) => {
-      sends.push({ events, keepalive: opts?.keepalive ?? false });
-      return results.shift() ?? { ok: true };
-    }),
-    beacon: vi.fn((events) => {
+    send: vi.fn(
+      async (
+        events: AnalyticsEvent[],
+        opts?: { keepalive?: boolean },
+      ): Promise<SendResult> => {
+        sends.push({ events, keepalive: opts?.keepalive ?? false });
+        return results.shift() ?? { ok: true };
+      },
+    ),
+    beacon: vi.fn((events: AnalyticsEvent[]) => {
       beacons.push(events);
       return beaconAccepts;
     }),
@@ -394,7 +399,7 @@ describe("flushOnUnload()", () => {
         sends.push(events);
         return new Promise<SendResult>(() => {});
       }),
-      beacon: vi.fn((events) => {
+      beacon: vi.fn((events: AnalyticsEvent[]) => {
         beacons.push(events);
         return true;
       }),

@@ -2,8 +2,9 @@ import { analyticsEventSchema } from "@travelplan/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API_URL } from "@/config/env";
 import { identify, resetAnalyticsForTests, track } from "../track";
+import { blobText } from "./blob-text";
 
-const sendBeacon = vi.fn((_url: string, _body: Blob) => true);
+const sendBeacon = vi.fn<(url: string, body: Blob) => boolean>(() => true);
 
 beforeEach(() => {
   Object.defineProperty(navigator, "sendBeacon", {
@@ -20,7 +21,7 @@ afterEach(() => {
 
 async function beaconBody(call = 0) {
   const [url, blob] = sendBeacon.mock.calls[call];
-  return { url, body: JSON.parse(await blob.text()) };
+  return { url, body: JSON.parse(await blobText(blob)) };
 }
 
 describe("track()", () => {
