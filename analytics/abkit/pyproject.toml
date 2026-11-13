@@ -15,9 +15,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# ETS and ARIMA (abkit.forecast); seasonal naive and the backtest need only the core.
+forecast = [
+  "pandas==2.2.3",
+  "statsmodels==0.14.4",
+]
+# dev includes forecast so the CI job (core + dev) runs the forecast tests.
 dev = [
+  "pandas==2.2.3",
   "pytest==8.3.4",
   "ruff==0.8.4",
+  "statsmodels==0.14.4",
 ]
 # Only to (re)freeze the G-ref golden cases; CI and abkit itself never need it.
 golden = [

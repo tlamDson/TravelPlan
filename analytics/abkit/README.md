@@ -11,6 +11,14 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
 - `abkit golden`: runs abkit on every case of a golden dataset (default
   `analytics/golden/v1`) and prints pass/fail by each case's tolerance. Format,
   methods and freezing: `analytics/golden/README.md`.
+- `abkit.forecast` (M9): daily DAU and contributor series from an event log
+  (simkit `events.jsonl` or a directory of daily `*.jsonl.gz` exports), seasonal
+  naive (baseline), ETS and ARIMA with 95% prediction intervals, and a
+  rolling-origin backtest that refits on the past only at every origin. A
+  contributor is a user who requested, edited or saved a trip that day. ETS
+  (additive error; trend none/additive/damped; season none/additive) and ARIMA
+  (`d` by KPSS, `p+q <= 2`, seasonal AR `P <= 1`) choose a candidate by AICc.
+  ETS and ARIMA need the `[forecast]` extra (`statsmodels`); `[dev]` includes it.
 
 ```bash
 python -m venv analytics/.venv
@@ -18,4 +26,12 @@ analytics/.venv/Scripts/python -m pip install -e "analytics/abkit[dev]"   # bin/
 cd analytics/abkit && ../.venv/Scripts/python -m ruff check . && ../.venv/Scripts/python -m ruff format --check . && ../.venv/Scripts/python -m pytest -q
 analytics/.venv/Scripts/python -m abkit.bench assignment --pr 9
 analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1   # --strict: MISSING fails too
+analytics/.venv/Scripts/python -m simkit.generate --seed 42 --users 1000 --days 112 --out analytics/data/simulated/m9
+analytics/.venv/Scripts/python -m abkit.forecast analytics/data/simulated/m9/events.jsonl     --simulated --pr 21 --seed 42 --initial 56 --step 1 --horizon 7   # appends M9 rows; --dry-run
 ```
+
+`abkit.forecast` makes you say `--simulated` or `--real` (no default) and refuses
+`--real` when a user id carries simkit's `sim-` prefix. simkit has no weekly
+cycle and its users never churn, so on its events the series is a ramp plus
+noise: ETS and ARIMA win there by following the trend, which says little about
+weekly seasonality on real traffic.
