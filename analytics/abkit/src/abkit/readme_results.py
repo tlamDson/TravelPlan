@@ -48,6 +48,16 @@ RESULT_SPECS: tuple[ResultSpec, ...] = (
         False,
     ),
     ResultSpec(
+        "M4: CUPED sample-size multiplier, Hillstrom visit",
+        "hillstrom_visit_cuped_sample_size_multiplier",
+        False,
+    ),
+    ResultSpec(
+        "M4: CUPED sample-size multiplier, Hillstrom spend",
+        "hillstrom_spend_cuped_sample_size_multiplier",
+        False,
+    ),
+    ResultSpec(
         "M6: Hillstrom ATE bias, naive difference (biased resamples)",
         "hillstrom_ate_bias_naive_diff",
         False,
@@ -61,6 +71,11 @@ RESULT_SPECS: tuple[ResultSpec, ...] = (
     ),
     ResultSpec("M6: LaLonde NSW+PSID ATT error, IPW", "lalonde_psid_att_error_ipw", False),
     ResultSpec("M6: LaLonde NSW+PSID ATT error, AIPW", "lalonde_psid_att_error_aipw", False),
+    ResultSpec("M7: DiD ATT, GitHub Actions on PR merge time (log1p hours)", "did_att_main", False),
+    ResultSpec("M7: DiD ATT 95% CI low (log1p hours)", "did_att_ci95_low_main", False),
+    ResultSpec("M7: DiD ATT 95% CI high (log1p hours)", "did_att_ci95_high_main", False),
+    ResultSpec("M7: DiD ATT as a change in merge time", "did_att_pct_main", False),
+    ResultSpec("M7: pre-trend test p-value", "did_pretrend_p_main", False),
     ResultSpec(
         "M8: Criteo LP gain over top-k, T-learner, 10% budget", "m8_lp_gain_over_topk_t_b10", False
     ),
@@ -110,6 +125,17 @@ RESULT_SPECS: tuple[ResultSpec, ...] = (
     ResultSpec("M9: DAU forecast MAPE, seasonal naive", "forecast_mape_dau_seasonal_naive", True),
     ResultSpec("M9: DAU forecast MAPE, ETS", "forecast_mape_dau_ets", True),
     ResultSpec("M9: DAU forecast MAPE, ARIMA", "forecast_mape_dau_arima", True),
+    ResultSpec(
+        "M9: DAU 95% forecast interval coverage, seasonal naive",
+        "forecast_pi95_coverage_dau_seasonal_naive",
+        True,
+    ),
+    ResultSpec(
+        "M9: DAU 95% forecast interval coverage, ETS", "forecast_pi95_coverage_dau_ets", True
+    ),
+    ResultSpec(
+        "M9: DAU 95% forecast interval coverage, ARIMA", "forecast_pi95_coverage_dau_arima", True
+    ),
     ResultSpec(
         "M9a: events failing the schema (1,000 driver VUs)",
         "sim_driver_schema_invalid_share",

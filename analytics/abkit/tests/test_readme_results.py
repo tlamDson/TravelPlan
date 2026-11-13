@@ -120,3 +120,22 @@ def test_readme_quickstart_runs():
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip(), "the quickstart should print something"
+
+
+@pytest.mark.parametrize(
+    "metric",
+    [
+        "did_att_main",
+        "did_att_ci95_low_main",
+        "did_att_ci95_high_main",
+        "did_att_pct_main",
+        "did_pretrend_p_main",
+        "hillstrom_visit_cuped_sample_size_multiplier",
+        "hillstrom_spend_cuped_sample_size_multiplier",
+        "forecast_pi95_coverage_dau_seasonal_naive",
+        "forecast_pi95_coverage_dau_ets",
+        "forecast_pi95_coverage_dau_arima",
+    ],
+)
+def test_results_table_covers_every_headline_metric(metric):
+    assert metric in {s.metric for s in RESULT_SPECS}

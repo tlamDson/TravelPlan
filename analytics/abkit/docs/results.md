@@ -11,12 +11,19 @@ Simulated users are never mixed with real ones.
 | --- | --- | --- |
 | M4: CUPED variance reduction, Hillstrom visit | 0.006414 fraction | 42,613 |
 | M4: CUPED variance reduction, Hillstrom spend | 0.0004378 fraction | 42,613 |
+| M4: CUPED sample-size multiplier, Hillstrom visit | 1.006 x | 42,613 |
+| M4: CUPED sample-size multiplier, Hillstrom spend | 1 x | 42,613 |
 | M6: Hillstrom ATE bias, naive difference (biased resamples) | 3.711 pp | 100 |
 | M6: Hillstrom ATE bias, IPW | -0.01959 pp | 100 |
 | M6: Hillstrom ATE bias, AIPW | -0.01504 pp | 100 |
 | M6: LaLonde NSW+PSID ATT error, naive difference | -1.7e+04 USD | 2,675 |
 | M6: LaLonde NSW+PSID ATT error, IPW | 1234 USD | 2,675 |
 | M6: LaLonde NSW+PSID ATT error, AIPW | 818.8 USD | 2,675 |
+| M7: DiD ATT, GitHub Actions on PR merge time (log1p hours) | -0.1936 log1p hours | 292 |
+| M7: DiD ATT 95% CI low (log1p hours) | -0.6852 log1p hours | 292 |
+| M7: DiD ATT 95% CI high (log1p hours) | 0.298 log1p hours | 292 |
+| M7: DiD ATT as a change in merge time | -17.6 % | 292 |
+| M7: pre-trend test p-value | 0.4345 p | 292 |
 | M8: Criteo LP gain over top-k, T-learner, 10% budget | 5.3 % | 418,831 |
 | M8: Criteo LP gain over top-k, T-learner, 20% budget | 9.348 % | 418,831 |
 | M8: Criteo LP gain over top-k, T-learner, 30% budget | 3.671 % | 418,831 |
@@ -48,6 +55,9 @@ These rows come from virtual users, counted apart from real users. Each reports 
 | M9: DAU forecast MAPE, seasonal naive | 8.942 % | 350 |
 | M9: DAU forecast MAPE, ETS | 3.843 % | 350 |
 | M9: DAU forecast MAPE, ARIMA | 3.439 % | 350 |
+| M9: DAU 95% forecast interval coverage, seasonal naive | 0.9571 share | 350 |
+| M9: DAU 95% forecast interval coverage, ETS | 0.7771 share | 350 |
+| M9: DAU 95% forecast interval coverage, ARIMA | 0.8286 share | 350 |
 | M9a: events failing the schema (1,000 driver VUs) | 0.0009615 share | 41,600 |
 | M9a: duplicate events (1,000 driver VUs) | 0.01202 share | 41,600 |
 | Ingest throughput (1,000 driver VUs) | 1.345e+04 events/s | 41,600 |
