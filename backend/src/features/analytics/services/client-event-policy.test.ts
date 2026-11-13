@@ -39,7 +39,7 @@ describe("clientPolicyViolation", () => {
     const out = clientPolicyViolation(ev({ userId: "user_2" }), "user_1");
     expect(out?.reason).toBe("user_mismatch");
     expect(out?.issues).toEqual([
-      expect.objectContaining({ path: "userId", code: "user_mismatch" }),
+      { path: "userId", code: "user_mismatch" },
     ]);
   });
 
@@ -53,7 +53,7 @@ describe("clientPolicyViolation", () => {
     const out = clientPolicyViolation(exposure, null);
     expect(out?.reason).toBe("wrong_source");
     expect(out?.issues).toEqual([
-      expect.objectContaining({ path: "source", code: "server_only" }),
+      { path: "source", code: "server_only" },
     ]);
   });
 

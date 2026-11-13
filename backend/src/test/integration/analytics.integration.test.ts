@@ -129,6 +129,45 @@ describe("POST /api/analytics/events — flag on", () => {
     expect(doc?.receivedAt).toBeInstanceOf(Date);
   });
 
+  it("persists no client-supplied text for a quarantined event: only reason, issue path/code, safe ids and the hashed userId", async () => {
+    const pii = ["someone@example.com", "Bob Smith", "0912345678", "user_x9"];
+    const res = await post({
+      events: [
+        {
+          ...input.events[0],
+          userId: GOLDEN_USER,
+          "someone@example.com": "Bob Smith",
+          properties: { user_x9: "someone@example.com" },
+        },
+        { ...input.events[0], eventId: "0912345678", name: "Bob Smith" },
+      ],
+    });
+    expect(res.body.quarantined).toBe(2);
+    const docs = await AnalyticsQuarantine.find().lean();
+    expect(docs).toHaveLength(2);
+    for (const doc of docs) {
+      const text = JSON.stringify(doc);
+      for (const needle of [...pii, GOLDEN_USER]) {
+        expect(text).not.toContain(needle);
+      }
+      expect(Object.keys(doc).sort()).toEqual(
+        [
+          "_id",
+          "eventId",
+          "eventName",
+          "issues",
+          "reason",
+          "receivedAt",
+          "userIdHash",
+        ].sort(),
+      );
+      for (const issue of doc.issues) {
+        expect(Object.keys(issue).sort()).toEqual(["code", "path"]);
+      }
+    }
+    expect(docs.map((d) => d.userIdHash)).toContain(hashUserId(GOLDEN_USER));
+  });
+
   it("dedupes across requests: a client retry of the same batch stores nothing new", async () => {
     await post(input);
     const retry = await post(input);

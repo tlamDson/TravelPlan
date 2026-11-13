@@ -87,10 +87,54 @@ describe("classifyQuarantine", () => {
     ]);
   });
 
-  it("keeps each issue's zod code and message", () => {
+  it("keeps only each issue's path and zod code, never zod's message", () => {
     const out = classify({ ...valid, eventId: "x" });
+    expect(out.issues).toEqual([{ path: "eventId", code: "invalid_format" }]);
+  });
+
+  it("does not echo an unknown key name (zod puts it in the message)", () => {
+    const out = classify({ ...valid, "someone@example.com": 1 });
+    expect(out.reason).toBe("unknown_field");
+    expect(out.issues).toEqual([{ path: "", code: "unrecognized_keys" }]);
+    expect(JSON.stringify(out)).not.toContain("someone@example.com");
+  });
+
+  it("does not echo an unknown property key", () => {
+    const out = classify({
+      ...valid,
+      properties: { tripId: "t-1", "user_2abcDEF": "x" },
+    });
     expect(out.issues).toEqual([
-      { path: "eventId", code: "invalid_format", message: "Invalid UUID" },
+      { path: "properties", code: "unrecognized_keys" },
+    ]);
+    expect(JSON.stringify(out)).not.toContain("user_2abcDEF");
+  });
+
+  it("masks path segments that are not catalog field names", () => {
+    const issues = [
+      {
+        code: "custom" as const,
+        path: ["properties", "bob@example.com", 3, "tripId"],
+        message: "bob@example.com is bad",
+        input: undefined,
+      },
+    ];
+    expect(classifyQuarantine({}, issues).issues).toEqual([
+      { path: "properties.*.*.tripId", code: "custom" },
+    ]);
+  });
+
+  it("masks an issue code that is not code-shaped", () => {
+    const issues = [
+      {
+        code: "bob@example.com" as "custom",
+        path: ["name"],
+        message: "bad",
+        input: undefined,
+      },
+    ];
+    expect(classifyQuarantine({}, issues).issues).toEqual([
+      { path: "name", code: "unknown" },
     ]);
   });
 

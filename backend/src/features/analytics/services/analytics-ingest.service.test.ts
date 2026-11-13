@@ -171,6 +171,46 @@ describe("PII — nothing raw reaches the analytics collections", () => {
     });
   });
 
+  it("keeps a quarantined eventId only when it is a UUID and a name only when it is in the catalog", async () => {
+    await ingestTrustedEvents(
+      [{ ...input.events[0], eventId: "0912345678", name: "john_doe" }],
+      NOW,
+    );
+    const [doc] = quarantined();
+    expect(doc).toMatchObject({ eventId: null, eventName: null });
+    const text = JSON.stringify(doc);
+    expect(text).not.toContain("0912345678");
+    expect(text).not.toContain("john_doe");
+  });
+
+  it("stores no client-supplied string in quarantine issues: unknown keys and bad values are not echoed", async () => {
+    const pii = ["someone@example.com", "user_2abcDEF", "Bob Smith", "+84912"];
+    await ingestTrustedEvents(
+      [
+        {
+          ...input.events[0],
+          "someone@example.com": "Bob Smith",
+          source: "+84912",
+          sessionId: { "user_2abcDEF": "Bob Smith" },
+          properties: { "user_2abcDEF": "someone@example.com" },
+        },
+        { ...input.events[0], name: "Bob Smith" },
+        { "someone@example.com": { "user_2abcDEF": ["+84912"] } },
+        "Bob Smith",
+      ],
+      NOW,
+    );
+    const docs = quarantined();
+    expect(docs).toHaveLength(4);
+    for (const doc of docs) {
+      const text = JSON.stringify(doc);
+      for (const needle of pii) expect(text).not.toContain(needle);
+      for (const issue of doc.issues) {
+        expect(Object.keys(issue).sort()).toEqual(["code", "path"]);
+      }
+    }
+  });
+
   it("handles a non-object event", async () => {
     await ingestTrustedEvents([null, 42], NOW);
     expect(quarantined().map((d) => d.eventName)).toEqual([null, null]);
