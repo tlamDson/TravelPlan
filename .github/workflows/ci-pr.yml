@@ -9,9 +9,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job phụ, KHÔNG phải check bắt buộc — chỉ để biết PR có đụng backend không,
-  # dùng để gate step build Docker image cho rẻ. KHÔNG dùng để gate job "ci"/"quality"
-  # (required check phải luôn chạy, xem .claude/rules/workflow.md).
+  # Auxiliary job, NOT a required check — only tells us whether the PR touches the backend,
+  # and is used to gate the Docker image build step cheaply. Do NOT use it to gate the "ci"/"quality" jobs
+  # (a required check must always run; see .claude/rules/workflow.md).
   changes:
     name: Detect changed paths
     runs-on: ubuntu-latest
@@ -133,7 +133,7 @@ jobs:
             frontend/web/coverage/
           retention-days: 7
 
-  # Tách job riêng để không đổi tên check bắt buộc "Lint + Unit Tests"
+  # Separate job so the required check name "Lint + Unit Tests" is not changed
   quality:
     name: Typecheck + Build
     runs-on: ubuntu-latest
@@ -167,8 +167,8 @@ jobs:
           VITE_API_URL: http://localhost:3000/api
           VITE_MAPBOX_ACCESS_TOKEN: pk.dummy_token_for_ci
 
-  # Python analytics/abkit (B2 plan, PR 9). Tên job là tên required check:
-  # không đổi tên, không đặt `if:` cấp job — luôn chạy (nhanh: chỉ core + dev).
+  # Python analytics/abkit (B2 plan, PR 9). The job name is the required check name:
+  # do not rename it, do not put `if:` at job level — it always runs (fast: core + dev only).
   abkit:
     name: abkit Lint + Test
     runs-on: ubuntu-latest
@@ -231,15 +231,15 @@ jobs:
         working-directory: analytics/simkit
         run: python -m pytest -q
 
-  # Image này là thứ được deploy lên Railway — hỏng ở đây thì hỏng cả deploy
+  # This image is what gets deployed to Railway — if it breaks here, the whole deploy breaks
   docker:
     name: Backend Docker Build
     runs-on: ubuntu-latest
     needs: changes
-    # KHÔNG đặt `if:` ở cấp job và KHÔNG đổi tên job: đây là required status check.
-    # Job phải luôn chạy và luôn kết thúc Success, chỉ các step nặng mới gate bằng `if:`.
+    # Do NOT put `if:` at job level and do NOT rename the job: it is a required status check.
+    # The job must always run and always finish Success; only the heavy steps are gated with `if:`.
     env:
-      # PR release develop → main luôn build thật, không tin vào filter
+      # A develop → main release PR always does a real build, without trusting the filter
       SHOULD_BUILD: ${{ needs.changes.outputs.backend == 'true' || github.base_ref == 'main' }}
 
     steps:
@@ -263,11 +263,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Bỏ qua build image
+      - name: Skip image build
         if: env.SHOULD_BUILD != 'true'
-        run: echo "PR không đụng backend, packages/shared hay manifest gốc — bỏ qua build image."
+        run: echo "PR does not touch backend, packages/shared or the root manifests — skipping image build."
 
-  # Không phải required check — báo cáo lỗ hổng, không chặn merge.
+  # Not a required check — reports vulnerabilities, does not block merge.
   security:
     name: Security Scan
     runs-on: ubuntu-latest
@@ -295,13 +295,13 @@ jobs:
         with:
           sarif_file: "trivy-results.sarif"
 
-  # Không phải required check — KHÔNG thêm job này vào branch protection.
-  # Đỏ ở đây không chặn merge; xem .claude/rules/workflow.md mục required
-  # check trước khi cân nhắc thay đổi điều đó.
+  # Not a required check — do NOT add this job to branch protection.
+  # A red result here does not block merge; see the required-check section of
+  # .claude/rules/workflow.md before considering changing that.
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
-    # Secrets không khả dụng cho fork PR — skip thay vì fail khó hiểu.
+    # Secrets are not available to fork PRs — skip instead of failing confusingly.
     if: github.event.pull_request.head.repo.full_name == github.repository
 
     services:
