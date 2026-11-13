@@ -105,12 +105,12 @@ def run_specs(panel_path: Path = ACTIONS_PANEL_CSV) -> dict[str, SpecResult]:
 def _notes(result: SpecResult) -> str:
     s, att = result.spec, result.att
     period = "quarters" if s.period_months == 3 else f"{s.period_months}-month periods"
+    window = "every row" if result.study is None else f"window [-{s.pre}, {s.post}], ref -1"
     text = (
         f"{s.about}; GitHub Actions adoption vs PR merge time, PR 18 panel (400 repos, seed "
-        f"18); outcome {s.outcome} per repo and period, {period}, window "
-        f"[-{s.pre}, {s.post}], ref -1, controls {s.controls}, weighted={s.weighted}; "
-        f"{att.n_treated} adopters, {att.n_control} controls; repo-clustered CR1 SE "
-        f"{att.se:.4g}, normal 95% CI"
+        f"18); outcome {s.outcome} per repo and period, {period}, {window}, controls "
+        f"{s.controls}, weighted={s.weighted}; {att.n_treated} adopters, {att.n_control} "
+        f"controls; repo-clustered CR1 SE {att.se:.4g}, normal 95% CI"
     )
     if result.study is not None:
         st = result.study
