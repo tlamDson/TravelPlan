@@ -52,6 +52,18 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   it stopped. `abkit decide kappa` reports Cohen's kappa of those labels against the memo
   (SRM-blocked = investigate) and against a "p < 0.05 only" baseline; `--record` appends
   the two M11 rows. M11 waits for gate G-B2-3 (Lam's labels).
+- `abkit.actions` (PR 18, data for the DiD of PR 19, question G-B2-1): does PR merge time
+  change when a repository starts using GitHub Actions? `abkit actions-panel --cache DIR`
+  reads public data through `gh api`, GET only, with every answer cached under `DIR` (keep
+  it outside git, e.g. `D:/data/b2/gh-cache`; a rerun resumes from it and a rate limit
+  waits for its reset). Frame: non-fork repositories with 100–2000 stars, the first 300
+  search results per creation month 2014-01..2017-12; 400 of them drawn with seed 18.
+  Adoption is the oldest default-branch commit touching `.github/workflows`. The compact
+  panel in `analytics/data/actions_panel/` has one row per repo and month 2018-01..2022-12:
+  merged non-bot PRs created that month, median and mean `log1p` hours to merge, months
+  since adoption and `treated`; `repos.csv` lists every sampled repo (also the missing ones)
+  and `meta.json` the seed, queries and counts. Search ranks by stars inside the band, so
+  the frame leans to the upper end of it.
 - `abkit.runs`: the `analytics/runs/runs.csv` ledger. Every number quoted in a
   README must come from a row in that file.
 - `abkit.bench`: runs a named benchmark and appends its result to `runs.csv`.
