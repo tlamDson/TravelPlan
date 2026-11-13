@@ -56,6 +56,15 @@ describe("track()", () => {
     expect([first.userId, second.userId]).toEqual([null, "user_1"]);
   });
 
+  it("sends nothing for an event carrying a property outside the catalog", () => {
+    const widened = { tripId: "t1", email: "jane@example.com" };
+    track("trip_viewed", widened);
+
+    window.dispatchEvent(new Event("pagehide"));
+
+    expect(sendBeacon).not.toHaveBeenCalled();
+  });
+
   it("does not listen for page hide before anything is tracked", () => {
     window.dispatchEvent(new Event("pagehide"));
 
