@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "welch/one-sided-greater",
+  "method": "welch_ttest",
+  "description": "250 vs 250 users, lift +0.2, one-sided test that treatment is greater.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "alternative": "greater"
+  },
+  "expected": {
+    "estimate": 0.16665919999999979,
+    "statistic": 1.86316699073976,
+    "df": 496.61595364113003,
+    "p_value": 0.03151443276526537
+  },
+  "decision": "reject_null",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "scipy",
+    "version": "1.14.1",
+    "call": "scipy.stats.ttest_ind(treatment, control, equal_var=False, alternative=alternative); estimate = mean(treatment) - mean(control); CI = confidence_interval(1 - alpha)",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13",
+    "seed": 104
+  }
+}

@@ -4,8 +4,8 @@ Every case has a known answer that **abkit did not compute**, so the engine can
 never vouch for itself (B2 plan, "Golden dataset").
 
 ```bash
-analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1            # report, exit 1 on FAIL/ERROR
-analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1 --strict   # MISSING fails too
+analytics/.venv/Scripts/python -m abkit golden                       # latest (v2); exit 1 on FAIL/ERROR
+analytics/.venv/Scripts/python -m abkit golden analytics/golden/v2 --strict   # MISSING fails too
 ```
 
 Statuses: `PASS` (every expected key within tolerance, decision equal),
@@ -60,7 +60,7 @@ control. Decisions: `reject_null` when `p_value < alpha`, else `fail_to_reject`.
 
 The exact formula behind each case is in its `source.call`.
 
-## G-ref (`v1`, 22 cases)
+## G-ref (`v2` latest, 22 cases; `v1` kept)
 
 Frozen by `abkit.golden.freeze_ref` from the seeded table in
 `abkit/golden/ref_cases.py`; the numbers come from `abkit/golden/ref_truth.py`,
@@ -70,8 +70,25 @@ cases `rel 1e-6`. R cross-checks these again in PR 23.
 
 ```bash
 analytics/.venv/Scripts/python -m pip install -e "analytics/abkit[dev,golden]"   # adds statsmodels
-analytics/.venv/Scripts/python -m abkit.golden.freeze_ref analytics/golden/v2    # refuses to overwrite without --force
+analytics/.venv/Scripts/python -m abkit.golden.freeze_ref analytics/golden/v3    # refuses to overwrite without --force
 ```
+
+### v2 (B2 plan, PR 10)
+
+`v2` re-froze three power cases. All other cases are byte-identical to `v1`,
+and `tests/test_golden_reference.py` checks that.
+
+- `power/ttest-mde` and `power/ttest-sample-size`: the truth is now a tight
+  `scipy.optimize.brentq` root of statsmodels' `TTestIndPower().power`.
+  `solve_power` stops at its `xtol=1e-5`, so v1's MDE was outside its own
+  `rel 1e-6` tolerance, and its power was below the 0.8 target.
+- `power/ttest-power`: the tolerance is now `rel 1e-7`. statsmodels computes
+  the noncentral t with cdflib `nctdtr`, which is about 1e-8 away from scipy's
+  boost `nct` and from quadrature. v1's `rel 1e-9` was stricter than its own
+  reference.
+
+`abkit golden analytics/golden/v1` still fails those two cases on purpose
+(`tests/test_golden_core_stats.py` pins this).
 
 `tests/test_golden_reference.py` regenerates the data and recomputes the truth
 of every committed case; the statsmodels cases skip where the `[golden]` extra

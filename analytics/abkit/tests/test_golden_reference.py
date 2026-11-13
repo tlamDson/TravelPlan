@@ -75,7 +75,9 @@ def test_freezer_writes_to_the_latest_version_by_default() -> None:
 
 
 def _files(root: Path) -> dict[str, bytes]:
-    return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+    files = (p for p in root.rglob("*") if p.is_file())
+    # Compare content, not the checkout's line endings (core.autocrlf on Windows).
+    return {p.relative_to(root).as_posix(): p.read_bytes().replace(b"\r\n", b"\n") for p in files}
 
 
 def test_v1_is_kept_and_v2_changes_only_the_refrozen_cases() -> None:

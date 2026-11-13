@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "welch/aa-null",
+  "method": "welch_ttest",
+  "description": "A/A: 400 vs 400 users from the same N(0, 1).",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "estimate": 0.011917000000000004,
+    "statistic": 0.16983181620935464,
+    "df": 797.9801517013691,
+    "p_value": 0.8651854497366381,
+    "ci_low": -0.12582144972534673,
+    "ci_high": 0.14965544972534675
+  },
+  "decision": "fail_to_reject",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "scipy",
+    "version": "1.14.1",
+    "call": "scipy.stats.ttest_ind(treatment, control, equal_var=False, alternative=alternative); estimate = mean(treatment) - mean(control); CI = confidence_interval(1 - alpha)",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13",
+    "seed": 103
+  }
+}
