@@ -3,16 +3,30 @@ requires = ["setuptools==75.6.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "abkit"
+# The PyPI name "abkit" belongs to someone else. The import name stays `abkit`.
+name = "abkit-experiments"
 version = "0.1.0"
 description = "Experimentation toolkit for TravelPlan: assignment, A/B statistics, simulation checks."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+]
 dependencies = [
   "numpy==2.1.3",
   "scipy==1.14.1",
 ]
+
+[project.urls]
+Documentation = "https://github.com/tlamDson/TravelPlan/tree/main/analytics/abkit/docs"
+Source = "https://github.com/tlamDson/TravelPlan/tree/main/analytics/abkit"
+Issues = "https://github.com/tlamDson/TravelPlan/issues"
 
 [project.optional-dependencies]
 # The budget LP of abkit.uplift (PuLP ships the CBC solver in its wheel).
@@ -36,6 +50,15 @@ dev = [
   "ruff==0.8.4",
   "statsmodels==0.14.4",
 ]
+# The docs site (mkdocs.yml); `mkdocs build --strict`.
+docs = [
+  "mkdocs==1.6.1",
+]
+# Build and check the distribution (the tag-triggered release workflow).
+release = [
+  "build==1.2.2.post1",
+  "twine==6.0.1",
+]
 # Only to (re)freeze the G-ref golden cases; CI and abkit itself never need it.
 golden = [
   "statsmodels==0.14.4",
@@ -44,6 +67,7 @@ golden = [
 [project.scripts]
 abkit = "abkit.cli:main"
 abkit-bench = "abkit.bench:main"
+abkit-results = "abkit.readme_results:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

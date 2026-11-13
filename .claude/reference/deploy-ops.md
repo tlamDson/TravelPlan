@@ -55,3 +55,7 @@ BullBoard `/admin/queues` phải có Basic Auth nếu bật ngoài dev. Containe
 ## Biến môi trường frontend
 
 `frontend/web/src/config/env.ts` đọc `VITE_MAPBOX_ACCESS_TOKEN` (ưu tiên) hoặc `VITE_MAPBOX_TOKEN`. `VITE_*` không có schema máy đọc được như envalid — kiểm thủ công khi thêm biến.
+
+## Phát hành abkit lên PyPI
+
+`.github/workflows/release-abkit.yml` chạy khi push tag `abkit-v<version>` (phải khớp `version` trong `analytics/abkit/pyproject.toml` và `__version__`). Gói PyPI là `abkit-experiments` (tên `abkit` trên PyPI của người khác; import vẫn là `abkit`). Publish bằng Trusted Publishing, không token: job `publish` chạy ở GitHub environment `pypi` và là job duy nhất có `id-token: write`. Việc của chủ repo, một lần: thêm pending trusted publisher trên PyPI (project `abkit-experiments`, repo `tlamDson/TravelPlan`, workflow `release-abkit.yml`, environment `pypi`) và tạo environment `pypi`. Bảng kết quả trong README và `analytics/abkit/docs/results.md` sinh từ `runs.csv`: `python -m abkit.readme_results --write`.
