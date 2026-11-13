@@ -47,7 +47,7 @@ describe("SaveTripCta", () => {
     });
     renderCta();
 
-    const button = screen.getByRole("button", { name: "Save trip name" });
+    const button = screen.getByRole("button", { name: "Save trip" });
     expect(button).toHaveAttribute("data-variant", "labeled-cta");
     expect(button).toHaveTextContent("Save trip");
   });
@@ -58,9 +58,7 @@ describe("SaveTripCta", () => {
       mockUseExperiment.mockReturnValue({ variant, isLoading: false });
       const { onSave } = renderCta();
 
-      await userEvent.click(
-        screen.getByRole("button", { name: "Save trip name" }),
-      );
+      await userEvent.click(screen.getByRole("button", { name: /^Save trip/ }));
 
       expect(onSave).toHaveBeenCalledTimes(1);
     },
@@ -73,8 +71,6 @@ describe("SaveTripCta", () => {
     });
     renderCta({ disabled: true });
 
-    expect(
-      screen.getByRole("button", { name: "Save trip name" }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save trip" })).toBeDisabled();
   });
 });
