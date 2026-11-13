@@ -70,7 +70,7 @@ const CORRECTED: Record<string, string> = {
   "dash.planNew": "Lên kế hoạch chuyến đi mới",
   "dash.activeNow": "Đang diễn ra",
   "dash.avgTravelers": "Số người đi trung bình",
-  "trip.nearbySuggestionsSummary": "Gợi ý gần đây ({count} gợi ý)",
+  "trip.nearbySuggestionsSummary": "Gợi ý lân cận ({count} địa điểm)",
   "trip.lifecycle_completed": "Đã hoàn thành",
   "reliability.pageSubtitle":
     "SLO, ngân sách lỗi và các tín hiệu vàng cho quy trình tạo chuyến đi",
