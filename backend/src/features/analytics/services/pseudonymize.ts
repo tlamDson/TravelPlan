@@ -29,3 +29,14 @@ export function hashUserId(userId: string): string {
     .update(userId)
     .digest("hex");
 }
+
+/**
+ * Same keyed HMAC for any other client-chosen id (sessionId, tripId,
+ * jobId). The field name is part of the input, so equal text in two
+ * different fields does not hash to the same value.
+ */
+export function hashField(field: string, value: string): string {
+  return createHmac("sha256", assertAnalyticsHashSecret())
+    .update(`${field}:${value}`)
+    .digest("hex");
+}

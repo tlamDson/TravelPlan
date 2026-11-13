@@ -4,7 +4,8 @@ import type { AnalyticsEvent } from "@travelplan/shared";
 /**
  * One accepted analytics event (B2 plan, PR 2). Only events that passed
  * `analyticsEventSchema` land here; `properties` is already strict-validated
- * per event name, so it is stored as Mixed. The unique `eventId` index is
+ * per event name, so it is stored as Mixed. userId, sessionId and
+ * free-string properties are stored as keyed hashes, never as sent. The unique `eventId` index is
  * what makes client retries and concurrent duplicates idempotent.
  */
 export interface IAnalyticsEvent extends Omit<
@@ -22,6 +23,7 @@ const AnalyticsEventSchema = new Schema<IAnalyticsEvent>(
     schemaVersion: { type: Number, required: true },
     name: { type: String, required: true },
     occurredAt: { type: Date, required: true },
+    /** Keyed hash, like every free-string id (pseudonymize-event.ts). */
     sessionId: { type: String, required: true },
     /** HMAC of the Clerk userId (services/pseudonymize.ts), never raw. */
     userId: { type: String, default: null },

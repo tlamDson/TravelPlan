@@ -11,6 +11,7 @@ import { analyticsEventRepository } from "../repositories/analytics-event.reposi
 import { analyticsQuarantineRepository } from "../repositories/analytics-quarantine.repository";
 import { clientPolicyViolation } from "./client-event-policy";
 import { hashUserId } from "./pseudonymize";
+import { pseudonymizeEvent } from "./pseudonymize-event";
 import { classifyQuarantine } from "./quarantine-reason";
 
 type Violation = ReturnType<typeof classifyQuarantine>;
@@ -94,7 +95,7 @@ async function ingest(
     }
     fresh.set(event.eventId, {
       ...event,
-      userId: event.userId === null ? null : hashUserId(event.userId),
+      ...pseudonymizeEvent(event),
       occurredAt: new Date(event.occurredAt),
       receivedAt: now,
     });
