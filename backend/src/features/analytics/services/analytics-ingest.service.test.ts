@@ -123,13 +123,60 @@ describe("PII — nothing raw reaches the analytics collections", () => {
     const event = input.events[0];
     await ingestTrustedEvents([event], NOW);
     const doc = stored.get(event.eventId)!;
-    expect(doc).toEqual({
-      ...event,
+    expect(doc).toMatchObject({
+      eventId: event.eventId,
+      name: event.name,
+      source: event.source,
+      schemaVersion: event.schemaVersion,
       userId: hash(event.userId),
       occurredAt: new Date(event.occurredAt),
       receivedAt: NOW,
     });
     expect(JSON.stringify(doc)).not.toContain(event.userId);
+  });
+
+  it("stores no client-chosen free string of an accepted event: sessionId and id properties are hashed", async () => {
+    const pii = ["someone@example.com", "0912345678", "Bob Smith"];
+    const base = {
+      ...input.events[0],
+      userId: null,
+      sessionId: "someone@example.com",
+    };
+    const events = [
+      {
+        ...base,
+        eventId: "11111111-1111-4111-8111-111111111111",
+        name: "trip_viewed",
+        properties: { tripId: "Bob Smith" },
+      },
+      {
+        ...base,
+        eventId: "22222222-2222-4222-8222-222222222222",
+        name: "trip_generation_requested",
+        properties: {
+          jobId: "0912345678",
+          durationDays: 3,
+          destinationCount: 2,
+        },
+      },
+    ];
+    const result = await ingestClientEvents(events, null, NOW);
+    expect(result).toMatchObject({ accepted: 2, quarantined: 0 });
+    const docs = [...stored.values()];
+    const text = JSON.stringify(docs);
+    for (const needle of pii) expect(text).not.toContain(needle);
+    expect(docs[0]).toMatchObject({
+      sessionId: hash("sessionId:someone@example.com"),
+      properties: { tripId: hash("tripId:Bob Smith") },
+    });
+    expect(docs[1]).toMatchObject({
+      sessionId: hash("sessionId:someone@example.com"),
+      properties: {
+        jobId: hash("jobId:0912345678"),
+        durationDays: 3,
+        destinationCount: 2,
+      },
+    });
   });
 
   it("keeps an anonymous userId as null", async () => {

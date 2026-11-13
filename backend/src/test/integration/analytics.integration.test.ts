@@ -125,8 +125,40 @@ describe("POST /api/analytics/events — flag on", () => {
     expect(doc?.occurredAt.toISOString()).toBe(
       new Date(event.occurredAt).toISOString(),
     );
-    expect(doc?.properties).toEqual(event.properties);
+    expect(Object.keys(doc?.properties ?? {}).sort()).toEqual(
+      Object.keys(event.properties).sort(),
+    );
     expect(doc?.receivedAt).toBeInstanceOf(Date);
+  });
+
+  it("persists no client-chosen free string of an accepted event: sessionId and id properties are stored hashed", async () => {
+    const event = {
+      ...input.events[0],
+      userId: null,
+      sessionId: "someone@example.com",
+      name: "trip_generation_completed",
+      properties: {
+        jobId: "0912345678",
+        tripId: "Bob Smith",
+        outcome: "completed",
+        durationMs: 1200,
+      },
+    };
+    const res = await post({ events: [event] }, null);
+    expect(res.body).toMatchObject({ accepted: 1, quarantined: 0 });
+    const doc = await AnalyticsEvent.findOne({ eventId: event.eventId }).lean();
+    const text = JSON.stringify(doc);
+    for (const raw of ["someone@example.com", "0912345678", "Bob Smith"]) {
+      expect(text).not.toContain(raw);
+    }
+    const HEX = /^[0-9a-f]{64}$/;
+    expect(doc?.sessionId).toMatch(HEX);
+    expect(doc?.properties).toEqual({
+      jobId: expect.stringMatching(HEX),
+      tripId: expect.stringMatching(HEX),
+      outcome: "completed",
+      durationMs: 1200,
+    });
   });
 
   it("persists no client-supplied text for a quarantined event: only reason, issue path/code, safe ids and the hashed userId", async () => {
