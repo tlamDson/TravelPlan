@@ -15,7 +15,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# The budget LP of abkit.uplift (PuLP ships the CBC solver in its wheel).
+uplift = [
+  "pulp==2.9.0",
+]
+# dev includes uplift so the CI job (core + dev) runs the LP tests.
 dev = [
+  "pulp==2.9.0",
   "pytest==8.3.4",
   "ruff==0.8.4",
 ]

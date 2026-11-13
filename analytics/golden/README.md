@@ -46,17 +46,18 @@ column to a NumPy array (float64 when every cell is numeric, else str) or is
 `None`. `variant` is `control` / `treatment`; estimates are treatment minus
 control. Decisions: `reject_null` when `p_value < alpha`, else `fail_to_reject`.
 
-| Method                    | Data columns                                             | Params                                                               | Outputs                                                                                           | Decision         |
-| ------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------- |
-| `welch_ttest`             | `variant`, `value`                                       | `alpha`, `alternative`                                               | `estimate`, `statistic`, `df`, `p_value`, `ci_low`, `ci_high` (CI two-sided only)                 | yes              |
-| `delta_ratio`             | `variant`, `numerator`, `denominator` (one row per user) | `alpha`                                                              | `ratio_control`, `ratio_treatment`, `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high` | yes              |
-| `cuped`                   | `variant`, `value`, `covariate`                          | `alpha`, `alternative`                                               | `theta`, `variance_reduction`, then the Welch outputs on the adjusted values                      | yes              |
-| `srm_chisquare`           | `variant`, `count`, `expected_share`                     | `threshold`                                                          | `statistic`, `p_value`, `dof`                                                                     | `srm` / `no_srm` |
-| `power_ttest_ind`         | —                                                        | `effect_size`, `nobs1`, `ratio`, `alpha`, `alternative`              | `power`                                                                                           | —                |
-| `sample_size_ttest_ind`   | —                                                        | `effect_size`, `power`, `ratio`, `alpha`, `alternative`              | `nobs1` (not rounded up)                                                                          | —                |
-| `mde_ttest_ind`           | —                                                        | `nobs1`, `power`, `ratio`, `alpha`, `alternative`                    | `effect_size` (Cohen's d)                                                                         | —                |
-| `sample_size_proportions` | —                                                        | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                | —                |
-| `bh_fdr`                  | `hypothesis`, `p_value`                                  | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                        | —                |
+| Method                    | Data columns                                                      | Params                                                               | Outputs                                                                                           | Decision         |
+| ------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------- |
+| `welch_ttest`             | `variant`, `value`                                                | `alpha`, `alternative`                                               | `estimate`, `statistic`, `df`, `p_value`, `ci_low`, `ci_high` (CI two-sided only)                 | yes              |
+| `delta_ratio`             | `variant`, `numerator`, `denominator` (one row per user)          | `alpha`                                                              | `ratio_control`, `ratio_treatment`, `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high` | yes              |
+| `cuped`                   | `variant`, `value`, `covariate`                                   | `alpha`, `alternative`                                               | `theta`, `variance_reduction`, then the Welch outputs on the adjusted values                      | yes              |
+| `srm_chisquare`           | `variant`, `count`, `expected_share`                              | `threshold`                                                          | `statistic`, `p_value`, `dof`                                                                     | `srm` / `no_srm` |
+| `power_ttest_ind`         | —                                                                 | `effect_size`, `nobs1`, `ratio`, `alpha`, `alternative`              | `power`                                                                                           | —                |
+| `sample_size_ttest_ind`   | —                                                                 | `effect_size`, `power`, `ratio`, `alpha`, `alternative`              | `nobs1` (not rounded up)                                                                          | —                |
+| `mde_ttest_ind`           | —                                                                 | `nobs1`, `power`, `ratio`, `alpha`, `alternative`                    | `effect_size` (Cohen's d)                                                                         | —                |
+| `sample_size_proportions` | —                                                                 | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                | —                |
+| `bh_fdr`                  | `hypothesis`, `p_value`                                           | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                        | —                |
+| `uplift_arm_summary`      | `variant`, `n`, `visit`, `conversion` (one row of totals per arm) | —                                                                    | `n_total`, `treatment_ratio`, `visit_rate`, `conversion_rate`, `ate_*`, `relative_uplift_*`       | —                |
 
 The exact formula behind each case is in its `source.call`.
 
@@ -93,3 +94,24 @@ and `tests/test_golden_reference.py` checks that.
 `tests/test_golden_reference.py` regenerates the data and recomputes the truth
 of every committed case; the statsmodels cases skip where the `[golden]` extra
 is not installed (CI installs core + dev only).
+
+## G-public Criteo (`v2/criteo/`, B2 plan, PR 20)
+
+`criteo/v21-key-figures` holds the key figures that the
+[Criteo AI Lab page](https://ailab.criteo.com/criteo-uplift-prediction-dataset/)
+prints for the un-biased Criteo Uplift file (v2.1): 13,979,592 rows, visit rate
+.046992, conversion rate .00292 and treatment ratio .85. Each tolerance is half a
+unit of the last printed digit. Table 1 of
+[Diemert et al. (2021)](https://arxiv.org/abs/2111.10106) prints the same figures
+(4.70% / 0.29%). We checked every figure against the raw file before freezing.
+Table 1 also prints a "Relative Avg. Uplift" of 68.7% (visit) and 37.2%
+(conversion). The file gives 27.1% and 59.4% as (treated − control) / control,
+so the case does not use them.
+
+The dataset is CC BY-NC-SA and is not republished here, so `data.csv` has only
+the two arm totals. To re-freeze from the raw file (the sha256 is checked; the
+file is Criteo's own copy on Hugging Face, `abkit.criteo.CRITEO_MIRROR_URL`):
+
+```bash
+analytics/.venv/Scripts/python -m abkit.golden.freeze_criteo D:/data/b2/criteo/criteo-research-uplift-v2.1.csv.gz --root analytics/golden/v3
+```
