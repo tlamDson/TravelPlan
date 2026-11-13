@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 from fake_ingest import FakeIngest
 
+from simkit.driver import run as run_module
 from simkit.driver.client import Tally, send_script
 from simkit.driver.exported import read_export
 from simkit.driver.reconcile import reconcile
@@ -36,6 +37,7 @@ def loaded(prepared, tmp_path_factory):
     tally = Tally()
     for script in prepared.scripts:
         send_script(lambda b: (200, fake.ingest(list(b))), script, tally)
+    tally.spawned_users = tally.peak_active = 1  # one in-process "Locust user"
     out = tmp_path_factory.mktemp("export")
     fake.export(out)
     return fake, tally, read_export(out)
@@ -67,6 +69,8 @@ def test_through_a_fake_ingest_the_counts_reconcile(prepared, loaded):
         stored_quarantine=len(fake.quarantine),
         accepted_ids=prepared.accepted_ids,
         exported_ids=[r["eventId"] for r in rows],
+        vus=1,
+        scripts=len(prepared.scripts),
     )
     assert result.ok, result.failures()
     assert tally.accepted == prepared.sent - 40 - 4
@@ -101,6 +105,8 @@ def test_run_records_are_simulated_rows_of_pr_16(prepared, loaded):
         stored_quarantine=len(fake.quarantine),
         accepted_ids=prepared.accepted_ids,
         exported_ids=[r["eventId"] for r in rows],
+        vus=1,
+        scripts=len(prepared.scripts),
     )
     records = to_run_records(
         prepared,
@@ -122,6 +128,8 @@ def test_run_records_are_simulated_rows_of_pr_16(prepared, loaded):
     assert by_metric["sim_driver_readout_estimate_abs_diff"].value == 0.0
     assert by_metric["sim_driver_ingest_throughput"].value == pytest.approx(prepared.sent / 2.0)
     assert by_metric["sim_driver_ingest_throughput"].unit == "events/s"
+    assert by_metric["sim_driver_peak_concurrent_vus"].value == 1
+    assert by_metric["sim_driver_peak_concurrent_vus"].unit == "users"
     assert all("virtual users" in r.notes and "locust_vus=50" in r.notes for r in records)
 
 
@@ -137,3 +145,58 @@ def test_cli_refuses_a_remote_database_before_starting_anything():
     with pytest.raises(SystemExit) as exc:
         main(["--mongo-uri", "mongodb+srv://u:p@cluster0.example.net/travelplan_sim"])
     assert exc.value.code == 2
+
+
+def _fake_load(*, lose_event=False, peak=None, flip_variant=False):
+    """Stands in for the live stack in main(): FakeIngest instead of backend + Locust + Mongo."""
+
+    def load(args, prepared, work):
+        fake = FakeIngest()
+        tally = Tally()
+        for script in prepared.scripts:
+            send_script(lambda b: (200, fake.ingest(list(b))), script, tally)
+        tally.spawned_users = args.vus
+        tally.peak_active = min(args.vus, len(prepared.scripts)) if peak is None else peak
+        if lose_event:
+            fake.stored.pop(next(iter(fake.stored)))
+        if flip_variant:  # every count still agrees; only the readout table changes
+            for event in fake.stored.values():
+                if event["name"] == "experiment_exposure":
+                    props = event["properties"]
+                    other = "control" if props["variant"] == "treatment" else "treatment"
+                    event["properties"] = {**props, "variant": other}
+        fake.export(work / "export")
+        counts = (len(fake.stored), len(fake.quarantine))
+        return tally, 1.0, counts, read_export(work / "export")
+
+    return load
+
+
+MAIN_ARGS = ["--users", "60", "--days", "10", "--vus", "4", "--duplicate", "5", "--dry-run"]
+
+
+def test_main_exits_0_only_when_every_check_passes(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(run_module, "_load", _fake_load())
+    assert run_module.main([*MAIN_ARGS, "--work-dir", str(tmp_path)]) == 0
+    assert "FAIL" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("fake", "failed"),
+    [
+        (_fake_load(lose_event=True), "stored events = accepted"),
+        (_fake_load(peak=2), "peak concurrent virtual users = min(vus, scripts)"),
+        (_fake_load(flip_variant=True), "export table = simulated-events table"),
+    ],
+)
+def test_main_exits_1_when_a_check_fails(monkeypatch, tmp_path, capsys, fake, failed):
+    monkeypatch.setattr(run_module, "_load", fake)
+    assert run_module.main([*MAIN_ARGS, "--work-dir", str(tmp_path)]) == 1
+    assert f"FAIL {failed}" in capsys.readouterr().out
+
+
+def test_main_does_not_append_rows_on_a_dry_run(monkeypatch, tmp_path):
+    runs = tmp_path / "runs.csv"
+    monkeypatch.setattr(run_module, "_load", _fake_load())
+    run_module.main([*MAIN_ARGS, "--work-dir", str(tmp_path), "--runs-csv", str(runs)])
+    assert not runs.exists()

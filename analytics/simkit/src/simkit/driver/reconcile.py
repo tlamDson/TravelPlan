@@ -29,8 +29,15 @@ def reconcile(
     stored_quarantine: int,
     accepted_ids: Collection[str],
     exported_ids: Collection[str],
+    vus: int,
+    scripts: int,
 ) -> Reconciliation:
-    """``expected``: the fault manifest's ingest counts (``FaultResult.expected_ingest``)."""
+    """``expected``: the fault manifest's ingest counts (``FaultResult.expected_ingest``).
+
+    ``vus`` Locust users were asked for; every one must have spawned, and as many as there is
+    work for (``scripts``) must have been sending at the same moment. Without that a "1k VU"
+    run could finish its work with a few hundred users and still pass.
+    """
     return Reconciliation(
         {
             "received = sent": (sent, tally.received),
@@ -46,5 +53,10 @@ def reconcile(
             "exported rows = accepted": (tally.accepted, len(exported_ids)),
             "exported ids = accepted ids": (0, len(set(accepted_ids) ^ set(exported_ids))),
             "failed batches = 0": (0, tally.failed_batches),
+            "spawned locust users = vus": (vus, tally.spawned_users),
+            "peak concurrent virtual users = min(vus, scripts)": (
+                min(vus, scripts),
+                tally.peak_active,
+            ),
         }
     )

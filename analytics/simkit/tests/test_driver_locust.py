@@ -40,6 +40,14 @@ def test_locust_users_send_every_script_once_and_stop(tmp_path):
     assert tally.failed_batches == 0
 
 
+def test_every_locust_user_is_active_at_once_before_the_work_runs_out(tmp_path):
+    # 40+ scripts for 8 users: all 8 must be sending together, and Locust must report 8 spawned.
+    proc, tally, scripts, _ = _run(tmp_path, FakeIngest(), vus=8)
+    assert len(scripts) > 8
+    assert tally.spawned_users == 8
+    assert tally.peak_active == 8
+
+
 def test_a_5xx_is_retried_with_the_same_event_ids(tmp_path):
     fake = FakeIngest(fail_first=3)
     proc, tally, _, faulted = _run(tmp_path, fake, vus=2)

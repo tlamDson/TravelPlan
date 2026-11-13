@@ -91,6 +91,7 @@ def to_run_records(
         f"virtual users={prepared.users} (simulated) locust_vus={vus} days={prepared.days} "
         f"start={prepared.start.isoformat()} sent={prepared.sent} batches={tally.batches} "
         f"retries={tally.retries} failed_batches={tally.failed_batches} "
+        f"spawned_locust_users={tally.spawned_users} peak_concurrent={tally.peak_active} "
         f"experiment={prepared.experiment.definition.key} path=locust->POST /api/analytics/sim/"
         f"events->mongo->analytics:export->abkit"
     )
@@ -151,6 +152,16 @@ def to_run_records(
             notes,
         ),
     ]
+    rows.append(
+        (
+            "bench",
+            "sim_driver_peak_concurrent_vus",
+            tally.peak_active,
+            "users",
+            vus,
+            notes,
+        )
+    )
     if p95 is not None:
         rows.append(("bench", "sim_driver_batch_latency_p95", p95, "ms", tally.batches, notes))
     return [
@@ -240,6 +251,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         stored_quarantine=quarantined,
         accepted_ids=prepared.accepted_ids,
         exported_ids=[r["eventId"] for r in rows],
+        vus=args.vus,
+        scripts=len(prepared.scripts),
     )
     e2e = analyze(prepared, rows)
     for name, (expected, actual) in rec.checks.items():

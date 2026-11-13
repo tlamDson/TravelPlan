@@ -98,6 +98,14 @@ def test_tallies_merge_and_round_trip():
     assert Tally.from_dict(merged.to_dict()) == merged
 
 
+def test_merge_keeps_the_largest_concurrency_not_the_sum():
+    a = Tally(spawned_users=10, peak_active=7)
+    b = Tally(spawned_users=10, peak_active=9)
+    merged = a.merge(b)
+    assert (merged.spawned_users, merged.peak_active) == (10, 9)
+    assert Tally.from_dict(merged.to_dict()) == merged
+
+
 def test_latency_percentile():
     tally = Tally(latencies_ms=[float(i) for i in range(1, 101)])
     assert tally.latency_ms(0.95) == pytest.approx(95.05)
