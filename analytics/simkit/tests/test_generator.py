@@ -3,6 +3,7 @@ from datetime import date
 
 import pytest
 
+from simkit._common import parse_ts
 from simkit.catalog import replay_ingest
 from simkit.export import to_jsonl
 from simkit.generator import MAX_EVENTS_PER_SESSION, simulate
@@ -87,6 +88,8 @@ def test_completion_follows_its_request_in_the_same_session(sim) -> None:
             request = requested[props["jobId"]]
             assert request["sessionId"] == event["sessionId"]
             assert request["occurredAt"] < event["occurredAt"]
+            gap = parse_ts(event["occurredAt"]) - parse_ts(request["occurredAt"])
+            assert gap.total_seconds() * 1000 == pytest.approx(props["durationMs"], abs=1)
 
 
 def test_trip_actions_point_at_an_earlier_trip_of_the_same_user(sim) -> None:

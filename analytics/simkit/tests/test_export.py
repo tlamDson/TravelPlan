@@ -1,7 +1,8 @@
 import json
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from pathlib import Path
 
+import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
@@ -35,20 +36,25 @@ def test_parquet_has_typed_envelope_columns(tmp_path: Path, events) -> None:
     assert table.column_names == list(PARQUET_COLUMNS)
     assert table.num_rows == len(events)
     assert str(table.schema.field("occurredAt").type) == "timestamp[ms, tz=UTC]"
-    rows = table.to_pylist()
+    # Compare epoch milliseconds: converting tz-aware values to Python needs tzdata on Windows.
+    epoch_ms = table.column("occurredAt").cast(pa.int64()).to_pylist()
+    expected_ms = [
+        round(datetime.fromisoformat(e["occurredAt"].replace("Z", "+00:00")).timestamp() * 1000)
+        for e in events
+    ]
+    assert epoch_ms == expected_ms
+    rows = table.drop_columns(["occurredAt"]).to_pylist()
     first = events[0]
     assert rows[0]["eventId"] == first["eventId"]
     assert rows[0]["userId"] == first["userId"]
-    assert rows[0]["occurredAt"] == datetime.fromisoformat(
-        first["occurredAt"].replace("Z", "+00:00")
-    ).astimezone(UTC)
+    assert rows[0]["schemaVersion"] == 1
     assert json.loads(rows[0]["properties"]) == first["properties"]
 
 
 def test_parquet_keeps_anonymous_users_as_null(tmp_path: Path, events) -> None:
     path = tmp_path / "anon.parquet"
     write_parquet([{**events[0], "userId": None}], path)
-    assert pq.read_table(path).to_pylist()[0]["userId"] is None
+    assert pq.read_table(path, columns=["userId"]).to_pylist()[0]["userId"] is None
 
 
 def test_parquet_refuses_quarantined_events(tmp_path: Path, events) -> None:

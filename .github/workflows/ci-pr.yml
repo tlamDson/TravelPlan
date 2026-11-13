@@ -185,7 +185,9 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-          cache-dependency-path: analytics/abkit/pyproject.toml
+          cache-dependency-path: |
+            analytics/abkit/pyproject.toml
+            analytics/simkit/pyproject.toml
 
       - name: Install abkit (core + dev)
         run: python -m pip install -e ".[dev]"
@@ -197,6 +199,23 @@ jobs:
         run: python -m ruff format --check .
 
       - name: Pytest
+        run: python -m pytest -q
+
+      # analytics/simkit (B2 plan, PR 13) needs abkit installed first (step above).
+      - name: Install simkit (core + dev)
+        working-directory: analytics/simkit
+        run: python -m pip install -e ".[dev]"
+
+      - name: simkit Ruff lint
+        working-directory: analytics/simkit
+        run: python -m ruff check .
+
+      - name: simkit Ruff format
+        working-directory: analytics/simkit
+        run: python -m ruff format --check .
+
+      - name: simkit Pytest
+        working-directory: analytics/simkit
         run: python -m pytest -q
 
   # Image này là thứ được deploy lên Railway — hỏng ở đây thì hỏng cả deploy
