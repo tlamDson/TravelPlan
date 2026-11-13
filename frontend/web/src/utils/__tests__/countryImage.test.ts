@@ -48,4 +48,20 @@ describe("getCountryImage", () => {
       getCountryImage("Paris, France", "same"),
     );
   });
+
+  it("an explicit country name wins over a city alias of another country", () => {
+    // "hue" is a Vietnamese city alias, "phoenix"/"portland" are US ones.
+    expect(getCountryImage("Hue, United States", "t-1")).toMatch(
+      /^\/images\/countries\/america_/,
+    );
+    expect(getCountryImage("Phoenix, France", "t-2")).toMatch(
+      /^\/images\/countries\/france_/,
+    );
+    expect(getCountryImage("Portland, Vietnam", "t-3")).toMatch(
+      /^\/images\/countries\/vietnam_/,
+    );
+    expect(getCountryImage("Da Nang, France", "t-4")).toMatch(
+      /^\/images\/countries\/france_/,
+    );
+  });
 });
