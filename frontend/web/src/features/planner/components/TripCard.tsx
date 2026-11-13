@@ -224,14 +224,17 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
                 <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="line-clamp-1">
                   {formatDateRange(trip.startDate, trip.endDate, language)}
-                  {duration > 0 && ` · ${duration}-day trip`}
+                  {duration > 0 &&
+                    ` · ${t("trips.durationDays").replace("{count}", String(duration))}`}
                 </span>
               </div>
 
               {trip.budget.totalLimit > 0 && (
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Budget</span>
+                    <span className="text-muted-foreground">
+                      {t("trip.budgetLabel")}
+                    </span>
                     <span>
                       {formatCurrency(
                         convertedSpent,

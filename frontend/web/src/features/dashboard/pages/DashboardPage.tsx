@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { WidgetError } from "@/components/WidgetError";
 import { useTrips } from "@/features/planner/hooks/useTrips";
 import { TripCard } from "@/features/planner/components/TripCard";
+import { countDestinations } from "../utils/countDestinations";
 import {
   Plus,
   Plane,
@@ -80,8 +81,7 @@ export default function DashboardPage() {
   ]);
 
   // Computed Metrics
-  const totalPlaces =
-    trips?.reduce((acc, trip) => acc + (trip.cities?.length || 0), 0) || 0;
+  const totalPlaces = countDestinations(trips);
 
   const totalSpent =
     trips?.reduce((acc, trip) => acc + (trip.budget?.totalSpent || 0), 0) || 0;

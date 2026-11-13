@@ -75,7 +75,11 @@ interface SettingsModalProps {
   initialTab?: TabId;
 }
 
-export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProps) {
+export function SettingsModal({
+  isOpen,
+  onClose,
+  initialTab,
+}: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>("personal");
   const { t } = useTranslationStore();
   const { autoLoadLongTripChunks, setAutoLoadLongTripChunks } =
@@ -132,11 +136,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProp
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold">
-                    Auto-load long trip days
+                    {t("settings.autoLoadLabel")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    If enabled, we load upcoming chunks automatically. This may
-                    take longer, and you can return later.
+                    {t("settings.autoLoadDesc")}
                   </p>
                 </div>
                 <Switch

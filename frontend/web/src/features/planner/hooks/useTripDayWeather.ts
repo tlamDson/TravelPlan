@@ -4,6 +4,7 @@ import {
   getTripDayWeatherForecast,
   isWeatherNotConfiguredError,
 } from "@/features/planner/api/weather.api";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 
 interface UseTripDayWeatherParams {
   destination?: string;
@@ -15,13 +16,15 @@ export function useTripDayWeather({
   dayDateIso,
 }: UseTripDayWeatherParams) {
   const { isLoaded, isSignedIn } = useAuth();
+  const language = useTranslationStore((state) => state.language);
 
   return useQuery({
-    queryKey: ["trip-day-weather", destination, dayDateIso],
+    queryKey: ["trip-day-weather", destination, dayDateIso, language],
     queryFn: () =>
       getTripDayWeatherForecast({
         destination: destination!,
         dayDateIso: dayDateIso!,
+        language,
       }),
     enabled: Boolean(
       destination &&
