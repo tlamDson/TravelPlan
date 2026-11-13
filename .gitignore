@@ -36,6 +36,8 @@ lerna-debug.log*
 # ============================================
 # Private documentation
 docs/
+# Public docs site of the abkit package (mkdocs.yml), published with the wheel docs
+!analytics/abkit/docs/
 .agent/
 .design-docs/
 .expo/

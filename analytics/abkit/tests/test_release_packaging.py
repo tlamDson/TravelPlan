@@ -78,18 +78,11 @@ def test_wheel_has_the_abkit_package_and_distribution_metadata(tmp_path):
         ignore=shutil.ignore_patterns("build", "dist", "*.egg-info", "__pycache__", ".*"),
     )
     out = tmp_path / "out"
-    command = [
-        sys.executable,
-        "-m",
-        "pip",
-        "wheel",
-        "--no-deps",
-        "--no-build-isolation",
-        "-w",
-        str(out),
-        str(src),
-    ]
-    result = subprocess.run(command, capture_output=True, text=True, timeout=300)
+    out.mkdir()
+    build = f"from setuptools import build_meta; build_meta.build_wheel(r'{out}')"
+    result = subprocess.run(
+        [sys.executable, "-c", build], cwd=src, capture_output=True, text=True, timeout=300
+    )
     assert result.returncode == 0, result.stdout + result.stderr
     (wheel,) = out.glob("*.whl")
     version = PYPROJECT["project"]["version"]
