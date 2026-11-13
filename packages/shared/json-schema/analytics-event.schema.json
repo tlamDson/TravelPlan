@@ -134,7 +134,7 @@
             "durationDays": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 60
+              "maximum": 90
             },
             "destinationCount": {
               "type": "integer",

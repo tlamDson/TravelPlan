@@ -11,6 +11,7 @@ import { useTripWizard } from "../useTripWizard";
 import { useReorderActivities } from "../useReorderActivities";
 import { useRegenActivity } from "../useRegenActivity";
 import { useUpdateTrip } from "../useTrips";
+import { MAX_TRIP_DAYS } from "../../components/create-trip-dialog.utils";
 
 vi.mock("sonner", () => ({
   toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() },
@@ -57,6 +58,34 @@ describe("trip_generation_requested", () => {
       durationDays: 3,
       destinationCount: 1,
     });
+    expectCatalogValid(trackMock.mock.calls);
+  });
+
+  it("keeps a catalog-valid event for the longest trip the wizard allows", async () => {
+    server.use(
+      http.post("*/trips", () =>
+        HttpResponse.json({ success: true, jobId: "job-2", tripId: "trip-2" }),
+      ),
+    );
+    const { result } = renderHookWithQuery(() => useTripWizard());
+    const start = new Date("2026-06-01T00:00:00.000Z");
+    const end = new Date(start.getTime() + MAX_TRIP_DAYS * 86_400_000);
+
+    act(() => {
+      result.current.mutate({
+        preferences: {
+          ...preferences,
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+        },
+      });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(trackMock).toHaveBeenCalledWith(
+      "trip_generation_requested",
+      expect.objectContaining({ durationDays: MAX_TRIP_DAYS }),
+    );
     expectCatalogValid(trackMock.mock.calls);
   });
 
