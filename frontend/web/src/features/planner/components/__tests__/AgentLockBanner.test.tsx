@@ -13,12 +13,12 @@ describe("AgentLockBanner — visibility", () => {
 describe("AgentLockBanner — fallback branch", () => {
   it("shows the fallback banner regardless of isLocked", () => {
     render(<AgentLockBanner isLocked={false} isFallback />);
-    expect(screen.getByText("Chế độ dự phòng")).toBeInTheDocument();
+    expect(screen.getByText("Fallback mode")).toBeInTheDocument();
   });
 
   it("uses the shared tag-yellow tokens for the fallback banner, not raw yellow", () => {
     render(<AgentLockBanner isLocked={false} isFallback />);
-    const title = screen.getByText("Chế độ dự phòng");
+    const title = screen.getByText("Fallback mode");
 
     expect(title.className).toContain("text-tag-yellow-text");
     expect(title.className).not.toMatch(/text-yellow-700/);
@@ -28,7 +28,7 @@ describe("AgentLockBanner — fallback branch", () => {
     render(
       <AgentLockBanner isLocked={false} isFallback fallbackCity="Hanoi" />,
     );
-    expect(screen.getByText(/cho Hanoi/)).toBeInTheDocument();
+    expect(screen.getByText(/for Hanoi/)).toBeInTheDocument();
   });
 });
 
@@ -89,34 +89,34 @@ describe("AgentLockBanner — processing branch", () => {
 
   it("cycles the progressive message as elapsed seconds pass", () => {
     render(<AgentLockBanner isLocked={true} status="PROCESSING" />);
-    expect(screen.getByText("Đang phân tích yêu cầu...")).toBeInTheDocument();
+    expect(screen.getByText("Analyzing your request...")).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(4000);
     });
     expect(
-      screen.getByText("Đang tìm các địa điểm phù hợp..."),
+      screen.getByText("Finding matching places..."),
     ).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(6000); // total 10s
     });
     expect(
-      screen.getByText("Đang lên lịch trình theo sở thích..."),
+      screen.getByText("Building your itinerary around your interests..."),
     ).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(8000); // total 18s
     });
     expect(
-      screen.getByText("Đang tối ưu hoá hành trình theo khu vực..."),
+      screen.getByText("Optimizing the route by area..."),
     ).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(10000); // total 28s
     });
     expect(
-      screen.getByText("Sắp hoàn tất, chờ thêm chút nữa nhé..."),
+      screen.getByText("Almost done, just a little longer..."),
     ).toBeInTheDocument();
   });
 
@@ -140,7 +140,7 @@ describe("AgentLockBanner — processing branch", () => {
       screen.getAllByText("Validating places with Google..."),
     ).toHaveLength(2);
     expect(
-      screen.queryByText("Đang phân tích yêu cầu..."),
+      screen.queryByText("Analyzing your request..."),
     ).not.toBeInTheDocument();
   });
 
