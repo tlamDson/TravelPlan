@@ -13,6 +13,9 @@ license = { text = "MIT" }
 dependencies = [
   "abkit==0.1.0",
   "jsonschema==4.23.0",
+  # Imported directly by the G-sim freezer; same pins as abkit.
+  "numpy==2.1.3",
+  "scipy==1.14.1",
 ]
 
 [project.optional-dependencies]
