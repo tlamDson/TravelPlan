@@ -28,6 +28,9 @@ import { isApiDocsEnabled } from "./lib/api-docs-flag";
 import reliabilityRoutes from "./features/reliability/routes";
 import { isReliabilityApiEnabled } from "./features/reliability/reliability-flag";
 import { createBullBoardRouter } from "./features/reliability/bull-board";
+import analyticsRoutes from "./features/analytics/routes";
+import { isAnalyticsEnabled } from "./features/analytics/analytics-flag";
+import { assertAnalyticsHashSecret } from "./features/analytics/services/pseudonymize";
 
 const swaggerOptions = {
   definition: {
@@ -128,6 +131,14 @@ export function createApp(): Express {
   // this mount flag → requireUserAuth (routes.ts) → allowlist (controller).
   if (isReliabilityApiEnabled()) {
     app.use("/api/reliability", reliabilityRoutes);
+  }
+  // Analytics event ingest (B2) — off unless ANALYTICS_ENABLED=true; public
+  // (anonymous visitors log too), metered by its own limiter in routes.ts.
+  // Needs ANALYTICS_HASH_SECRET (userIds are stored as HMAC) — crash at
+  // boot rather than 500 on every event.
+  if (isAnalyticsEnabled()) {
+    assertAnalyticsHashSecret();
+    app.use("/api/analytics", analyticsRoutes);
   }
 
   //7. Health checks
