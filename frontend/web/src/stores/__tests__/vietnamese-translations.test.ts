@@ -56,6 +56,9 @@ const PROPER_NOUNS = new Set([
   "Pro",
   "Airbnb",
   "Google",
+  "Places",
+  "Clerk",
+  "Gemini",
   "Mapbox",
   "Taxi",
 ]);
