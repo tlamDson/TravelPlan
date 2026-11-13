@@ -90,7 +90,7 @@ describe("[Guard] CLAUDE.md + .claude/rules stay a small rule set", () => {
     expect(claude).toContain("RESULT:");
     expect(claude).toContain("EnterWorktree");
     expect(claude).toContain("## RED");
-    expect(claude).toMatch(/300 dòng/);
+    expect(claude).toMatch(/300 lines/);
     expect(claude).toContain("runs.csv");
     expect(claude).toMatch(/simulated/);
   });
@@ -126,12 +126,31 @@ describe("[Guard] .claude/reference holds on-demand knowledge", () => {
   });
 });
 
+describe("[Guard] Claude docs are written in English", () => {
+  // Vietnamese letters (precomposed, with tone marks) plus đ/Đ.
+  const VIETNAMESE =
+    /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/u;
+
+  it("has no Vietnamese text in CLAUDE.md or .claude markdown", () => {
+    const offenders = docFilesWithPointers()
+      .filter((f) => f !== "README.md")
+      .flatMap((file) =>
+        read(file)
+          .split(/\r?\n/)
+          .flatMap((line, i) =>
+            VIETNAMESE.test(line) ? [`${file}:${i + 1}`] : [],
+          ),
+      );
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe("[Guard] code-reviewer agent covers Python and data", () => {
   it("checks ruff/pytest, pinned deps and PII hashing", () => {
     const reviewer = read(".claude/agents/code-reviewer.md");
     expect(reviewer).toMatch(/ruff/);
     expect(reviewer).toMatch(/pytest/);
-    expect(reviewer).toMatch(/ghim/i);
+    expect(reviewer).toMatch(/pin/i);
     expect(reviewer).toMatch(/PII/);
     expect(reviewer).toMatch(/runs\.csv/);
   });
