@@ -4,17 +4,17 @@ import { DndContext } from "@dnd-kit/core";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { makeActivity } from "@/test/factories/trip";
-import { useTranslationStore } from "@/stores/useTranslationStore";
+import {
+  useTranslationStore,
+  type Language,
+} from "@/stores/useTranslationStore";
 import type { Activity, ItineraryDay } from "@/utils/schemas";
 import { ItineraryDayCard } from "../ItineraryDayCard";
 
 const INITIAL = useTranslationStore.getState();
 afterEach(() => useTranslationStore.setState(INITIAL, true));
 
-function renderCard(
-  language: "English" | "Vietnamese" | "French",
-  a: Partial<Activity>,
-) {
+function renderCard(language: Language, a: Partial<Activity>) {
   useTranslationStore.setState({ language });
   const day = {
     _id: "day-1",
@@ -82,7 +82,7 @@ describe("activity opening hours follow the UI language", () => {
   });
 
   it("falls back to the stored text for legacy activities without structured hours", () => {
-    renderCard("English", { openingHours: "9:00 AM – 5:00 PM" });
+    renderCard("English (US)", { openingHours: "9:00 AM – 5:00 PM" });
     expect(screen.getByText("9:00 AM – 5:00 PM")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,5 @@
 import { Document, Types } from "mongoose";
+import type { DayHours } from "../services/opening-hours";
 import type {
   TripStatus as SharedTripStatus,
   TripLifecycle as SharedTripLifecycle,
@@ -51,6 +52,8 @@ export interface IActivity {
   priceLevel?: number;
   photoUrl?: string;
   openingHours?: string;
+  /** Language-neutral hours for this activity's weekday; the client renders the labels */
+  openingHoursDetail?: DayHours;
   /** Distance validation — set by geo-validator when activity requires non-walking transport */
   requiresTransport?: boolean;
   /** Distance from the previous activity in the day (in km) */

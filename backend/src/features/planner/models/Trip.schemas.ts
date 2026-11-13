@@ -33,6 +33,14 @@ export const EmbeddedBudgetSchema = new Schema<IEmbeddedBudget>(
   { _id: false },
 );
 
+const dayHoursSchema = new Schema(
+  {
+    kind: { type: String, enum: ["open24h", "closed", "ranges"] },
+    ranges: [new Schema({ open: String, close: String }, { _id: false })],
+  },
+  { _id: false },
+);
+
 export const ActivitySchema = new Schema<IActivity>(
   {
     type: {
@@ -65,6 +73,7 @@ export const ActivitySchema = new Schema<IActivity>(
     priceLevel: Number,
     photoUrl: String,
     openingHours: String,
+    openingHoursDetail: dayHoursSchema,
     // Distance validation flag — set when next activity is too far for chosen transport mode
     requiresTransport: { type: Boolean, default: false },
     distanceFromPrevious: Number,

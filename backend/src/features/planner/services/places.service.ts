@@ -2,6 +2,7 @@ import axios from "axios";
 import { env } from "../../../config/env";
 import { logger } from "../../../lib/logger";
 import { resolveBestPhotoUrl } from "./place-photo.service";
+import type { OpeningPeriod } from "./opening-hours";
 
 export interface PlaceDetails {
   placeId: string;
@@ -13,6 +14,7 @@ export interface PlaceDetails {
   photoUrl?: string; // resolved CDN URL (no API key exposed)
   openingHours?: string;
   openingHoursArray?: string[];
+  openingPeriods?: OpeningPeriod[];
   categories?: string[];
   location?: { lat: number; lng: number };
 }
@@ -157,6 +159,9 @@ export class PlacesService {
         if (place.currentOpeningHours.weekdayDescriptions) {
           details.openingHoursArray =
             place.currentOpeningHours.weekdayDescriptions;
+        }
+        if (Array.isArray(place.currentOpeningHours.periods)) {
+          details.openingPeriods = place.currentOpeningHours.periods;
         }
       }
 

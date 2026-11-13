@@ -9,6 +9,7 @@ import type { ValidatedPlace } from "../services/validation.service";
 import type { TripPreferences } from "@travelplan/shared";
 import type { IActivity } from "../models/Trip.types";
 import { geoValidatorService } from "../services/geo-validator.service";
+import { resolveDayHours } from "../services/opening-hours";
 import { nearbyFoodService } from "../services/nearby-food.service";
 import { logger } from "../../../lib/logger";
 import type { TransportMode } from "../services/geo-validator.service";
@@ -261,8 +262,12 @@ export async function buildItinerary(
           activity.priceLevel = place.priceLevel;
         if (place.photoUrl) activity.photoUrl = place.photoUrl;
 
+        // Dates are UTC midnight; local getDay() would shift the weekday on a non-UTC host.
+        const dayJs = dayDate.getUTCDay();
+        const detail = resolveDayHours(place.openingPeriods, dayJs);
+        if (detail) activity.openingHoursDetail = detail;
+
         if (place.openingHoursArray && place.openingHoursArray.length > 0) {
-          const dayJs = dayDate.getDay();
           const googleIdx = dayJs === 0 ? 6 : dayJs - 1;
           const entry = place.openingHoursArray[googleIdx];
           if (entry) {
