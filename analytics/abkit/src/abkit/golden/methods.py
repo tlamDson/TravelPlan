@@ -15,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from abkit import stats
+from abkit import causal, stats
 from abkit.golden.case import KNOWN_METHODS
 
 Data = dict[str, np.ndarray] | None
@@ -84,6 +84,17 @@ def _sample_size_proportions(data: Data, params: Mapping[str, Any]) -> Mapping[s
     return asdict(stats.sample_size_proportions(**_pick(params, *keys)))
 
 
+def _causal(method: str) -> Implementation:
+    """``params``: ``outcome`` column, plus the keywords of ``causal.estimate_effect``."""
+
+    def run(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
+        kwargs = dict(params)
+        outcome = kwargs.pop("outcome")
+        return _with_decision(causal.estimate_effect(data, method, outcome=outcome, **kwargs))
+
+    return run
+
+
 IMPLEMENTATIONS: dict[str, Implementation] = {
     "welch_ttest": _welch,
     "delta_ratio": _delta,
@@ -92,4 +103,7 @@ IMPLEMENTATIONS: dict[str, Implementation] = {
     "sample_size_ttest_ind": _sample_size,
     "mde_ttest_ind": _mde,
     "sample_size_proportions": _sample_size_proportions,
+    "naive_diff": _causal("naive_diff"),
+    "ipw": _causal("ipw"),
+    "aipw": _causal("aipw"),
 }

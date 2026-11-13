@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "id": "public/lalonde-experimental",
+  "method": "naive_diff",
+  "description": "NSW RE74 subsample (185 treated, 260 randomized controls): the experimental benchmark, difference in 1978 earnings with the OLS standard error.",
+  "data": "data.csv",
+  "params": {
+    "outcome": "re78",
+    "se_type": "pooled",
+    "alpha": 0.05
+  },
+  "expected": {
+    "estimate": 1794,
+    "se": 633
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 0.5,
+      "rel": 0
+    }
+  },
+  "source": {
+    "tool": "published",
+    "version": "Dehejia & Wahba (1999), NBER WP 6586; JASA 94(448):1053-1062",
+    "call": "Table 2 panel B col (1); Table 3 col (1); row NSW",
+    "paper_url": "https://www.nber.org/papers/w6586",
+    "data_url": "https://users.nber.org/~rdehejia/data/.nswdata2.html",
+    "data_files": {
+      "nswre74_treated.txt": "e7b742fe0ff07a0f45e129b4ff108bb9611cd83d53604732c48a8a0a3e20eda3",
+      "nswre74_control.txt": "a1364cea459d953dc691a667d99194b4ad335d6d550354fe23a5d2dc58d729b5"
+    },
+    "generator": "abkit.golden.freeze_public",
+    "frozen_at": "2026-11-13"
+  }
+}

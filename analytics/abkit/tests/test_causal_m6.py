@@ -117,7 +117,7 @@ def _write_hillstrom_csv(path: Path, data: dict[str, np.ndarray]) -> None:
             "Urban" if data["zip_urban"][i] else "Rural" if data["zip_rural"][i] else "Surburban"
         )
         segment = "Womens E-Mail" if data["treatment"][i] else "No E-Mail"
-        history = np.expm1(data["log_history"][i])
+        history = float(np.expm1(data["log_history"][i]))
         lines.append(
             f"{int(data['recency'][i])},x,{history!r},{int(data['mens'][i])},"
             f"{int(data['womens'][i])},{zip_code},{int(data['newbie'][i])},{channel},{segment},"

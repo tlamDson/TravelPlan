@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "id": "public/lalonde-psid-aipw",
+  "method": "aipw",
+  "description": "NSW treated (185) + PSID-1 controls (2,490): the ATT must land inside the experimental 95% CI, 1794 +/- 1.96 x 633. AIPW-ATT, DW's PSID-1 logit and DW's regression covariates for the control outcome model.",
+  "data": "data.csv",
+  "params": {
+    "outcome": "re78",
+    "estimand": "att",
+    "propensity_terms": [
+      "age",
+      "age^2",
+      "educ",
+      "educ^2",
+      "married",
+      "nodegree",
+      "black",
+      "hisp",
+      "re74",
+      "re75",
+      "re74^2",
+      "re75^2",
+      "u74*black"
+    ],
+    "outcome_terms": [
+      "age",
+      "age^2",
+      "educ",
+      "nodegree",
+      "black",
+      "hisp",
+      "re74",
+      "re75"
+    ],
+    "alpha": 0.05
+  },
+  "expected": {
+    "estimate": 1794
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 1240.66,
+      "rel": 0
+    }
+  },
+  "source": {
+    "tool": "published",
+    "version": "Dehejia & Wahba (1999), NBER WP 6586; JASA 94(448):1053-1062",
+    "call": "benchmark: Table 3 col (1) row NSW; logit: Table 3 note c; outcome covariates: Table 3 note a",
+    "paper_url": "https://www.nber.org/papers/w6586",
+    "data_url": "https://users.nber.org/~rdehejia/data/.nswdata2.html",
+    "data_files": {
+      "nswre74_treated.txt": "e7b742fe0ff07a0f45e129b4ff108bb9611cd83d53604732c48a8a0a3e20eda3",
+      "psid_controls.txt": "73ffcdd8feb7f965f8e1de9bfdb80a095542c7a95ce7f56b2e2b2a9716e858cc"
+    },
+    "generator": "abkit.golden.freeze_public",
+    "frozen_at": "2026-11-13"
+  }
+}
