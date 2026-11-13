@@ -59,9 +59,9 @@ control. Decisions: `reject_null` when `p_value < alpha`, else `fail_to_reject`.
 | `sample_size_proportions` | —                                                        | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                                                                                                                                        | —                |
 | `bh_fdr`                  | `hypothesis`, `p_value`                                  | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                                                                                                                                                | —                |
 | `readout`                 | `variant`, `persona`, metric columns (see below)         | see below                                                            | `srm`, `estimate`, plus `early_estimate` / `estimate_<persona>`                                                                                                                                                           | see below        |
-| `naive_diff`              | `treatment` (0/1), the `outcome` column                  | `outcome`, `alpha`, `se_type` (`welch` / `pooled`)                   | `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high`                                     | yes              |
-| `ipw`                     | `treatment`, `outcome`, covariates                       | `outcome`, `estimand` (`ate` / `att`), `propensity_terms`, `alpha`   | as `naive_diff` (normal-based)                                                                    | yes              |
-| `aipw`                    | `treatment`, `outcome`, covariates                       | as `ipw`, plus `outcome_terms`                                       | as `naive_diff` (normal-based)                                                                    | yes              |
+| `naive_diff`              | `treatment` (0/1), the `outcome` column                  | `outcome`, `alpha`, `se_type` (`welch` / `pooled`)                   | `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high`                                                                                                                                                             | yes              |
+| `ipw`                     | `treatment`, `outcome`, covariates                       | `outcome`, `estimand` (`ate` / `att`), `propensity_terms`, `alpha`   | as `naive_diff` (normal-based)                                                                                                                                                                                            | yes              |
+| `aipw`                    | `treatment`, `outcome`, covariates                       | as `ipw`, plus `outcome_terms`                                       | as `naive_diff` (normal-based)                                                                                                                                                                                            | yes              |
 
 The exact formula behind each case is in its `source.call`. The causal methods take
 covariates as terms: `age`, `age^2`, `u74*black` (an intercept is always added); the
@@ -202,12 +202,12 @@ Truth is the published numbers of Dehejia & Wahba (1999), [NBER WP 6586](https:/
 [users.nber.org/~rdehejia/data](https://users.nber.org/~rdehejia/data/.nswdata2.html); the
 sha256 of each raw file is pinned in `abkit/golden/freeze_lalonde.py` and in `source.data_files`.
 
-| Case                          | Method       | Expected (published)                         | Tolerance                                   |
-| ----------------------------- | ------------ | -------------------------------------------- | ------------------------------------------- |
-| `lalonde-experimental`        | `naive_diff` | estimate 1,794, SE 633 (Table 2B/3, row NSW) | ±0.5 (rounding)                             |
-| `lalonde-psid-naive`          | `naive_diff` | estimate −15,205, SE 1,154/1,155 (Table 2/3) | ±0.5; SE ±1                                 |
-| `lalonde-psid-ipw`            | `ipw` (ATT)  | the experimental 1,794                       | ±1,240.66 = 1.96 × 633, the experimental CI |
-| `lalonde-psid-aipw`           | `aipw` (ATT) | the experimental 1,794                       | same                                        |
+| Case                   | Method       | Expected (published)                         | Tolerance                                   |
+| ---------------------- | ------------ | -------------------------------------------- | ------------------------------------------- |
+| `lalonde-experimental` | `naive_diff` | estimate 1,794, SE 633 (Table 2B/3, row NSW) | ±0.5 (rounding)                             |
+| `lalonde-psid-naive`   | `naive_diff` | estimate −15,205, SE 1,154/1,155 (Table 2/3) | ±0.5; SE ±1                                 |
+| `lalonde-psid-ipw`     | `ipw` (ATT)  | the experimental 1,794                       | ±1,240.66 = 1.96 × 633, the experimental CI |
+| `lalonde-psid-aipw`    | `aipw` (ATT) | the experimental 1,794                       | same                                        |
 
 The two observational cases pass when the estimate on NSW treated + PSID-1 controls lands
 inside the experimental 95% CI. The propensity model is DW's PSID-1 logit (Table 3, note c);
@@ -223,11 +223,11 @@ analytics/.venv/Scripts/python -m abkit.golden.freeze_lalonde D:/data/b2/lalonde
 
 The answer here is Lam's own call, not abkit's: gate G-B2-3, about 1–2 hours.
 
-| File | What |
-| ---- | ---- |
+| File                         | What                                                                                                                                                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `readouts/R01.md` … `R30.md` | The evidence of a readout without its conclusion: who the users are, the sample ratio numbers, every effect (also when SRM fails), the early window, persona table and interim looks where the case has them. No decision, no PASS/FAIL, no case name or description |
-| `key.json` | Blind id → case, `simulated`, abkit's `memo` label (SRM-blocked = `investigate`), and the `baseline` label (ship when `p < alpha` and the lift is positive, ignoring SRM). **Do not open it before labelling** |
-| `labels.csv` | Lam's labels (`readout,label,labelled_at`), written by `abkit decide label`; not committed until G-B2-3 is done |
+| `key.json`                   | Blind id → case, `simulated`, abkit's `memo` label (SRM-blocked = `investigate`), and the `baseline` label (ship when `p < alpha` and the lift is positive, ignoring SRM). **Do not open it before labelling**                                                       |
+| `labels.csv`                 | Lam's labels (`readout,label,labelled_at`), written by `abkit decide label`; not committed until G-B2-3 is done                                                                                                                                                      |
 
 28 readouts are G-sim cases drawn per group with seed 1115 (A/A 5, effect 8, long tail 3,
 novelty 3, peeking 3, ratio 3, SRM 3), all simulated (virtual users); 2 are the real
