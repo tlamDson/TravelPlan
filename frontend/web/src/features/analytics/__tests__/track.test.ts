@@ -2,6 +2,7 @@ import { analyticsEventSchema } from "@travelplan/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API_URL } from "@/config/env";
 import {
+  getAnalyticsSessionId,
   identify,
   resetAnalyticsForTests,
   track,
@@ -87,13 +88,19 @@ describe("trackOnce()", () => {
     } as const;
     trackOnce("trip_generation_completed", props, "job-1");
     trackOnce("trip_generation_completed", props, "job-1");
-    trackOnce("trip_generation_completed", { ...props, jobId: "job-2" }, "job-2");
+    trackOnce(
+      "trip_generation_completed",
+      { ...props, jobId: "job-2" },
+      "job-2",
+    );
 
     window.dispatchEvent(new Event("pagehide"));
 
     const { body } = await beaconBody();
     expect(
-      body.events.map((e: { properties: { jobId: string } }) => e.properties.jobId),
+      body.events.map(
+        (e: { properties: { jobId: string } }) => e.properties.jobId,
+      ),
     ).toEqual(["job-1", "job-2"]);
   });
 
@@ -119,5 +126,15 @@ describe("trackOnce()", () => {
 
     const { body } = await beaconBody();
     expect(body.events).toHaveLength(1);
+  });
+});
+
+describe("getAnalyticsSessionId()", () => {
+  it("returns the session id that tracked events carry", async () => {
+    track("trip_viewed", { tripId: "t1" });
+    window.dispatchEvent(new Event("pagehide"));
+
+    const { body } = await beaconBody();
+    expect(getAnalyticsSessionId()).toBe(body.events[0].sessionId);
   });
 });
