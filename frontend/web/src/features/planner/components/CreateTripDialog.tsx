@@ -25,6 +25,7 @@ import { useActiveJobStore } from "@/stores/useActiveJobStore";
 import { getUserPreferences } from "@/features/settings/types/user-preferences.types";
 import { getTripDays, buildPreferences } from "./create-trip-dialog.utils";
 import { BRAND_GRADIENT_BUTTON } from "@/lib/brandGradient";
+import { track, type ClientEventProperties } from "@/features/analytics";
 
 const TOTAL_STEPS = 6;
 const MIN_DAILY_BUDGET = 20;
@@ -38,7 +39,16 @@ const steps = [
   { titleKey: "wizard.step6Title", descKey: "wizard.step6Desc" },
 ];
 
-export function CreateTripDialog({ trigger }: { trigger: React.ReactNode }) {
+type WizardEntryPoint = ClientEventProperties<"wizard_started">["entryPoint"];
+
+export function CreateTripDialog({
+  trigger,
+  entryPoint,
+}: {
+  trigger: React.ReactNode;
+  /** Where the user opened the wizard from, for wizard_started. */
+  entryPoint: WizardEntryPoint;
+}) {
   const navigate = useNavigate();
   const { data, reset, initWizard } = useTripWizardStore();
   const { t, language, currency: preferredCurrency } = useTranslationStore();
@@ -144,6 +154,7 @@ export function CreateTripDialog({ trigger }: { trigger: React.ReactNode }) {
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
+          track("wizard_started", { entryPoint });
           // Sync budget currency with user's preferred currency setting
           initWizard(preferredCurrency || "USD", getUserPreferences());
         } else {

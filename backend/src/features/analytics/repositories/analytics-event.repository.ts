@@ -20,6 +20,20 @@ export class AnalyticsEventRepository {
     );
     return result.upsertedCount;
   }
+
+  /**
+   * Streams events with start <= occurredAt < end, ordered by occurredAt
+   * then eventId so an export of the same data is byte-identical.
+   */
+  streamOccurredBetween(
+    start: Date,
+    end: Date,
+  ): AsyncIterable<IAnalyticsEvent> {
+    return AnalyticsEvent.find({ occurredAt: { $gte: start, $lt: end } })
+      .sort({ occurredAt: 1, eventId: 1 })
+      .lean<IAnalyticsEvent>()
+      .cursor();
+  }
 }
 
 export const analyticsEventRepository = new AnalyticsEventRepository();

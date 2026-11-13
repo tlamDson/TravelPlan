@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_TRIP_DAYS } from "../constants/trip.js";
 import { jobOutcomeSchema } from "./reliability.schema.js";
 
 /**
@@ -52,7 +53,7 @@ export const tripGenerationRequestedEventSchema = defineEvent(
   "trip_generation_requested",
   {
     jobId: idSchema,
-    durationDays: z.number().int().min(1).max(60),
+    durationDays: z.number().int().min(1).max(MAX_TRIP_DAYS),
     destinationCount: z.number().int().min(1).max(20),
   },
 );

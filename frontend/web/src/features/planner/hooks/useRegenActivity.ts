@@ -16,6 +16,7 @@ import { queryKeys } from "@/lib/query-client";
 import { apiClient } from "@/lib/axios";
 import type { Trip } from "../api/trips.api";
 import { useSubscriptionStore } from "@/stores/useSubscriptionStore";
+import { track } from "@/features/analytics";
 
 interface RegenParams {
   tripId: string;
@@ -65,7 +66,12 @@ export function useRegenActivity() {
       return regenActivityApi(params);
     },
 
-    onSuccess: (payload, { tripId }) => {
+    onSuccess: (payload, { tripId, dayIndex }) => {
+      track("itinerary_edited", {
+        tripId,
+        editType: "regenerate_activity",
+        dayIndex,
+      });
       queryClient.setQueryData<Trip>(queryKeys.trips.detail(tripId), (old) => {
         if (!old) return old;
         return { ...old, itinerary: payload.itinerary };

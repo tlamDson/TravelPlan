@@ -1,9 +1,12 @@
 import type { TripWizardData } from "@/stores/trip-wizard.store";
-import type { TripPreferences } from "@travelplan/shared";
+import { MAX_TRIP_DAYS, type TripPreferences } from "@travelplan/shared";
 
-export const MAX_TRIP_DAYS = 90;
+export { MAX_TRIP_DAYS };
 
-export function getTripDays(startDate: string, endDate: string) {
+export function getTripDays(
+  startDate: string | Date,
+  endDate: string | Date,
+) {
   if (!startDate || !endDate) return null;
   const start = new Date(startDate);
   const end = new Date(endDate);
