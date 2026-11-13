@@ -30,10 +30,27 @@ def find_rscript() -> str | None:
 
 
 RSCRIPT = find_rscript()
+R_PACKAGES = ("testthat", "jsonlite")
+
+
+def missing_r_packages(rscript: str) -> list[str]:
+    """The R packages the suite needs that ``rscript`` cannot load."""
+    probe = "cat(Filter(function(p) !requireNamespace(p, quietly = TRUE), commandArgs(TRUE)))"
+    result = subprocess.run(
+        [rscript, "-e", probe, *R_PACKAGES],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=60,
+    )
+    return result.stdout.split()
 
 
 @pytest.mark.skipif(RSCRIPT is None, reason="R (Rscript) is not installed on this machine")
 def test_r_testthat_suite_agrees_with_golden_to_1e_8() -> None:
+    missing = missing_r_packages(RSCRIPT)
+    if missing:
+        pytest.skip(f"R packages not installed: {', '.join(missing)} (install.packages(...))")
     # Rscript segfaults on a missing script, so check the entry point first.
     assert (R_DIR / "run.R").is_file(), "analytics/abkit/r/run.R is missing"
     result = subprocess.run(

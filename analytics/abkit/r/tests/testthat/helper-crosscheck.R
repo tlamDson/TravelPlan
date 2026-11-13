@@ -10,8 +10,8 @@ golden_dir <- function() {
 }
 
 #' Check every expected key of every golden case of `method` against `fn(case)`.
-expect_cases_match <- function(method, fn) {
-  cases <- golden_cases(golden_dir(), method)
+#' `cases` can be overridden so the mutation tests can feed tampered answers.
+expect_cases_match <- function(method, fn, cases = golden_cases(golden_dir(), method)) {
   expect_gt(length(cases), 0)
   for (case in cases) {
     actual <- fn(case)
