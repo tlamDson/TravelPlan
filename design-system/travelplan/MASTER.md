@@ -7,18 +7,18 @@
 ---
 
 **Project:** TravelPlan
-**Generated:** 2026-09-12 18:26:10 (search.py --design-system --persist), hiệu chỉnh tay cùng ngày để khớp token thật
-**Category:** Travel/Tourism Agency (library classification — chỉ đúng cho phần landing/marketing, xem ghi chú ở "Style Guidelines")
+**Generated:** 2026-09-12 18:26:10 (search.py --design-system --persist), hand-adjusted the same day to match the real tokens
+**Category:** Travel/Tourism Agency (library classification — only correct for the landing/marketing part, see the note under "Style Guidelines")
 
-**Đọc trước khi dùng:** Colors đã ghi đè bằng token thật (`frontend/web/src/index.css`), không phải bảng màu library gốc. Component Specs + Style Guidelines đã hiệu chỉnh để phân biệt vùng app thật (Minimalism/shadcn) và vùng landing (`features/landing/`, giữ gradient-accent, bỏ video-hero).
+**Read before use:** Colors are overridden with the real tokens (`frontend/web/src/index.css`), not the original library palette. Component Specs + Style Guidelines are adjusted to separate the real app area (Minimalism/shadcn) from the landing area (`features/landing/`, keeps the gradient accent, drops the video hero).
 
 ---
 
 ## Global Rules
 
-### Color Palette — Ground truth: `frontend/web/src/index.css` (KHÔNG lấy từ library gần đúng nhất)
+### Color Palette — Ground truth: `frontend/web/src/index.css` (do NOT use the library's closest approximation)
 
-⚠️ Bảng màu library gốc (`#0EA5E9` sky blue + `#EA580C` adventure orange, category "Travel/Tourism Agency") chỉ là gợi ý gần nhất trong dữ liệu tra cứu — **không khớp token thật đang chạy trong app**. Bảng dưới đây lấy trực tiếp từ CSS variables (`hsl(...)` → hex) đang dùng thật ở `frontend/web/src/index.css`, đây mới là nguồn sự thật khi build UI.
+⚠️ The original library palette (`#0EA5E9` sky blue + `#EA580C` adventure orange, category "Travel/Tourism Agency") is only the closest suggestion in the lookup data — **it does not match the real tokens running in the app**. The table below is taken directly from the CSS variables (`hsl(...)` → hex) actually used in `frontend/web/src/index.css`; that is the source of truth when building UI.
 
 **Light mode:**
 
@@ -39,15 +39,15 @@
 
 | Role                                     | Hex       | CSS Variable (`index.css`)                                   |
 | ----------------------------------------- | --------- | ------------------------------------------------------------ |
-| Primary / Ring                           | `#24A8E5` | không đổi giữa light/dark                                    |
-| Destructive                              | `#E94444` | không đổi giữa light/dark                                    |
+| Primary / Ring                           | `#24A8E5` | unchanged between light/dark                                 |
+| Destructive                              | `#E94444` | unchanged between light/dark                                 |
 | Background                               | `#0D0D0D` | `--background`                                               |
 | Background secondary / Card / Sidebar bg | `#000000` | `--background-secondary` / `--card` / `--sidebar-background` |
 | Secondary / Muted / Accent (bg)          | `#242424` | `--secondary` / `--muted` / `--accent`                       |
 | Foreground                               | `#FFFFFF` | `--foreground`                                               |
 | Foreground secondary                     | `#E3E3E3` | `--foreground-secondary`                                     |
 
-**Color Notes:** Warm-neutral sky-blue accent (hue 199°, giống họ màu "Sky Blue" của library nhưng độ bão hoà/độ sáng khác) trên nền cream ấm (light) / gần đen (dark), tương phản chữ ấm (nâu than `#362F2B`, không phải xám lạnh). Radius toàn cục `0.5rem` (`--radius`). Tag/callout colors (gray/brown/orange/yellow/green/blue/purple/pink/red) xem đầy đủ ở `index.css` — không lặp lại ở đây vì đã có sẵn hằng số CSS, đừng tạo giá trị mới trùng mục đích.
+**Color Notes:** Warm-neutral sky-blue accent (hue 199°, similar to the library's "Sky Blue" family but with different saturation/lightness) on a warm cream background (light) / near-black (dark), with warm text contrast (charcoal brown `#362F2B`, not cool gray). Global radius `0.5rem` (`--radius`). For the tag/callout colors (gray/brown/orange/yellow/green/blue/purple/pink/red) see `index.css` — not repeated here because the CSS constants already exist; do not create new values that duplicate their purpose.
 
 ### Typography
 
@@ -87,14 +87,14 @@
 
 ## Component Specs
 
-Đã khớp sẵn với `--radius: 0.5rem` (8px) và token thật ở `index.css` — không dùng cam `#EA580C`/nền xanh nhạt `#F0F9FF` của library gốc, project không có màu CTA cam riêng, primary action dùng thẳng sky-blue.
+Already aligned with `--radius: 0.5rem` (8px) and the real tokens in `index.css` — do not use the original library's orange `#EA580C` / light-blue background `#F0F9FF`; the project has no separate orange CTA color, the primary action uses sky-blue directly.
 
 ### Buttons
 
 ```css
-/* Primary Button — trùng Button variant="default" của shadcn, đã có sẵn ở components/ui/button.tsx */
+/* Primary Button — same as shadcn Button variant="default", already available in components/ui/button.tsx */
 .btn-primary {
-  background: hsl(var(--primary)); /* #24A8E5 light, không đổi ở dark */
+  background: hsl(var(--primary)); /* #24A8E5 light, unchanged in dark */
   color: hsl(var(--primary-foreground)); /* #FFFFFF */
   padding: 12px 24px;
   border-radius: 8px; /* var(--radius) */
@@ -182,24 +182,24 @@
 
 ## Style Guidelines
 
-⚠️ Library gốc gợi ý "Aurora UI" (gradient rực rỡ, Northern Lights) + pattern "Video-First Hero" cho category "Travel/Tourism Agency" — đây là gợi ý cho trang **marketing/quảng cáo du lịch**, không khớp hoàn toàn với TravelPlan (agentic travel _planner_ app, không phải tourism agency bán tour). Áp dụng có chọn lọc theo 2 vùng:
+⚠️ The original library suggests "Aurora UI" (vivid gradient, Northern Lights) + a "Video-First Hero" pattern for the "Travel/Tourism Agency" category — this is a suggestion for a **travel marketing/advertising page**, not a full match for TravelPlan (an agentic travel _planner_ app, not a tourism agency selling tours). Apply it selectively across 2 areas:
 
-**Vùng app thật (sau login — wizard, trip detail, dashboard, `/reliability`, v.v.):** bỏ qua toàn bộ mục Style/Page Pattern bên dưới. Theo `shadcn`/Minimalism thuần — flat, ít shadow, không gradient trang trí, đúng như `frontend/web/src/components/ui/` hiện có. Chỉ áp dụng Spacing/Shadow tokens + Anti-patterns + Checklist ở trên.
+**Real app area (after login — wizard, trip detail, dashboard, `/reliability`, etc.):** ignore the whole Style/Page Pattern section below. Follow plain `shadcn`/Minimalism — flat, few shadows, no decorative gradients, exactly as in the current `frontend/web/src/components/ui/`. Only apply the Spacing/Shadow tokens + Anti-patterns + Checklist above.
 
-**Vùng landing/marketing (`frontend/web/src/features/landing/`, đã tồn tại — `HeroSection`/`FeaturesSection`/`HowItWorksSection`/`TestimonialsSection`/`CTASection`):** giữ lại phần "gradient accent" của Aurora UI (đã khớp sẵn với `.gradient-text`/`.accent-glow` utility có sẵn trong `index.css`, dùng `--primary` + `--accent-blue`) nhưng **bỏ "Video-First Hero"** — trang landing thật không dùng video nền, chỉ dùng ảnh/gradient tĩnh. Section order thật đã đúng pattern chuẩn "Hero + Features + How It Works + Testimonials + CTA", không cần đổi.
+**Landing/marketing area (`frontend/web/src/features/landing/`, already exists — `HeroSection`/`FeaturesSection`/`HowItWorksSection`/`TestimonialsSection`/`CTASection`):** keep the "gradient accent" part of Aurora UI (already matching the existing `.gradient-text`/`.accent-glow` utilities in `index.css`, using `--primary` + `--accent-blue`) but **drop the "Video-First Hero"** — the real landing page does not use a video background, only static images/gradients. The real section order already follows the standard "Hero + Features + How It Works + Testimonials + CTA" pattern, no change needed.
 
-**Style:** Minimalism (app) / Gradient-accent tĩnh, không video (landing)
+**Style:** Minimalism (app) / Static gradient accent, no video (landing)
 
-**Keywords còn áp dụng được:** smooth blend, luminous accent glow — giữ nguyên qua `gradient-text`/`accent-glow` utility sẵn có; **bỏ** "mesh gradient"/"Northern Lights"/"abstract" (không khớp phong cách sạch hiện tại).
+**Keywords that still apply:** smooth blend, luminous accent glow — kept through the existing `gradient-text`/`accent-glow` utilities; **drop** "mesh gradient"/"Northern Lights"/"abstract" (they do not match the current clean style).
 
-**Key Effects:** `hover-lift` (translateY -4px), `accent-glow` (box-shadow glow quanh primary), `gradient-text` (primary → accent-blue) — cả 3 đã có sẵn trong `index.css`, dùng lại thay vì tạo effect mới.
+**Key Effects:** `hover-lift` (translateY -4px), `accent-glow` (box-shadow glow around primary), `gradient-text` (primary → accent-blue) — all 3 already exist in `index.css`, reuse them instead of creating new effects.
 
-### Page Pattern (chỉ áp dụng cho `features/landing/`)
+### Page Pattern (applies only to `features/landing/`)
 
-**Pattern Name:** Hero + Features + How It Works + Testimonials + CTA (đã đúng, khớp `LandingPage.tsx` hiện tại)
+**Pattern Name:** Hero + Features + How It Works + Testimonials + CTA (already correct, matches the current `LandingPage.tsx`)
 
-- **CTA Placement:** `CTASection` cuối trang + CTA trong `HeroSection` — không overlay trên video.
-- **Section Order:** đúng thứ tự file hiện có: `LandingNav` → `HeroSection` → `FeaturesSection` → `HowItWorksSection` → `TestimonialsSection` → `CTASection` → `LandingFooter`.
+- **CTA Placement:** `CTASection` at the bottom of the page + CTA inside `HeroSection` — no overlay on video.
+- **Section Order:** the exact order of the existing files: `LandingNav` → `HeroSection` → `FeaturesSection` → `HowItWorksSection` → `TestimonialsSection` → `CTASection` → `LandingFooter`.
 
 ---
 
@@ -207,8 +207,8 @@
 
 - ❌ Generic photos
 - ❌ Complex booking
-- ❌ Video background hero (library gợi ý "Video-First Hero" — landing thật hiện tại KHÔNG dùng video, giữ nguyên gradient/ảnh tĩnh)
-- ❌ Mesh gradient/Aurora rực rỡ ngoài phạm vi `gradient-text`/`accent-glow` đã có — vùng app thật (post-login) phải phẳng, không gradient trang trí
+- ❌ Video background hero (the library suggests "Video-First Hero" — the real landing page currently does NOT use video, keep the static gradient/images)
+- ❌ Vivid mesh gradient/Aurora beyond the existing `gradient-text`/`accent-glow` — the real app area (post-login) must stay flat, with no decorative gradients
 
 ### Additional Forbidden Patterns
 

@@ -56,9 +56,7 @@ export function useLoadNextChunk(
             if (!old) return old;
             const existingDays = old.itinerary ?? [];
             const newDays = (response.data.days ?? []) as ItineraryDay[];
-            const existingDayNums = new Set(
-              existingDays.map((d) => d.day),
-            );
+            const existingDayNums = new Set(existingDays.map((d) => d.day));
             const uniqueNewDays = newDays.filter(
               (d) => !existingDayNums.has(d.day),
             );
@@ -72,10 +70,10 @@ export function useLoadNextChunk(
         setNextChunkIndex((prev) => prev + 1);
       } else {
         // Chunk not ready yet — backend is still generating
-        toast.info("Đang tải thêm ngày... vui lòng thử lại sau vài giây.");
+        toast.info("Loading more days... please try again in a few seconds.");
       }
     } catch {
-      toast.error("Không thể tải thêm ngày. Vui lòng thử lại.");
+      toast.error("Could not load more days. Please try again.");
     } finally {
       setIsLoadingChunk(false);
     }

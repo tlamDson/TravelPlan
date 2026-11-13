@@ -38,7 +38,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
       track("calendar_synced", { tripId: tripId!, provider: "google" });
       toast.success(
         data.message ??
-          "Đang đồng bộ lên Google Calendar... Sự kiện sẽ xuất hiện trong ít phút!",
+          "Syncing to Google Calendar... Events will appear in a few minutes!",
         { duration: 6000 },
       );
     },
@@ -52,7 +52,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
       const code = e?.response?.data?.code;
       if (code === "GOOGLE_NOT_CONNECTED") {
         toast.error(
-          "Vui lòng đăng nhập bằng tài khoản Google để sử dụng tính năng đồng bộ lịch.",
+          "Please sign in with a Google account to use calendar sync.",
           { duration: 8000 },
         );
         return;
@@ -60,7 +60,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
       if (code === "CALENDAR_VIP_ONLY" || code === "CALENDAR_VIP_REQUIRED") {
         toast.error(
           e?.response?.data?.message ??
-            "Tài khoản chưa được bật đồng bộ lịch trên hệ thống.",
+            "Calendar sync is not enabled for this account.",
           { duration: 6000 },
         );
         return;
@@ -69,7 +69,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
         return;
       }
       toast.error(
-        e?.response?.data?.message ?? "Không thể đồng bộ lên Google Calendar.",
+        e?.response?.data?.message ?? "Could not sync to Google Calendar.",
       );
     },
   });
@@ -88,7 +88,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
   const handleSync = useCallback(async () => {
     if (!tripId) return;
     if (!user) {
-      toast.error("Vui lòng đăng nhập.");
+      toast.error("Please sign in.");
       return;
     }
     const email = user.primaryEmailAddress?.emailAddress;
@@ -106,7 +106,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
 
     if (!google) {
       toast.error(
-        "Vui lòng liên kết tài khoản Google (đăng nhập bằng Google) để đồng bộ lịch.",
+        "Please link a Google account (sign in with Google) to sync your calendar.",
         { duration: 8000 },
       );
       return;
@@ -114,7 +114,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
 
     if (typeof google.reauthorize !== "function") {
       toast.error(
-        "Không thể xin thêm quyền Calendar từ trình duyệt này. Hãy cập nhật @clerk/clerk-react hoặc kiểm tra cấu hình Clerk.",
+        "Could not request additional Calendar permissions from this browser. Update @clerk/clerk-react or check your Clerk configuration.",
         { duration: 8000 },
       );
       return;
@@ -140,7 +140,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
       const msg =
         clerkErr?.errors?.[0]?.message ??
         clerkErr?.message ??
-        "Không thể cấp quyền Google Calendar.";
+        "Could not grant Google Calendar access.";
       toast.error(msg, { duration: 8000 });
     }
   }, [tripId, user, syncCalendar]);

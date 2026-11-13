@@ -21,8 +21,8 @@ const statusLabel: Record<TripStatus, string> = {
   PROCESSING_STEP_2: "Processing (Verify)",
   COMPLETED: "Completed",
   FAILED: "Failed",
-  FALLBACK: "Dự phòng",
-  CANCELLED: "Đã hủy",
+  FALLBACK: "Fallback",
+  CANCELLED: "Cancelled",
 };
 
 export function TripStatusBadge({ status, className }: TripStatusBadgeProps) {

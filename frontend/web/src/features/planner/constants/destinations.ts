@@ -11,7 +11,7 @@ export interface City {
   id: string;
   name: string;
   nameEn: string;
-  /** Format gửi backend: "City, Country" */
+  /** Format sent to the backend: "City, Country" */
   destinationValue: string;
 }
 
@@ -268,7 +268,7 @@ export const CITIES_BY_COUNTRY: Record<string, City[]> = {
       destinationValue: "Cannes, France",
     },
   ],
-  // Các nước khác: rỗng → dùng free text city
+  // Other countries: empty → use free-text city
 };
 
 export function isMVPCountry(countryId: string): boolean {
