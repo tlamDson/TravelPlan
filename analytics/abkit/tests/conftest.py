@@ -1,8 +1,10 @@
 import copy
 import json
+import os
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -53,3 +55,31 @@ def write_case(
 @pytest.fixture
 def repo_root() -> Path:
     return REPO_ROOT
+
+
+HILLSTROM_HEADER = (
+    "recency,history_segment,history,mens,womens,zip_code,newbie,channel,segment,visit,"
+    "conversion,spend"
+)
+#: The raw Hillstrom file is not in git (B2 plan: external data under D:\data\b2\).
+HILLSTROM_RAW = Path(os.environ.get("ABKIT_HILLSTROM_CSV", "D:/data/b2/hillstrom.csv"))
+
+
+def write_hillstrom_like(path: Path, n: int = 600, seed: int = 4) -> Path:
+    """A small file in the raw Hillstrom layout; visit and spend depend on the covariates."""
+    rng = np.random.default_rng(seed)
+    segments = ("Mens E-Mail", "Womens E-Mail", "No E-Mail")
+    lines = [HILLSTROM_HEADER]
+    for i in range(n):
+        segment = segments[i % 3]
+        recency = int(rng.integers(1, 13))
+        history = round(float(rng.uniform(30, 900)), 2)
+        lift = 0.0 if segment == "No E-Mail" else 0.08
+        visit = int(rng.random() < 0.35 - 0.02 * recency + lift)
+        spend = round(history / 20 * visit * float(rng.random() < 0.3), 2)
+        lines.append(
+            f"{recency},2) $100 - $200,{history:g},1,0,Urban,0,Web,{segment},{visit},"
+            f"{int(spend > 0)},{spend:g}"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
