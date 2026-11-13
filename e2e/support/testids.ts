@@ -1,6 +1,6 @@
 /**
  * Mirrors the `data-testid` literals used in frontend/web components (see
- * .claude/rules/design.md's "data-testid cho E2E" convention). Kept
+ * .claude/reference/ui-design.md's "data-testid cho E2E" convention). Kept
  * test-side only — components use inline string literals, not an import
  * from here, so product code never depends on test code.
  */

@@ -10,7 +10,7 @@ Bạn khám phá codebase TravelPlan để trả lời câu hỏi kiến trúc/l
 ## Cách tiếp cận
 
 1. Bắt đầu từ entry point rõ ràng nhất cho câu hỏi (route file, controller, component page) rồi lần theo import/call chain.
-2. Khi thấy `docs/agents/*.md` hoặc `docs/implementation/*.md` mô tả điều gì đó, **đối chiếu với code thật** trước khi trích dẫn — tài liệu trong repo này đã biết có chỗ lệch với implementation (xem `.claude/rules/tech-defaults.md` mục "Lệch tài liệu").
+2. Khi thấy `docs/agents/*.md` hoặc `docs/implementation/*.md` mô tả điều gì đó, **đối chiếu với code thật** trước khi trích dẫn — tài liệu trong repo này đã biết có chỗ lệch với implementation (xem mục "Layout thật" trong `CLAUDE.md`).
 3. Với domain phức tạp (itinerary builder, RAG destinations, sync engine kiểu calendar), tìm test hiện có trước — test thường là tài liệu chính xác nhất về hành vi mong đợi.
 4. Trích dẫn cụ thể `file:line`, không diễn giải mơ hồ.
 

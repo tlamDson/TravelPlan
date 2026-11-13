@@ -4,7 +4,7 @@
  * "no longer available"; gemini-3.6-flash was the newest non-preview flash
  * model this key could actually reach). Deliberately not `gemini-flash-latest`:
  * intent-parser.service's JSON extraction is fragile regex, not a real
- * parser (see `.claude/rules/tech-defaults.md`'s known `extractJson()` bug
+ * parser (see `.claude/reference/tech-debt.md`'s known `extractJson()` bug
  * with bare arrays) — an unannounced silent model swap changing output
  * formatting is a worse failure mode than a pinned model eventually
  * deprecating loudly. Re-verify with `npm run check:services` (note: that

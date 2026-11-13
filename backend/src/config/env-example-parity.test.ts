@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
  * schema declares — commented lines like `# KEY=` count, this only checks
  * the key is *documented*, not filled in. A missing entry here is exactly
  * how FRONTEND_URL/CORS_ALLOWED_ORIGINS went undocumented and caused a real
- * CORS outage (see .claude/rules/tech-defaults.md "Cạm bẫy hay gặp").
+ * CORS outage (see .claude/reference/pitfalls.md).
  */
 
 const ENV_TS_PATH = path.join(__dirname, "env.ts");

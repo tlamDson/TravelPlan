@@ -145,7 +145,7 @@ Scale workers conservatively if you care about Redis command volume (e.g. one re
 
 ### Staging environment (`develop` → staging, `main` → production)
 
-The repo’s Git Flow (see `.claude/rules/workflow.md`) assumes two deploy targets, set up through each provider’s dashboard (not something `railway.toml`/`vercel.json` alone can express, since environment membership and which secrets belong to which environment are dashboard/CLI concepts, not repo config). Full copy-pasteable variable list: `.env.staging.example`.
+The repo’s Git Flow (see `.claude/rules/git-pr.md`) assumes two deploy targets, set up through each provider’s dashboard (not something `railway.toml`/`vercel.json` alone can express, since environment membership and which secrets belong to which environment are dashboard/CLI concepts, not repo config). Full copy-pasteable variable list: `.env.staging.example`.
 
 **Railway**
 

@@ -14,7 +14,7 @@ export default defineConfig([
       globals: globals.node,
     },
     rules: {
-      // Nợ kỹ thuật đã biết (119 chỗ `any`, xem .claude/rules/tech-defaults.md) —
+      // Nợ kỹ thuật đã biết (119 chỗ `any`, xem .claude/reference/tech-debt.md) —
       // bật warn trước, siết lên error theo từng module khi dọn dần.
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [

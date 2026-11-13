@@ -1,58 +1,99 @@
-# TravelPlan — Claude Code Project Instructions
+# TravelPlan — luật cho Claude Code
 
-TravelPlan: agentic travel planner. Monorepo TypeScript (npm workspaces + turbo): Express backend (API + BullMQ worker), React/Vite web app, shared Zod contracts, MongoDB + Redis, Clerk auth, Gemini AI trip generation, Mapbox/Google Places validation.
+File này và `.claude/rules/*` được nạp vào **mọi** phiên, nên chỉ chứa định nghĩa project và luật. Kiến thức chỉ cần cho một số việc nằm ở `.claude/reference/` (bảng cuối file) — chỉ đọc khi việc đang làm cần tới.
 
-Các rule chi tiết dưới đây áp dụng luôn, không chỉ khi được hỏi:
+@.claude/rules/git-pr.md
+@.claude/rules/tdd.md
 
-@.claude/rules/tech-defaults.md
-@.claude/rules/workflow.md
-@.claude/rules/design.md
+## Phần 1 — Định nghĩa project
 
-## Quy tắc bắt buộc (không được vi phạm)
+**TravelPlan** là trình lập lịch trình du lịch có agent: người dùng tạo trip qua wizard, worker gọi Gemini sinh ý định địa điểm, đối chiếu qua Google Places/Mapbox, gom cụm theo địa lý rồi dựng lịch trình theo ngày.
 
-- **Mọi thay đổi đi qua PR** — không commit thẳng vào `develop`/`main`. Tạo nhánh → commit → push → mở PR vào `develop`.
-- **`main` do chủ repo quản lý** — Claude không bao giờ merge vào `main` (kể cả `--admin`), không push, không tự mở PR release trừ khi được yêu cầu rõ ràng. Câu nói rộng kiểu "làm hết đi"/"merge luôn" trong hội thoại **không** tính là uỷ quyền bấm merge `main` — chỉ tính khi nói tường minh đúng nghĩa đó. Nếu chủ repo tự merge, phải là merge commit thật, không squash. Chi tiết: `.claude/rules/workflow.md` mục "Quy tắc bất di bất dịch".
-- **Chỉ merge vào `develop` khi CI + test pass hết** — phải xanh **cả 3 job**: `Lint + Unit Tests`, `Typecheck + Build`, `Backend Docker Build`. Claude **được phép tự merge** PR vào `develop` khi cả 3 job đã xanh và test local đã pass, không cần hỏi lại. CI đỏ hoặc đang chạy → không merge, đợi hoặc fix.
-- **TDD bắt buộc** (Red → Green → Refactor) — không commit code mới thiếu test. Chi tiết: `.claude/rules/tdd.md`.
-- **Cập nhật `CLAUDE.md` + `.claude/rules/*`** khi task làm thay đổi convention, tooling hay quy trình.
-- **Sửa bug quan sát được qua trình duyệt phải verify bằng MCP `chrome-devtools` cả trước lẫn sau khi fix** — không báo "đã fix" nếu chưa tái hiện lại thao tác gây bug sau khi sửa. Chi tiết: `.claude/rules/debug-chrome-mcp.md`.
-- **Không tạo file `.md` mới ở thư mục gốc** — chỉ `README.md` và `CLAUDE.md`.
+**Stack:** monorepo TypeScript (npm workspaces + turbo, Node ≥ 20). Backend Express 5 + Mongoose 9 + BullMQ/ioredis, Zod, Pino, Clerk (`@clerk/express`), Gemini (không phải OpenAI; model pin cứng ở `backend/src/config/gemini-models.ts`). Web React 19 + Vite 7 SPA (không phải Next.js), react-router v7, TanStack Query, Zustand, Tailwind + shadcn/ui, Mapbox GL. MongoDB Atlas, Redis. Python (`analytics/`, `services/`) dùng venv riêng.
 
-## Trạng thái dự án
+**Layout thật** (`docs/agents/*.md`, `docs/PLAN.md` mô tả layout khác — đừng tìm `web/`, `api/`, `worker/`):
 
-Theo `docs/PROGRESS.md`: tiến độ tổng thể ~85%. Đang có thay đổi dở dang chưa commit ở module destinations (`backend/src/features/destinations/`, `frontend/web/src/features/planner/components/wizard/WizardDestinationPickers.tsx`) — xem `git status` trước khi bắt đầu việc gì để không ghi đè.
+| Thư mục            | Nội dung                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `backend/`         | Một workspace chứa cả API (`src/index.ts` → `createApp()` ở `src/app.ts`) và worker BullMQ (`src/worker.ts`) |
+| `frontend/web/`    | SPA chính                                                                                                    |
+| `frontend/mobile/` | Expo/React Native, giai đoạn sớm                                                                             |
+| `packages/shared/` | `@travelplan/shared`: Zod schema, type, constant dùng chung (build bằng `tsup`)                              |
+| `analytics/`       | Python: `abkit` (experimentation), `simkit` (mô phỏng) — B2, thêm dần                                        |
+| `services/`        | Python service của B3 — thêm dần                                                                             |
+| `e2e/`             | Playwright, không thuộc workspace npm nào                                                                    |
 
-**Hạ tầng test đã dựng xong 4/4 lớp** (shared + backend unit, frontend unit/component, backend integration, E2E Playwright — đã merge vào `develop`). Backend integration đã mở rộng từ ~4 lên ~30 route. E2E Playwright có nền móng CI-safe (`npm run e2e`, 4 spec, job CI không-bắt-buộc); spec `@live` gọi Gemini/Places thật để đi hết pipeline sinh trip vẫn **chưa có** — để PR riêng vì cần key thật + spawn worker, không chạy trên CI. Chi tiết đầy đủ từng lớp, lệnh chạy, và quy ước → `.claude/rules/tech-defaults.md` mục "Hạ tầng test" + `.claude/rules/tdd.md`.
+**Các lớp backend:** controller mỏng (validate Zod → gọi service → trả JSON), service chứa business logic, repository chỉ chạm DB và không có logic. Controller chạm thẳng Mongoose là lỗi review.
 
-**Kiến trúc thật khác tài liệu**: `docs/agents/*.md` và `docs/PLAN.md` mô tả layout lý tưởng (`web/`, `api/`, `worker/` tách riêng) không khớp code thật. Layout thật: `backend/` (1 workspace chứa cả API và worker), `frontend/web/`, `frontend/mobile/`, `packages/shared` (tên package `@travelplan/shared`). Chi tiết đầy đủ ở `.claude/rules/tech-defaults.md`.
+- **Fire & Listen:** `POST /api/trips` validate → `tripQueue.add()` → trả `{ jobId }` ngay; controller không bao giờ `await` việc sinh trip. Worker gọi `job.updateProgress()` ở từng bước, lưu kết quả từng phần.
+- **Trip state machine:** `DRAFT → QUEUED → PROCESSING → COMPLETED` (↘ `FAILED`); worker kiểm `Trip.status` trước mỗi bước (idempotent).
+- **AI là service không tin cậy:** AI không gọi API ngoài trực tiếp, chỉ qua tool ở `backend/src/features/planner/tools/`; mọi place AI sinh phải đối chiếu qua `searchPlaces`; circuit breaker `opossum` bọc Places/Mapbox; retry AI tối đa 3 lần rồi fail gracefully.
+- Pipeline lịch trình (6 bước cố định): xem skill `itinerary-builder`.
 
-**Nợ kỹ thuật đã xác minh** (không tự sửa trừ khi được giao — xem `.claude/rules/tech-defaults.md` để có danh sách đầy đủ, gồm cả các bug phát hiện khi dựng hạ tầng test): 143 chỗ `any` (bare token, loại test file) rải rác backend, phần lớn ở `catch (error: any)`; 19 component shadcn chưa dùng; Mapbox lệch tên biến `VITE_MAPBOX_TOKEN`/`VITE_MAPBOX_ACCESS_TOKEN` giữa local và deploy. (`trip.controller.ts` 882 dòng/14 `as any` → tách thành 7 file dưới 200 dòng/0 `as any` ở PR `refactor/split-trip-controller`; `validation.service.ts`'s `PlaceCache` cache-key mù destination + mất field `photoUrl`/`openingHoursArray` khi cache hit → fix ở PR `fix/place-cache-key-and-lossy-fields`; `generalLimiter`/auth cho `/api/dev/scrape-insights` đã fix ở PR `fix/general-limiter-and-dev-route-auth`; Stripe eager-init/`CLERK_PUBLISHABLE_KEY` thiếu khai báo đã fix ở PR `fix/boot-env-resilience`; `/api/dev/*`+`/api/docs` gate ở mức mount + Pino redaction + `service: "worker"` tag đã fix ở PR `fix/security-gates-and-log-hygiene`.)
+**Shared Kernel:** `packages/shared` là nguồn sự thật duy nhất của data contract — chỉ Zod schema, TS type, error code, constant; cấm UI, business logic, model DB. Thay đổi chéo lớp đi theo thứ tự `packages/shared` → backend → frontend (chạy `npm run build:shared` sau khi sửa shared).
 
-**Error tracking & backup đã có credentials thật** (đợt PR #38-42, xem `.claude/rules/tech-defaults.md` mục "Error tracking & Backup" để biết chi tiết): Sentry (`@sentry/node`/`@sentry/react`) wire sẵn cho api/worker/web, tag `service` khớp với Pino — `SENTRY_DSN`/`VITE_SENTRY_DSN` đã set trên cả Railway (4 service) lẫn Vercel (Production + Preview) ngày 2026-08-21, chưa verify bằng lỗi thật. Backup MongoDB hằng ngày (`backend/scripts/backup-mongo.sh` + `.github/workflows/backup-mongo.yml`) đã có đủ 4 GitHub secret `BACKUP_S3_*`/`BACKUP_AWS_*_KEY` (bucket Cloudflare R2), nhưng **cron vẫn chưa chạy** — `schedule`/`workflow_dispatch` chỉ được GitHub nhận diện khi workflow nằm trên default branch (`main`), mà file này mới chỉ ở `develop`; sẽ tự chạy sau lần release `develop → main` tới, xem cạm bẫy tương ứng ở `tech-defaults.md`. Runbook restore ở `backend/scripts/BACKUP.md`.
+**Repository Symmetry:** mỗi domain có mặt đối xứng ở `frontend/web/src/features/<domain>/`, `backend/src/features/<domain>/` và (khi có contract chung) `packages/shared/src/schemas/<domain>.ts`.
 
-**Google Cloud billing đã tách theo project, có killswitch**: `GOOGLE_PLACES_API_KEY` ở project `travelplan-486522` (billing account riêng, tự ngắt billing nếu vượt $5/tháng), `GEMINI_API_KEY` ở project `gen-lang-client-0544187342` (không gắn billing account nào, chỉ chạy free tier). Không bao giờ dùng chung billing account cho nhiều app — bài học từ sự cố tháng 4/2026 khiến Places bị đóng oan theo project khác bị lộ key. Chi tiết đầy đủ + lệnh `gcloud` ở `.claude/rules/tech-defaults.md`.
+**Env:** biến mới khai trong `backend/src/config/env.ts` (envalid, crash lúc boot nếu thiếu biến bắt buộc) **và** `.env.example` — test `env-example-parity.test.ts` chặn nếu thiếu. Logging bằng Pino (`backend/src/lib/logger.ts`), không `console.log`; `logger.error({ err }, "msg")`.
 
-**CI trước đây "nói dối"**: `lint`/`test` từng bị bọc `|| echo` nên không bao giờ fail — CI xanh không có nghĩa test pass. Đã sửa trong `ci-pr.yml`/`ci-main.yml`.
+**4 lớp test** (chi tiết setup: `.claude/reference/test-infra.md`):
 
-**Git Flow**: `develop` (staging) → `main` (production, chỉ chủ repo merge). **Staging đã dựng xong và đang chạy thật** (không còn là checklist lý thuyết): Railway environment `staging` — service `travelplan-api-staging` (đổi tên từ `travelplan-web-staging`; rename service không đổi domain tự sinh, domain vẫn là `travelplan-web-staging-staging.up.railway.app`) + `travelplan-worker-staging` + `Redis-hGhE`, deploy tự động từ push vào `develop`; MongoDB Atlas database `travelplan_staging` riêng (không phải Railway-hosted, khớp topology thật của production); Vercel Preview scoped theo `git-branch=develop` cho các biến `VITE_*`. Webhook Clerk/Stripe test-mode riêng đã trỏ đúng domain staging. Toàn bộ cạm bẫy dựng hạ tầng (Railway `ServiceInstance` không tự sinh, `checkSuites` treo vĩnh viễn, `redeploy` dùng lại snapshot cũ...) đã ghi ở `.claude/rules/tech-defaults.md` mục "Deploy & vận hành".
+| Lớp                     | Lệnh                                                         | Ghi chú                                                                             |
+| ----------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| Shared + backend unit   | `npm run test -w packages/shared`, `npm run test -w backend` | Mock repository/queue bằng `vi.mock()`, không gọi AI/Places thật                    |
+| Frontend unit/component | `npm run test -w frontend/web`                               | MSW, `renderWithProviders`                                                          |
+| Backend integration     | `npm run test:integration -w backend`                        | Mongo/Redis thật (`docker compose up -d mongodb redis`), DB chung `travelplan_test` |
+| E2E Playwright          | `npm run e2e`                                                | Cần `.env.e2e`; job CI không bắt buộc                                               |
 
-**GitHub MCP đã verify hoạt động thật** (không chỉ cấu hình lý thuyết) — client_id `Ov23lijeoeW3qbp7cH35` của OAuth App "TravelPlan" đã đăng ký và test xong luồng OAuth đầy đủ. Chi tiết cạm bẫy (DCR không hỗ trợ, path callback thật, lỗi do Windows Git Bash vs PowerShell tính khác project) ở `.claude/rules/tech-defaults.md`.
+Gate chung: `npm run lint`, `npm run typecheck`, `npm run build` (chạy `build:shared` trước nếu sửa shared).
 
-**Lớp đo reliability/SRE cho pipeline BullMQ đã xong toàn bộ 8 phase** (PR #54-#61, tất cả đã merge vào `develop`, 2026-08-25): SLI/SLO/error-budget đúng khung SRE golden-signals (latency/traffic/errors/saturation) cho trip-generation. Điểm mấu chốt: `JobMetric` (backend/src/features/reliability/models/) ghi outcome thật từ event `completed`/`failed` của worker thay vì tin trạng thái BullMQ — sửa đúng bug "FALLBACK đội lốt thành công" (Gemini chết hoàn toàn mà dashboard cũ vẫn báo xanh, đúng tình huống đã xảy ra thật với bug `gemini-2.0-flash` deprecate). Đọc qua `GET /api/reliability/slo` (gate 3 lớp: flag `ENABLE_RELIABILITY_API` → Clerk auth → allowlist `SRE_ADMIN_EMAILS`), drill-down qua Bull Board dev-only ở `/admin/queues`, và dashboard UI tại `/reliability` (**cố ý không có link ở menu nào** — chỉ vào bằng URL trực tiếp, đúng quyết định đã chốt vì hiện chỉ có 1 người xem). Toàn bộ 8 phase, quyết định thiết kế, và bug đã sửa dọc đường nằm ở `docs/PROGRESS.md` mục "Reliability / SRE Measurement Layer" (local, không track git).
+**Môi trường:** `develop` → staging (Railway env `staging` + Vercel Preview), `main` → production. 3 check bắt buộc trên PR: `Lint + Unit Tests`, `Typecheck + Build`, `Backend Docker Build`. Chi tiết hạ tầng: `.claude/reference/deploy-ops.md`.
 
-**"False-healthy" đã được đo bằng số thật, không còn là giả thuyết** (PR #64, `test/measure-false-healthy`, 2026-09-12): `backend/scripts/measure-false-healthy.ts` (`npm run measure:false-healthy --workspace=backend -- --simulate|--retrospective`) trả lời 3 câu — bao nhiêu job báo sai, dashboard sai bao lâu trước khi phát hiện, % lần đọc "healthy" là giả. `--simulate` chạy **Worker BullMQ thật** lần đầu tiên trong integration test (`backend/src/test/integration/fallback-false-healthy.integration.test.ts` — tiền lệ mới, trước đó chưa integration test nào spawn `createWorker()` thật) để pin cứng chuỗi `job.returnvalue.status === "FALLBACK"` mà `job-outcome.ts`'s `deriveOutcome` dựa vào, rồi sweep `buildSloReport({ now })` thật (không phải re-implement công thức) qua timeline mô phỏng. Kết quả đo được: outage 6h 100%-fallback → dashboard `/reliability` **không bao giờ** rời "healthy" (cửa sổ compliance 28 ngày pha loãng hoàn toàn); outage 8 ngày → phát hiện đầu tiên ở +12h28m. `--retrospective` (đọc Atlas production, không ghi) chỉ tìm được 1 trip `FALLBACK` thật (2026-08-14, một ngày trước fix) — traffic thật quá thấp để đo trọn vẹn quy mô sự cố gốc, chỉ coi là cận dưới. **Vẫn chưa verify** bằng session trình duyệt thật đăng nhập tài khoản `SRE_ADMIN_EMAILS` (phần này của nợ cũ chưa đóng — cố ý để riêng, xem PR #64 description).
+## Phần 2 — Luật
 
-**Pipeline throughput/latency/stall đã đo bằng số thật, và `lockDuration: 60s` đã bị gỡ vì không mua được gì** (B3, `test/measure-pipeline-throughput`, 2026-09-13): `backend/scripts/measure-pipeline.ts` (`npm run measure:pipeline --workspace=backend -- --harvest --redis-url=<url>` rồi `-- --report`) harvest job history trực tiếp từ Redis (BullMQ chưa từng ghi retention trên `main`, nên mọi job cũ vẫn còn — nhưng `develop`'s `DEFAULT_JOB_RETENTION` đã dọn phần lớn: chỉ còn 8 job `trip-generation` trong Redis production tại thời điểm đo, so với 44 job thật trong Mongo từ 2026-02 tới nay). Số đo được (n=8, quá nhỏ để đại diện): p95 processing 105.9s, 0 stall cả trước lẫn sau mốc tune 2026-04-02 — nhưng ở n này, cận trên 95% cho tỷ lệ stall thật vẫn có thể lên tới 37.5% (`stall-rate-bounds.ts`'s rule-of-three/Wilson interval), nên **không có kết luận thống kê nào rút ra được từ so sánh trước/sau**. Câu trả lời thật đến từ cơ chế, không phải thống kê: `worker-lock-duration.integration.test.ts` (Redis thật, BullMQ Worker thật, 4 kịch bản, zero AI spend) chứng minh lock renewal là timer JS chạy mỗi `lockDuration/2` bất kể job chạy bao lâu — job `await` dài không bao giờ stall dù lock ngắn; chỉ có xử lý đồng bộ chặn event loop lâu hơn lock mới gây stall thật (dựng bằng một child process riêng chạy busy-loop, vì blocking event loop của 1 process thì không gì trong CÙNG process đó chạy được để quan sát — kể cả code kiểm tra); và lock dài hơn chỉ trả giá bằng recovery lâu hơn khi worker crash thật (đo được: chênh lệch ~1.5s giữa lock 500ms và 2000ms khớp đúng tỷ lệ). Grep `trip.processor.ts`/`itinerary-builder.ts`/`itinerary-chunker.service.ts` không thấy pha đồng bộ nào đáng kể (chỉ `sanitizeHtml` per-place-name và `JSON.parse` trên response AI cỡ thường — micro giây). Kết luận: xoá hẳn `workerThroughputOpts`/literal `{stalledInterval:30_000,lockDuration:60_000}` ở cả `worker.ts` lẫn `insight-worker.ts`, dùng default BullMQ — `stalledInterval:30_000` vốn đã là no-op (trùng default), còn `lockDuration:60_000` chỉ trả giá recovery mà không mua được gì cho pipeline hiện tại.
+**Quyền** (theo `Conductor/docs/authority.md` — `D:\Desktop\Conductor\docs\authority.md` trên máy của Lam):
 
-**SLI đạt được đã đo bằng traffic thật lần đầu tiên, và nợ browser-session của PR #64 đã đóng** (PR `test/measure-achieved-slo`, 2026-09-13): `backend/scripts/measure-achieved-slo.ts` (`npm run measure:achieved-slo --workspace=backend`, chỉ đọc) đọc `buildSloReport()`/`countByFailureReason()` thật trên `JobMetric` do một load-test cục bộ sinh ra — **không phải traffic người dùng thật**, vì production (`main`) vẫn chưa có code reliability (`git ls-tree origin/main` xác nhận thiếu hẳn `backend/src/features/reliability/`, đúng như PR #64 đã ghi) nên chưa có nơi nào để đo traffic thật. Load-test: 42 job `generate-trip` thật (Gemini + Places thật, không mock) qua `npm run seed:real-trip-jobs`, chạy trên Mongo/Redis Docker local — 35 job ghi được vào `JobMetric` (7 job mất tích do một session Claude Code khác chạy `test:integration` cùng lúc gọi `queue.obliterate()` lên đúng Redis cục bộ dùng chung, reset job-id counter của BullMQ giữa chừng — không làm sai lệch record nào, chỉ làm mất tích, xem cạm bẫy "Redis dev dùng chung" ở `tech-defaults.md`). Kết quả thật đo được trên 35 event: **SLI = 34.29%** (12 completed / 15 fallback / 8 failed — cách rất xa target 90%), **error budget tiêu 657%** (burn rate 6.57x, trạng thái `critical`), fallback rate 42.9%, failure rate 22.9%. Nguyên nhân: load-test cố ý chạy đủ lâu để chạm tường quota free-tier Gemini (~20 `generateContent`/ngày) giữa chừng — số liệu vì vậy trộn lẫn hai giai đoạn (trước/sau khi cạn quota) chứ không phải một single SLO ổn định, đúng theo cảnh báo đã ghi trong plan gốc. Verify UI: đăng nhập thật qua `clerk impersonate <email> --print` (Clerk CLI chính chủ, `npm install -g clerk`, đã link sẵn app TravelPlan) lấy `__clerk_ticket` rồi hoàn tất bằng `window.Clerk.client.signIn.create({ strategy: "ticket", ticket })` qua `chrome-devtools`'s `evaluate_script` — số trên dashboard `/reliability` (budget/latency/error rate) khớp chính xác 100% với output của script. Xác nhận cả 2 nhánh gate: tài khoản trong `SRE_ADMIN_EMAILS` → 200; tài khoản khác đã đăng nhập → 403 với UI lỗi rõ ràng ("Reliability data unavailable — Request failed with status code 403" + nút Retry); chưa đăng nhập → frontend tự redirect `/signin`, không bao giờ gọi API. Bug thật phát hiện lần đầu tiên nhờ có dữ liệu latency thật không đều (không phải toàn số 0 như test/seed synthetic): `LatencyChart.tsx`'s bar chart render rỗng (0 chiều cao) ở lần load đầu tiên của trang, khớp console warning "width(-1) and height(-1)"; chỉ `resize_page` mới trigger Recharts vẽ lại đúng — xem `tech-defaults.md` mục "Nợ kỹ thuật".
+- Mọi thay đổi đi qua PR vào `develop`; không commit/push thẳng `develop` hay `main`.
+- PR vào `develop` được tự merge khi 3 check bắt buộc xanh **và** review độc lập PASS (squash).
+- Release `develop` → `main` theo điều lệ trên; ngoài điều lệ đó thì `main` là của chủ repo — câu rộng kiểu "làm hết đi" không phải uỷ quyền merge `main`. Merge `main` là merge commit thật, không squash.
+- **Chi phí tối đa $0:** không bật dịch vụ trả phí, không vượt free tier/credit. Không chắc có tốn tiền không thì coi như có và không làm.
 
-## MCP Servers
+**Hai loại phiên:**
 
-Khai báo ở `.mcp.json`, mỗi người tự approve/authorize khi dùng lần đầu (`/mcp`).
+- **Phiên headless của conductor:** làm trong worktree được giao (không `EnterWorktree`), không `/pr`, `/ci-watch`, `ScheduleWakeup`, không merge, không chờ CI. Commit → push → mở PR → dừng, dòng cuối in đúng một trong `RESULT: pushed <số PR>`, `RESULT: failed <lý do>`, `RESULT: blocked <việc chủ repo phải làm>`. Không sửa `.claude/settings*.json`, `.claude/scripts/`, hook.
+- **Phiên tay:** gọi `EnterWorktree` trước khi sửa file đầu tiên, đưa nhánh về `origin/develop` (xem `.claude/rules/git-pr.md`). `/pr` và `/ci-watch` dùng khi muốn, không bắt buộc.
 
-| Server            | Dùng để                                                                       | Cần gì trên máy                                                                                                                                                                                      |
-| ----------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `github`          | Thao tác PR / issue / code search trực tiếp qua remote HTTP, OAuth qua `/mcp` | Đăng ký OAuth App thủ công + `--client-id`/`--client-secret`/`--callback-port` — xem cạm bẫy "GitHub MCP OAuth" ở `.claude/rules/tech-defaults.md`, đừng chỉ bấm `/mcp` suông vì sẽ fail với lỗi DCR |
-| `chrome-devtools` | Mở app thật trong Chrome để xem UI, đọc console/network, đo performance/a11y  | Google Chrome + Node (chạy qua `npx`)                                                                                                                                                                |
+**TDD:** commit đầu tiên chỉ chứa test đỏ; chạy và thấy đỏ đúng lý do; PR có mục `## RED` dán output đỏ đó. Không commit code mới thiếu test. Chi tiết: `.claude/rules/tdd.md`.
 
-Chỉ nhóm tool đọc (`screenshot`, `snapshot`, `console`, `network`) auto-allow trên `chrome-devtools`; `navigate_page` / `click` / gõ phím / `evaluate_script` vẫn hỏi xác nhận từng lần.
+**Kích thước file:** mỗi file một trách nhiệm; tách khi file trộn nhiều việc hoặc dài quá khoảng 300 dòng. Không còn trần cứng — file cũ dài hơn không phải nợ phải trả ngay.
+
+**An toàn dữ liệu:**
+
+- Zod ở mọi biên vào (request, response API, output AI, file đọc vào).
+- Output AI: `sanitize-html` trước khi ghi MongoDB, `DOMPurify` trước khi render; cấm `dangerouslySetInnerHTML` trần.
+- Không đọc, in hay commit secret (`.env*`, key, token).
+- Test không bao giờ chạm DB production — chỉ `travelplan_test`, `travelplan_e2e`, Docker local hoặc dữ liệu offline.
+- PII (email, userId Clerk, IP…) phải băm trước khi vào tầng phân tích (`analytics/`, event lưu để phân tích).
+
+**Trung thực số đo:** mọi con số trong README phải có trong `analytics/runs/runs.csv`. Người dùng mô phỏng luôn ghi "simulated"/"virtual users" và đếm riêng với người dùng thật; kết quả mô phỏng viết theo hướng "recovered a known injected effect".
+
+**Python trong `analytics/` và `services/`:** venv riêng mỗi worktree (`analytics/.venv`, cài bằng `pip install -e ".[dev]"`), ghim phiên bản dependency, `ruff check`, `ruff format --check`, `pytest -q` xanh trước khi push.
+
+**Tiết kiệm token:** chỉ chạy test liên quan tới thay đổi với reporter gọn (`npx vitest run <files> --reporter=dot`, `pytest -q`); full lint/typecheck/test một lần trước khi push. Chỉ đọc file trong `.claude/reference/` khi việc cần tới. Không dán lại plan hay tóm tắt dài.
+
+**Nợ kỹ thuật:** bug gặp ngoài phạm vi việc đang làm thì không tự sửa — viết test khẳng định hành vi hiện tại kèm `[BUG]`, rồi ghi vào `.claude/reference/tech-debt.md` đủ 3 phần: triệu chứng, nguyên nhân kèm `file:line`, điều kiện kích hoạt. Sửa xong thì xoá mục đó trong cùng commit.
+
+**Giữ luật cập nhật:** việc làm đổi convention, tooling hay quy trình thì sửa `CLAUDE.md`/`.claude/rules/*` (luật) hoặc `.claude/reference/*` (kiến thức) trong cùng PR. Lịch sử PR không ghi vào đây — đã có trong git. Không tạo file `.md` mới ở thư mục gốc (chỉ `README.md`, `CLAUDE.md`). Test `backend/src/config/claude-docs-parity.test.ts` giữ phần nạp tự động dưới 24 KB.
+
+## Tham khảo theo nhu cầu (`.claude/reference/`, không nạp tự động)
+
+| File                                 | Đọc khi                                                                                                    |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `.claude/reference/pitfalls.md`      | Đụng BullMQ/Redis, Mongoose, Pino, CORS, Gemini quota, CI workflow, MCP/OAuth, Docker local, Windows shell |
+| `.claude/reference/tech-debt.md`     | Trước khi sửa một module (xem nó có bug đã biết không); khi ghi nợ mới                                     |
+| `.claude/reference/deploy-ops.md`    | Railway, Vercel, staging, Sentry, backup Mongo, billing/quota GCP, `railway.toml`                          |
+| `.claude/reference/test-infra.md`    | Dựng/sửa test integration, E2E Playwright, RAG eval, các script đo (`measure:*`)                           |
+| `.claude/reference/ui-design.md`     | Mọi thay đổi UI ở `frontend/web`: pre-flight `ui-ux-pro-max`, quy ước UI, i18n 3 ngôn ngữ, `data-testid`   |
+| `.claude/reference/debug-browser.md` | Sửa bug quan sát được qua trình duyệt (verify bằng `chrome-devtools` trước và sau khi sửa)                 |
+
+Skills ở `.claude/skills/` (`itinerary-builder`, `rag-destinations`, `travelplan-devops`, `ui-ux-pro-max`, `ui-styling`) tự nạp theo mô tả. MCP: `github`, `chrome-devtools` khai ở `.mcp.json` (cạm bẫy OAuth ở `pitfalls.md`).

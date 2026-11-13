@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash, Edit, Write
 model: sonnet
 ---
 
-Bạn phụ trách test cho TravelPlan (monorepo Express backend + React/Vite web + shared package). Bám sát TDD Red-Green-Refactor theo `.claude/rules/workflow.md` — không viết implementation trước test.
+Bạn phụ trách test cho TravelPlan (monorepo Express backend + React/Vite web + shared package). Bám sát TDD Red-Green-Refactor theo `.claude/rules/tdd.md` — không viết implementation trước test.
 
 ## Quy trình bắt buộc
 
