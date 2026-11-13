@@ -240,3 +240,26 @@ file is Criteo's own copy on Hugging Face, `abkit.criteo.CRITEO_MIRROR_URL`):
 ```bash
 analytics/.venv/Scripts/python -m abkit.golden.freeze_criteo D:/data/b2/criteo/criteo-research-uplift-v2.1.csv.gz --root analytics/golden/v3
 ```
+
+## G-decide (`decide/v1/`, 30 blinded readouts, B2 plan, PR 15b)
+
+The answer here is Lam's own call, not abkit's: gate G-B2-3, about 1–2 hours.
+
+| File                         | What                                                                                                                                                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `readouts/R01.md` … `R30.md` | The evidence of a readout without its conclusion: who the users are, the sample ratio numbers, every effect (also when SRM fails), the early window, persona table and interim looks where the case has them. No decision, no PASS/FAIL, no case name or description |
+| `key.json`                   | Blind id → case, `simulated`, abkit's `memo` label (SRM-blocked = `investigate`), and the `baseline` label (ship when `p < alpha` and the lift is positive, ignoring SRM). **Do not open it before labelling**                                                       |
+| `labels.csv`                 | Lam's labels (`readout,label,labelled_at`), written by `abkit decide label`; not committed until G-B2-3 is done                                                                                                                                                      |
+
+28 readouts are G-sim cases drawn per group with seed 1115 (A/A 5, effect 8, long tail 3,
+novelty 3, peeking 3, ratio 3, SRM 3), all simulated (virtual users); 2 are the real
+Hillstrom e-mail test (`hillstrom/mens-visit`, `hillstrom/mens-spend`, real shoppers,
+not TravelPlan users). `tests/test_labeling_export.py` re-exports and byte-compares
+this directory, so it is never edited by hand: `abkit decide export --force` rewrites it
+and refuses while a `labels.csv` exists.
+
+```bash
+analytics/.venv/Scripts/python -m abkit decide label            # s / n / i, q to stop; resumes
+analytics/.venv/Scripts/python -m abkit decide kappa            # kappa vs memo and vs p-only
+analytics/.venv/Scripts/python -m abkit decide kappa --record   # append the two M11 rows
+```
