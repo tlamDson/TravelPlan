@@ -69,8 +69,17 @@ def test_mkdocs_site_builds_strict(tmp_path):
     assert (tmp_path / "site/index.html").is_file()
 
 
+def test_simkit_depends_on_the_distribution_name_not_the_import_name():
+    simkit = tomllib.loads((ABKIT_DIR.parent / "simkit/pyproject.toml").read_text("utf-8"))
+    version = PYPROJECT["project"]["version"]
+    assert f"abkit-experiments=={version}" in simkit["project"]["dependencies"]
+
+
 def test_wheel_has_the_abkit_package_and_distribution_metadata(tmp_path):
-    pytest.importorskip("setuptools")
+    setuptools = pytest.importorskip("setuptools")
+    pinned = PYPROJECT["build-system"]["requires"][0].split("==")[1]
+    if setuptools.__version__ != pinned:
+        pytest.skip(f"wheel build is checked with the pinned setuptools {pinned}")
     src = tmp_path / "src"
     shutil.copytree(
         ABKIT_DIR,

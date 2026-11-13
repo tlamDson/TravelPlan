@@ -9,9 +9,9 @@ description = "Seeded SIMULATED TravelPlan events with experiment and fault hook
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-# abkit is the sibling package analytics/abkit: install it first (see README).
+# abkit-experiments (import name abkit) is the sibling package analytics/abkit: install it first (see README).
 dependencies = [
-  "abkit==0.1.0",
+  "abkit-experiments==0.1.0",
   "jsonschema==4.23.0",
   # Imported directly by the G-sim freezer; same pins as abkit.
   "numpy==2.1.3",
