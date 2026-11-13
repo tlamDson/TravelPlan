@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "id": "sim-effect/uniform-60",
+  "method": "readout",
+  "description": "+60% on the save transition for every persona.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "srm_threshold": 0.0005,
+    "expected_shares": {
+      "control": 0.5,
+      "treatment": 0.5
+    },
+    "metric": {
+      "kind": "mean",
+      "column": "saves"
+    }
+  },
+  "expected": {
+    "srm": false,
+    "estimate": 2.010854816824966
+  },
+  "decision": "ship",
+  "tolerance": {
+    "default": {
+      "abs": 0.0,
+      "rel": 0.0
+    },
+    "estimate": {
+      "abs": 1.64904,
+      "rel": 0.0
+    }
+  },
+  "source": {
+    "tool": "simkit",
+    "version": "0.1.0",
+    "call": "simkit.golden_truth.observe: the same simulated users run in both arms; estimate = mean over enrolled users of Y(treatment) - Y(control) (ratio: sum Y_num / sum Y_den per arm); tolerance = 4 x the standard error of the observed difference",
+    "generator": "simkit.freeze_golden",
+    "seed": 13000,
+    "simulated": true,
+    "injected": {
+      "experiment": {
+        "definition": {
+          "key": "golden-sim-effect-uniform-60",
+          "salt": "golden",
+          "holdoutBuckets": 0,
+          "variants": [
+            {
+              "key": "control",
+              "weight": 5000
+            },
+            {
+              "key": "treatment",
+              "weight": 5000
+            }
+          ]
+        },
+        "target": "trip_saved",
+        "relativeLift": {
+          "treatment": {
+            "browser": 0.6,
+            "planner": 0.6,
+            "power": 0.6
+          }
+        },
+        "noveltyLift": {},
+        "noveltyHalfLifeDays": 2.0,
+        "exposureStates": [
+          "trip_generation_completed",
+          "trip_viewed"
+        ],
+        "exposureLoss": {}
+      },
+      "users": 6000,
+      "days": 14,
+      "window_days": 7,
+      "start": "2026-11-01",
+      "enrolled": 2211
+    },
+    "screening": {
+      "first_seed": 13000,
+      "attempts": 1,
+      "reference": "scipy 1.14.1: chi-square SRM, then Welch or delta-method z",
+      "verdict": "ship",
+      "srm_p_value": 0.6552,
+      "p_value": 2.781e-05
+    },
+    "frozen_at": "2026-11-13"
+  }
+}

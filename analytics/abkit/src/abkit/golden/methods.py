@@ -15,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from abkit import stats
+from abkit import causal, stats
 from abkit.golden.case import KNOWN_METHODS
 
 Data = dict[str, np.ndarray] | None
@@ -54,6 +54,13 @@ def _delta(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
     )
 
 
+def _cuped(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
+    (y_c, y_t), (x_c, x_t) = _split(data, "value"), _split(data, "covariate")
+    return _with_decision(
+        stats.cuped(y_c, x_c, y_t, x_t, params["alpha"], params.get("alternative", "two-sided"))
+    )
+
+
 def _srm(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
     result = stats.srm_chisquare(data["count"], data["expected_share"], params["threshold"])
     return _with_decision(result)
@@ -89,13 +96,28 @@ def _bh(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
     return {"p_adjusted": list(result.p_adjusted), "rejected": list(result.rejected)}
 
 
+def _causal(method: str) -> Implementation:
+    """``params``: ``outcome`` column, plus the keywords of ``causal.estimate_effect``."""
+
+    def run(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
+        kwargs = dict(params)
+        outcome = kwargs.pop("outcome")
+        return _with_decision(causal.estimate_effect(data, method, outcome=outcome, **kwargs))
+
+    return run
+
+
 IMPLEMENTATIONS: dict[str, Implementation] = {
     "welch_ttest": _welch,
     "delta_ratio": _delta,
+    "cuped": _cuped,
     "srm_chisquare": _srm,
     "power_ttest_ind": _power,
     "sample_size_ttest_ind": _sample_size,
     "mde_ttest_ind": _mde,
     "sample_size_proportions": _sample_size_proportions,
     "bh_fdr": _bh,
+    "naive_diff": _causal("naive_diff"),
+    "ipw": _causal("ipw"),
+    "aipw": _causal("aipw"),
 }
