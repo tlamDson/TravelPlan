@@ -13,6 +13,8 @@ from abkit.golden.runner import Status, run_golden
 from abkit.golden.subsets import SUBSETS_FILE, load_subset
 
 G_REF_GROUPS = {"welch", "delta", "cuped", "srm", "power", "bh"}
+#: G-public (PR 11: Hillstrom) is not part of the ci-fast gate (B2 plan: G-ref, G-event, G-sim).
+G_PUBLIC_GROUPS = {"hillstrom", "public"}  # Hillstrom (PR 11), LaLonde (PR 17)
 G_SIM_GROUPS = {
     "sim-aa",
     "sim-effect",
@@ -88,8 +90,7 @@ def test_committed_ci_fast_subset_has_every_g_ref_group_and_each_g_sim_group() -
     ids = load_subset(GOLDEN_LATEST, "ci-fast")
     all_cases = load_dataset(GOLDEN_LATEST)
     groups = {c.group for c in all_cases}
-    # G-public (``public/``, PR 17) is outside ci-fast; pytest runs it (test_golden_causal.py).
-    assert groups == G_REF_GROUPS | G_SIM_GROUPS | {"public"}
+    assert groups == G_REF_GROUPS | G_SIM_GROUPS | G_PUBLIC_GROUPS
     by_group = {g: {c.id for c in all_cases if c.group == g} for g in groups}
     for group in G_REF_GROUPS:
         assert by_group[group] <= ids, group

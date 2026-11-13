@@ -1,16 +1,22 @@
-"""Freeze the G-public LaLonde NSW cases from Dehejia & Wahba's raw files (B2 plan, PR 17).
+"""Freeze the G-public Hillstrom cases: published numbers, never computed by abkit.
 
-    python -m abkit.golden.freeze_public D:/data/b2/lalonde [ROOT] [--force]
+    python -m abkit.golden.freeze_public D:/data/b2/hillstrom.csv [ROOT] [--force]
 
-The truth is the published numbers of Dehejia & Wahba (1999), NBER WP 6586, Tables 2-3:
-the NSW experimental estimate $1,794 (SE 633) and the PSID-1 difference in means -$15,205
-(SE 1,154 in Table 3, 1,155 in Table 2). Nothing here runs the abkit engine: this file only
-reshapes the raw text files into ``data.csv`` and writes the published numbers.
+The truth is Radcliffe (2008), "Hillstrom's MineThatData Email Analytics
+Challenge: An Approach Using Uplift Modelling", Table 2 (``RADCLIFFE_URL``):
+visit rate and spend per head for the Mens e-mail against no e-mail, and
+Table 1 for the arm sizes. Each number here was checked against the raw file
+before it was used. The treated spend per head printed there ($1.41) is not
+what the file holds ($1.4226), so it is left out.
 
-The observational cases (IPW, AIPW on NSW treated + PSID-1 controls) expect the experimental
-estimate, with the experimental 95% CI half-width (1.96 x 633) as the tolerance: an estimate
-inside that interval recovers the benchmark. DW's logit for PSID-1 (Table 3, note c) is the
-propensity model; their regression covariates (note a) are the AIPW outcome model.
+The data is the two arms of the raw file (``variant``, ``value``,
+``covariate``), cell text unchanged. Tolerances: counts are exact; a printed
+number passes within half its last printed unit; the CUPED ``estimate`` also
+gets 3 sd of the shift CUPED makes (``theta`` times the arm imbalance in the
+covariate, sd about ``R * SE``), computed here with NumPy.
+
+This module may import only the golden format and the Hillstrom loader
+(``test_golden_public.py`` enforces it).
 """
 
 from __future__ import annotations
@@ -18,210 +24,167 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import shutil
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, datetime
 from pathlib import Path
 
-from abkit.golden.case import SCHEMA_VERSION, TRUTH_FILE
+import numpy as np
 
+from abkit.golden.case import GoldenFormatError, load_case
+from abkit.hillstrom import HILLSTROM_SHA256, HILLSTROM_URL, load_hillstrom, two_arms
+
+GENERATOR = "abkit.golden.freeze_public"
 DEFAULT_ROOT = Path(__file__).resolve().parents[4] / "golden/v2"
-PAPER_URL = "https://www.nber.org/papers/w6586"
-DATA_URL = "https://users.nber.org/~rdehejia/data/.nswdata2.html"
-#: Raw files as served on 2026-11-13 from https://users.nber.org/~rdehejia/data/<name>.
-RAW_FILES = {
-    "nswre74_treated.txt": "e7b742fe0ff07a0f45e129b4ff108bb9611cd83d53604732c48a8a0a3e20eda3",
-    "nswre74_control.txt": "a1364cea459d953dc691a667d99194b4ad335d6d550354fe23a5d2dc58d729b5",
-    "psid_controls.txt": "73ffcdd8feb7f965f8e1de9bfdb80a095542c7a95ce7f56b2e2b2a9716e858cc",
-}
-RAW_COLUMNS = ("treatment", "age", "educ", "black", "hisp", "married", "nodegree")
-RAW_COLUMNS += ("re74", "re75", "re78")
-#: DW Table 1 legend: Ux = 1 if unemployed (zero earnings) in 19x.
-COLUMNS = (*RAW_COLUMNS, "u74", "u75")
-EXPERIMENTAL = 1794
-EXPERIMENTAL_SE = 633
-PSID_NAIVE = -15205
-#: Two-sided 95% normal quantile times the published experimental SE.
-CI_HALF_WIDTH = round(1.959963984540054 * EXPERIMENTAL_SE, 2)
-#: DW Table 3, note c: the PSID-1 logit.
-PSID_PROPENSITY = [
-    "age", "age^2", "educ", "educ^2", "married", "nodegree", "black", "hisp",
-    "re74", "re75", "re74^2", "re75^2", "u74*black",
-]  # fmt: skip
-#: DW Table 3, note a: the regression covariates (without the treatment indicator).
-DW_REGRESSION = ["age", "age^2", "educ", "nodegree", "black", "hisp", "re74", "re75"]
+GROUP = "hillstrom"
+RADCLIFFE_URL = "http://minethatdata.com/Stochastic_Solutions_E-Mail_Challenge_2008.04.30.pdf"
+_N = {"n_control": 21306, "n_treatment": 21307}
 
 
 @dataclass(frozen=True)
-class BuiltCase:
-    case_id: str
-    truth: dict
-    csv_text: str
+class PublicCase:
+    name: str
+    outcome: str
+    covariate: str
+    description: str
+    #: Output key -> the number as printed in the source.
+    published: dict[str, float | int]
+    #: Half the last printed unit of each rounded number.
+    half_unit: float
+    where: str
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+PUBLIC_CASES: tuple[PublicCase, ...] = (
+    PublicCase(
+        name="mens-visit",
+        outcome="visit",
+        covariate="recency",
+        description=(
+            "Hillstrom e-mail test, Mens E-Mail vs No E-Mail: two-week visit rate, "
+            "CUPED-adjusted by recency (months since last purchase)."
+        ),
+        published={
+            **_N,
+            "mean_control": 0.1062,
+            "mean_treatment": 0.1828,
+            "naive_estimate": 0.0766,
+            "estimate": 0.0766,
+        },
+        half_unit=0.00005,
+        where="Table 2, Men's row, Visit Rate: treated 18.28%, control 10.62%, uplift 7.66%",
+    ),
+    PublicCase(
+        name="mens-spend",
+        outcome="spend",
+        covariate="history",
+        description=(
+            "Hillstrom e-mail test, Mens E-Mail vs No E-Mail: two-week spend per head "
+            "in dollars, CUPED-adjusted by history (spend in the past year)."
+        ),
+        published={**_N, "mean_control": 0.65, "naive_estimate": 0.77, "estimate": 0.77},
+        half_unit=0.005,
+        where=(
+            "Table 2, Men's row, Spend / head: control $0.65, uplift $0.77 "
+            "(treated $1.41 is not used: the file gives $1.4226)"
+        ),
+    ),
+)
 
 
-def _read_raw(path: Path) -> list[list[float]]:
-    rows = []
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        if not line.strip():
+def _render_csv(arms: dict, case: PublicCase) -> str:
+    rows = zip(arms["variant"], arms[case.outcome], arms[case.covariate], strict=True)
+    return "\n".join(["variant,value,covariate", *(",".join(r) for r in rows)]) + "\n"
+
+
+def _cuped_shift_sd(arms: dict, case: PublicCase) -> float:
+    """About R * SE: sd of theta (mean x_t - mean x_c) under randomization."""
+    y, x = arms[case.outcome].astype(float), arms[case.covariate].astype(float)
+    is_t = arms["variant"] == "treatment"
+    r = float(np.corrcoef(y, x)[0, 1])
+    se = math.sqrt(y[is_t].var(ddof=1) / is_t.sum() + y[~is_t].var(ddof=1) / (~is_t).sum())
+    return abs(r) * se
+
+
+def _tolerance(arms: dict, case: PublicCase) -> dict:
+    tolerance = {"default": {"abs": 0, "rel": 0}}
+    for key in case.published:
+        if key in _N:
             continue
-        cells = [float(c) for c in line.split()]
-        if len(cells) != len(RAW_COLUMNS):
-            raise ValueError(f"{path}:{number}: {len(cells)} values, expected {len(RAW_COLUMNS)}")
-        rows.append(cells)
-    return rows
+        slack = case.half_unit
+        if key == "estimate":
+            slack += 3 * _cuped_shift_sd(arms, case)
+        tolerance[key] = {"abs": slack, "rel": 0}
+    return tolerance
 
 
-def _render(rows: list[list[float]]) -> str:
-    lines = [",".join(COLUMNS)]
-    for row in rows:
-        values = [*row, float(row[7] == 0), float(row[8] == 0)]
-        lines.append(",".join(format(v, ".10g") for v in values))
-    return "\n".join(lines) + "\n"
-
-
-def _source(call: str, files: Sequence[str], frozen_at: str) -> dict:
-    return {
-        "tool": "published",
-        "version": "Dehejia & Wahba (1999), NBER WP 6586; JASA 94(448):1053-1062",
-        "call": call,
-        "paper_url": PAPER_URL,
-        "data_url": DATA_URL,
-        "data_files": {name: RAW_FILES[name] for name in files},
-        "generator": "abkit.golden.freeze_public",
-        "frozen_at": frozen_at,
-    }
-
-
-def _truth(case_id, method, description, params, expected, tolerance, source) -> dict:
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "id": case_id,
-        "method": method,
-        "description": description,
+def _write_case(arms: dict, case: PublicCase, case_dir: Path, sha256: str, frozen_at: str) -> None:
+    case_dir.mkdir(parents=True)
+    (case_dir / "data.csv").write_text(_render_csv(arms, case), "utf-8", newline="\n")
+    truth = {
+        "schema_version": 1,
+        "id": f"{GROUP}/{case.name}",
+        "method": "cuped",
+        "description": case.description,
         "data": "data.csv",
-        "params": params,
-        "expected": expected,
+        "params": {"alpha": 0.05, "alternative": "two-sided"},
+        "expected": case.published,
         "decision": None,
-        "tolerance": tolerance,
-        "source": source,
+        "tolerance": _tolerance(arms, case),
+        "source": {
+            "tool": "published",
+            "version": "Radcliffe (2008), Stochastic Solutions, Tables 1-2",
+            "call": (
+                f"{case.where}; arm sizes from Table 1. Published numbers are unadjusted "
+                "group means; CUPED keeps the same estimand."
+            ),
+            "url": RADCLIFFE_URL,
+            "data_url": HILLSTROM_URL,
+            "data_sha256": sha256,
+            "generator": GENERATOR,
+            "frozen_at": frozen_at,
+        },
     }
+    text = json.dumps(truth, indent=2) + "\n"
+    (case_dir / "truth.json").write_text(text, "utf-8", newline="\n")
+    load_case(case_dir)
 
 
-def build_lalonde_cases(
-    raw_dir: Path, check_hashes: bool = True, frozen_at: str | None = None
-) -> list[BuiltCase]:
-    raw_dir = Path(raw_dir)
-    if check_hashes:
-        for name, digest in RAW_FILES.items():
-            if _sha256(raw_dir / name) != digest:
-                raise ValueError(f"{raw_dir / name}: sha256 differs from the pinned download")
-    frozen_at = frozen_at or date.today().isoformat()
-    treated = _read_raw(raw_dir / "nswre74_treated.txt")
-    experimental = _render(treated + _read_raw(raw_dir / "nswre74_control.txt"))
-    psid = _render(treated + _read_raw(raw_dir / "psid_controls.txt"))
-    exp_files = ("nswre74_treated.txt", "nswre74_control.txt")
-    psid_files = ("nswre74_treated.txt", "psid_controls.txt")
-    benchmark_tol = {"default": {"abs": CI_HALF_WIDTH, "rel": 0}}
-    observational = "NSW treated (185) + PSID-1 controls (2,490): the ATT must land inside the"
-    observational += f" experimental 95% CI, {EXPERIMENTAL} +/- 1.96 x {EXPERIMENTAL_SE}"
-    cases = [
-        BuiltCase(
-            "public/lalonde-experimental",
-            _truth(
-                "public/lalonde-experimental",
-                "naive_diff",
-                "NSW RE74 subsample (185 treated, 260 randomized controls): the experimental "
-                "benchmark, difference in 1978 earnings with the OLS standard error.",
-                {"outcome": "re78", "se_type": "pooled", "alpha": 0.05},
-                {"estimate": EXPERIMENTAL, "se": EXPERIMENTAL_SE},
-                {"default": {"abs": 0.5, "rel": 0}},
-                _source("Table 2 panel B col (1); Table 3 col (1); row NSW", exp_files,
-                        frozen_at),
-            ),
-            experimental,
-        ),
-        BuiltCase(
-            "public/lalonde-psid-naive",
-            _truth(
-                "public/lalonde-psid-naive",
-                "naive_diff",
-                "NSW treated + PSID-1 controls: the unadjusted difference, far from the "
-                "experimental benchmark.",
-                {"outcome": "re78", "se_type": "pooled", "alpha": 0.05},
-                {"estimate": PSID_NAIVE, "se": 1154.5},
-                {"default": {"abs": 0.5, "rel": 0}, "se": {"abs": 1.0, "rel": 0}},
-                _source("Table 3 col (1) row PSID-1 (SE 1154; Table 2 prints 1155)", psid_files,
-                        frozen_at),
-            ),
-            psid,
-        ),
-        BuiltCase(
-            "public/lalonde-psid-ipw",
-            _truth(
-                "public/lalonde-psid-ipw",
-                "ipw",
-                f"{observational}. Normalized IPW-ATT, DW's PSID-1 logit.",
-                {"outcome": "re78", "estimand": "att", "propensity_terms": PSID_PROPENSITY,
-                 "alpha": 0.05},
-                {"estimate": EXPERIMENTAL},
-                benchmark_tol,
-                _source("benchmark: Table 3 col (1) row NSW; logit: Table 3 note c", psid_files,
-                        frozen_at),
-            ),
-            psid,
-        ),
-        BuiltCase(
-            "public/lalonde-psid-aipw",
-            _truth(
-                "public/lalonde-psid-aipw",
-                "aipw",
-                f"{observational}. AIPW-ATT, DW's PSID-1 logit and DW's regression covariates "
-                "for the control outcome model.",
-                {"outcome": "re78", "estimand": "att", "propensity_terms": PSID_PROPENSITY,
-                 "outcome_terms": DW_REGRESSION, "alpha": 0.05},
-                {"estimate": EXPERIMENTAL},
-                benchmark_tol,
-                _source("benchmark: Table 3 col (1) row NSW; logit: Table 3 note c; outcome "
-                        "covariates: Table 3 note a", psid_files, frozen_at),
-            ),
-            psid,
-        ),
-    ]  # fmt: skip
-    return cases
-
-
-def freeze_lalonde(
-    root: Path, raw_dir: Path, check_hashes: bool = True, force: bool = False
+def freeze_public(
+    raw_path: Path,
+    root: Path = DEFAULT_ROOT,
+    frozen_at: str | None = None,
+    force: bool = False,
+    expected_sha256: str | None = HILLSTROM_SHA256,
 ) -> list[Path]:
-    """Write every LaLonde case under ``root``; an existing case is kept unless ``force``."""
-    written = []
-    for case in build_lalonde_cases(raw_dir, check_hashes):
-        case_dir = Path(root) / case.case_id
+    """Write each case of ``PUBLIC_CASES`` under ``root/hillstrom/``; returns the directories."""
+    columns = load_hillstrom(raw_path, expected_sha256)
+    sha256 = hashlib.sha256(Path(raw_path).read_bytes()).hexdigest()
+    arms = two_arms(columns, treatment="Mens E-Mail", control="No E-Mail")
+    frozen_at = frozen_at or datetime.now(UTC).date().isoformat()
+    targets = [Path(root) / GROUP / c.name for c in PUBLIC_CASES]
+    existing = [t for t in targets if t.exists()]
+    if existing and not force:
+        raise GoldenFormatError(
+            f"{existing[0]} already exists; a changed case goes in a new dataset version"
+        )
+    for case, case_dir in zip(PUBLIC_CASES, targets, strict=True):
         if case_dir.exists():
-            if not force:
-                raise FileExistsError(f"{case_dir} already exists; pass force to rewrite it")
             shutil.rmtree(case_dir)
-        case_dir.mkdir(parents=True)
-        (case_dir / "data.csv").write_text(case.csv_text, encoding="utf-8", newline="\n")
-        truth = json.dumps(case.truth, indent=2) + "\n"
-        (case_dir / TRUTH_FILE).write_text(truth, encoding="utf-8", newline="\n")
-        written.append(case_dir)
-    return written
+        _write_case(arms, case, case_dir, sha256, frozen_at)
+    return targets
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m abkit.golden.freeze_public")
-    parser.add_argument("raw_dir", type=Path, help="folder with the three DW .txt files")
-    parser.add_argument("root", type=Path, nargs="?", default=DEFAULT_ROOT)
-    parser.add_argument("--force", action="store_true")
+    parser = argparse.ArgumentParser(prog="abkit.golden.freeze_public")
+    parser.add_argument("raw", type=Path, help="raw Hillstrom CSV")
+    parser.add_argument("root", nargs="?", type=Path, default=DEFAULT_ROOT)
+    parser.add_argument("--force", action="store_true", help="overwrite existing cases")
+    parser.add_argument("--frozen-at", default=None, help="date recorded in source.frozen_at")
     args = parser.parse_args(argv)
-    for path in freeze_lalonde(args.root, args.raw_dir, force=args.force):
-        print(path)
+    written = freeze_public(args.raw, args.root, frozen_at=args.frozen_at, force=args.force)
+    print(f"froze {len(written)} G-public cases under {args.root / GROUP}")
     return 0
 
 

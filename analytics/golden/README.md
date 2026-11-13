@@ -47,18 +47,18 @@ column to a NumPy array (float64 when every cell is numeric, else str) or is
 `None`. `variant` is `control` / `treatment`; estimates are treatment minus
 control. Decisions: `reject_null` when `p_value < alpha`, else `fail_to_reject`.
 
-| Method                    | Data columns                                             | Params                                                               | Outputs                                                                                           | Decision         |
-| ------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------- |
-| `welch_ttest`             | `variant`, `value`                                       | `alpha`, `alternative`                                               | `estimate`, `statistic`, `df`, `p_value`, `ci_low`, `ci_high` (CI two-sided only)                 | yes              |
-| `delta_ratio`             | `variant`, `numerator`, `denominator` (one row per user) | `alpha`                                                              | `ratio_control`, `ratio_treatment`, `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high` | yes              |
-| `cuped`                   | `variant`, `value`, `covariate`                          | `alpha`, `alternative`                                               | `theta`, `variance_reduction`, then the Welch outputs on the adjusted values                      | yes              |
-| `srm_chisquare`           | `variant`, `count`, `expected_share`                     | `threshold`                                                          | `statistic`, `p_value`, `dof`                                                                     | `srm` / `no_srm` |
-| `power_ttest_ind`         | —                                                        | `effect_size`, `nobs1`, `ratio`, `alpha`, `alternative`              | `power`                                                                                           | —                |
-| `sample_size_ttest_ind`   | —                                                        | `effect_size`, `power`, `ratio`, `alpha`, `alternative`              | `nobs1` (not rounded up)                                                                          | —                |
-| `mde_ttest_ind`           | —                                                        | `nobs1`, `power`, `ratio`, `alpha`, `alternative`                    | `effect_size` (Cohen's d)                                                                         | —                |
-| `sample_size_proportions` | —                                                        | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                | —                |
-| `bh_fdr`                  | `hypothesis`, `p_value`                                  | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                        | —                |
-| `readout`                 | `variant`, `persona`, metric columns (see below)         | see below                                                            | `srm`, `estimate`, plus `early_estimate` / `estimate_<persona>`                                   | see below        |
+| Method                    | Data columns                                             | Params                                                               | Outputs                                                                                                                                                                                                                   | Decision         |
+| ------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `welch_ttest`             | `variant`, `value`                                       | `alpha`, `alternative`                                               | `estimate`, `statistic`, `df`, `p_value`, `ci_low`, `ci_high` (CI two-sided only)                                                                                                                                         | yes              |
+| `delta_ratio`             | `variant`, `numerator`, `denominator` (one row per user) | `alpha`                                                              | `ratio_control`, `ratio_treatment`, `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high`                                                                                                                         | yes              |
+| `cuped`                   | `variant`, `value`, `covariate`                          | `alpha`, `alternative`                                               | `theta`, `variance_reduction`, then the Welch outputs on the adjusted values; also `sample_size_multiplier` (`1/(1-R²)`), `n_control`, `n_treatment`, raw `mean_control` / `mean_treatment`, `naive_estimate`, `naive_se` | yes              |
+| `srm_chisquare`           | `variant`, `count`, `expected_share`                     | `threshold`                                                          | `statistic`, `p_value`, `dof`                                                                                                                                                                                             | `srm` / `no_srm` |
+| `power_ttest_ind`         | —                                                        | `effect_size`, `nobs1`, `ratio`, `alpha`, `alternative`              | `power`                                                                                                                                                                                                                   | —                |
+| `sample_size_ttest_ind`   | —                                                        | `effect_size`, `power`, `ratio`, `alpha`, `alternative`              | `nobs1` (not rounded up)                                                                                                                                                                                                  | —                |
+| `mde_ttest_ind`           | —                                                        | `nobs1`, `power`, `ratio`, `alpha`, `alternative`                    | `effect_size` (Cohen's d)                                                                                                                                                                                                 | —                |
+| `sample_size_proportions` | —                                                        | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                                                                                                                                        | —                |
+| `bh_fdr`                  | `hypothesis`, `p_value`                                  | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                                                                                                                                                | —                |
+| `readout`                 | `variant`, `persona`, metric columns (see below)         | see below                                                            | `srm`, `estimate`, plus `early_estimate` / `estimate_<persona>`                                                                                                                                                           | see below        |
 | `naive_diff`              | `treatment` (0/1), the `outcome` column                  | `outcome`, `alpha`, `se_type` (`welch` / `pooled`)                   | `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high`                                     | yes              |
 | `ipw`                     | `treatment`, `outcome`, covariates                       | `outcome`, `estimand` (`ate` / `att`), `propensity_terms`, `alpha`   | as `naive_diff` (normal-based)                                                                    | yes              |
 | `aipw`                    | `treatment`, `outcome`, covariates                       | as `ipw`, plus `outcome_terms`                                       | as `naive_diff` (normal-based)                                                                    | yes              |
@@ -132,6 +132,36 @@ and `tests/test_golden_reference.py` checks that.
 of every committed case; the statsmodels cases skip where the `[golden]` extra
 is not installed (CI installs core + dev only).
 
+## G-public (`v2/hillstrom/`, B2 plan, PR 11)
+
+Published numbers, never computed by abkit. Each was checked against the raw
+file before it was used, and `truth.json` links its source (`source.url`) and
+the exact data file (`source.data_url`, `source.data_sha256`).
+
+| Case                   | Data (Mens E-Mail vs No E-Mail)        | Truth                                                                                       |
+| ---------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `hillstrom/mens-visit` | `value` = visit, `covariate` = recency | Radcliffe (2008) Table 2: visit 18.28% vs 10.62%, uplift 7.66 pp; Table 1: 21,307 vs 21,306 |
+| `hillstrom/mens-spend` | `value` = spend, `covariate` = history | Table 2: control $0.65 per head, uplift $0.77; same arm sizes                               |
+
+Not used: the treated spend per head printed in Table 2 ($1.41) does not match
+the file ($1.4226). Radcliffe reports no test, so `decision` is `null`.
+Tolerances: counts exact; a printed number within half its last printed unit;
+the CUPED `estimate` also gets 3 sd of the shift CUPED makes (`theta` times the
+arm imbalance in the covariate, about `R * SE`).
+
+Adding a new group to `v2` does not touch a frozen case, so it does not need a
+new version. The raw file is not committed (B2 plan: external data under
+`D:\data\b2\`); `data.csv` holds only the two arms and three columns.
+
+```bash
+curl -o D:/data/b2/hillstrom.csv http://www.minethatdata.com/Kevin_Hillstrom_MineThatData_E-MailAnalytics_DataMiningChallenge_2008.03.20.csv
+analytics/.venv/Scripts/python -m abkit.golden.freeze_public D:/data/b2/hillstrom.csv analytics/golden/v3   # checks the sha256
+```
+
+`tests/test_golden_public.py` refreezes into a temp dir and compares bytes
+when the raw file is at `D:/data/b2/hillstrom.csv` (or `ABKIT_HILLSTROM_CSV`);
+it skips otherwise, as on CI.
+
 ## G-sim (`v2`, 50 cases, simulated)
 
 SIMULATED experiments (virtual users, `simkit`), 50/50 on `trip_saved`:
@@ -170,7 +200,7 @@ analytics/.venv/Scripts/python -m simkit.freeze_golden analytics/golden/v3   # r
 Truth is the published numbers of Dehejia & Wahba (1999), [NBER WP 6586](https://www.nber.org/papers/w6586)
 (JASA 94(448)), never abkit. Data: their NSW RE74 subsample and PSID-1 comparison group,
 [users.nber.org/~rdehejia/data](https://users.nber.org/~rdehejia/data/.nswdata2.html); the
-sha256 of each raw file is pinned in `abkit/golden/freeze_public.py` and in `source.data_files`.
+sha256 of each raw file is pinned in `abkit/golden/freeze_lalonde.py` and in `source.data_files`.
 
 | Case                          | Method       | Expected (published)                         | Tolerance                                   |
 | ----------------------------- | ------------ | -------------------------------------------- | ------------------------------------------- |
@@ -186,5 +216,5 @@ outside the repo (`D:/data/b2/lalonde`); `tests/test_golden_causal.py` checks th
 data against them when present, and with NumPy alone that it reproduces 1,794, 633 and −15,205.
 
 ```bash
-analytics/.venv/Scripts/python -m abkit.golden.freeze_public D:/data/b2/lalonde   # --force to rewrite
+analytics/.venv/Scripts/python -m abkit.golden.freeze_lalonde D:/data/b2/lalonde   # --force to rewrite
 ```

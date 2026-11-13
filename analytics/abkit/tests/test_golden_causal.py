@@ -15,7 +15,7 @@ import pytest
 from conftest import GOLDEN_LATEST
 
 from abkit.golden.case import KNOWN_METHODS, load_case, load_dataset
-from abkit.golden.freeze_public import RAW_FILES, build_lalonde_cases, freeze_lalonde
+from abkit.golden.freeze_lalonde import RAW_FILES, build_lalonde_cases, freeze_lalonde
 from abkit.golden.methods import IMPLEMENTATIONS
 from abkit.golden.runner import Status, run_golden
 
@@ -149,7 +149,7 @@ def test_freeze_writes_loadable_cases_and_refuses_to_overwrite(tmp_path: Path) -
     assert len(written) == 4
     assert {c.id for c in load_dataset(tmp_path / "out")} == LALONDE
     truth = json.loads((written[0] / "truth.json").read_text(encoding="utf-8"))
-    assert truth["source"]["generator"] == "abkit.golden.freeze_public"
+    assert truth["source"]["generator"] == "abkit.golden.freeze_lalonde"
     with pytest.raises(FileExistsError):
         freeze_lalonde(tmp_path / "out", tmp_path / "raw", check_hashes=False)
 
@@ -166,8 +166,8 @@ def test_committed_cases_match_the_raw_dehejia_wahba_files() -> None:
         }
 
 
-def test_public_freezer_never_imports_the_abkit_engine() -> None:
-    path = Path(__file__).resolve().parents[1] / "src/abkit/golden/freeze_public.py"
+def test_lalonde_freezer_never_imports_the_abkit_engine() -> None:
+    path = Path(__file__).resolve().parents[1] / "src/abkit/golden/freeze_lalonde.py"
     tree = ast.parse(path.read_text(encoding="utf-8"))
     imported = set()
     for node in ast.walk(tree):

@@ -30,7 +30,7 @@
       "nswre74_treated.txt": "e7b742fe0ff07a0f45e129b4ff108bb9611cd83d53604732c48a8a0a3e20eda3",
       "nswre74_control.txt": "a1364cea459d953dc691a667d99194b4ad335d6d550354fe23a5d2dc58d729b5"
     },
-    "generator": "abkit.golden.freeze_public",
+    "generator": "abkit.golden.freeze_lalonde",
     "frozen_at": "2026-11-13"
   }
 }
