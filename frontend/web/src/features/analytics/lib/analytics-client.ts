@@ -1,8 +1,10 @@
 import {
   ANALYTICS_BATCH_MAX_EVENTS,
-  ANALYTICS_SCHEMA_VERSION,
   type AnalyticsEvent,
 } from "@travelplan/shared";
+import { buildClientEvent, type InvalidEventReport } from "./build-event";
+
+export type { InvalidEventReport };
 
 /** Events the browser may emit; exposure is written by the server only. */
 export type ClientEvent = Exclude<
@@ -43,6 +45,8 @@ export interface AnalyticsClientOptions {
   maxBackoffMs?: number;
   maxQueueSize?: number;
   onDrop?: (events: AnalyticsEvent[], reason: DropReason) => void;
+  /** An event failed the shared catalog and was not queued. */
+  onInvalid?: (report: InvalidEventReport) => void;
 }
 
 export interface AnalyticsClient {
@@ -56,15 +60,6 @@ export interface AnalyticsClient {
   /** Page is going away: beacon everything not yet acknowledged. */
   flushOnUnload(): void;
   pendingCount(): number;
-}
-
-/** Events are JSON on the wire, so plain objects and arrays are all there is. */
-function deepFreeze<T>(value: T): T {
-  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
-    for (const child of Object.values(value)) deepFreeze(child);
-    Object.freeze(value);
-  }
-  return value;
 }
 
 export function createAnalyticsClient(
@@ -81,6 +76,7 @@ export function createAnalyticsClient(
     maxBackoffMs = 30_000,
     maxQueueSize = 500,
     onDrop = () => {},
+    onInvalid = () => {},
   } = opts;
   const batchSize = Math.min(
     Math.max(1, opts.batchSize ?? 20),
@@ -165,19 +161,23 @@ export function createAnalyticsClient(
 
   return {
     track(name, properties) {
-      // Snapshot and freeze: a retry or beacon must resend exactly what the
-      // first send carried under this eventId, whatever the caller does next.
-      const event = deepFreeze({
-        eventId: newId(),
-        schemaVersion: ANALYTICS_SCHEMA_VERSION,
-        occurredAt: now().toISOString(),
-        sessionId: getSessionId(),
-        userId,
-        source: "web",
-        name,
-        properties: JSON.parse(JSON.stringify(properties)),
-      } as ClientEvent);
-      queue.push(event);
+      // Analytics must never break the caller, so nothing here may throw.
+      let built: ReturnType<typeof buildClientEvent>;
+      try {
+        built = buildClientEvent({
+          eventId: newId(),
+          occurredAt: now().toISOString(),
+          sessionId: getSessionId(),
+          userId,
+          name,
+          properties,
+        });
+        if (!built.ok) onInvalid(built.report);
+      } catch {
+        return;
+      }
+      if (!built.ok) return;
+      queue.push(built.event);
       if (queue.length > maxQueueSize) {
         onDrop(queue.splice(0, queue.length - maxQueueSize), "queue_full");
       }

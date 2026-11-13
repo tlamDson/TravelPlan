@@ -26,6 +26,9 @@ function getClient(): AnalyticsClient {
           { count: events.length, reason },
           "analytics events dropped",
         ),
+      // The report holds the event name and failing paths, never values.
+      onInvalid: (report) =>
+        logger.warn(report, "analytics event failed the catalog, not sent"),
     });
     uninstall = installUnloadFlush(client);
   }
