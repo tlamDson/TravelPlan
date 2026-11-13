@@ -1,10 +1,20 @@
-"""Core A/B statistics: Welch, delta method, SRM, power/MDE (B2 plan, PR 10).
+"""Core A/B statistics: Welch, delta method, SRM, power/MDE (B2 plan, PR 10);
+mSPRT and Benjamini-Hochberg (PR 12).
 
 Estimates are always treatment minus control. Each function validates its
 input and raises ``ValueError`` instead of returning NaN.
 """
 
+from abkit.stats.bh import BhResult, bh_fdr
 from abkit.stats.delta import DeltaResult, delta_ratio
+from abkit.stats.msprt import (
+    MsprtResult,
+    MsprtSequence,
+    msprt_halfwidth,
+    msprt_likelihood_ratio,
+    msprt_sequence,
+    msprt_test,
+)
 from abkit.stats.power import (
     ProportionSampleSize,
     cohens_h,
@@ -19,13 +29,21 @@ from abkit.stats.welch import WelchResult, welch_ttest
 
 __all__ = [
     "SRM_THRESHOLD",
+    "BhResult",
     "DeltaResult",
+    "MsprtResult",
+    "MsprtSequence",
     "ProportionSampleSize",
     "SrmResult",
     "WelchResult",
+    "bh_fdr",
     "cohens_h",
     "delta_ratio",
     "mde_ttest_ind",
+    "msprt_halfwidth",
+    "msprt_likelihood_ratio",
+    "msprt_sequence",
+    "msprt_test",
     "power_proportions",
     "power_ttest_ind",
     "sample_size_proportions",

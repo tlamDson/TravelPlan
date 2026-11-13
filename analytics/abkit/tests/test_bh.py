@@ -25,9 +25,10 @@ def test_step_up_lets_a_larger_p_rescue_smaller_ones() -> None:
     assert res.rejected == (True, True, True)
 
 
-def test_clips_at_one_and_keeps_a_single_p_unchanged() -> None:
+def test_never_exceeds_one_and_keeps_a_single_p_unchanged() -> None:
     assert bh_fdr([0.9, 0.95]).p_adjusted == pytest.approx((0.95, 0.95))
-    assert bh_fdr([0.6, 1.0, 0.99]).p_adjusted == pytest.approx((0.99, 1.0, 0.99))
+    # Raw x3/rank: 1.8, 1.485, 1.0; the largest p bounds every adjusted value.
+    assert bh_fdr([0.6, 1.0, 0.99]).p_adjusted == pytest.approx((1.0, 1.0, 1.0))
     assert bh_fdr([0.2]).p_adjusted == pytest.approx((0.2,))
 
 

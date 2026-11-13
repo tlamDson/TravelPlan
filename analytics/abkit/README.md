@@ -10,6 +10,13 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   the two-sample t-test and two proportions (Cohen's h). Estimates are
   treatment minus control. Bad input raises `ValueError`, so a function never
   returns NaN. These must pass the golden G-ref cases of each method.
+  It also has the mSPRT (normal mixture, Johari et al.): always-valid p-values
+  and confidence sequences that may be read after every look, and
+  Benjamini-Hochberg FDR adjustment across metrics.
+- `abkit.peeking`: simulated A/A experiments (virtual users) read every day for
+  14 days, for the daily-peek false positive rate of the t-test against the
+  mSPRT (M1), and the coverage of 95% intervals under an injected effect (M3).
+  It appends its rows to `runs.csv` (`simulated=true`).
 - `abkit.runs`: the `analytics/runs/runs.csv` ledger. Every number quoted in a
   README must come from a row in that file.
 - `abkit.bench`: runs a named benchmark and appends its result to `runs.csv`.
@@ -22,5 +29,6 @@ python -m venv analytics/.venv
 analytics/.venv/Scripts/python -m pip install -e "analytics/abkit[dev]"   # bin/ on Linux/macOS
 cd analytics/abkit && ../.venv/Scripts/python -m ruff check . && ../.venv/Scripts/python -m ruff format --check . && ../.venv/Scripts/python -m pytest -q
 analytics/.venv/Scripts/python -m abkit.bench assignment --pr 9
+analytics/.venv/Scripts/python -m abkit.peeking --pr 12   # 10,000 A/A x 14 days; --dry-run to print only
 analytics/.venv/Scripts/python -m abkit golden   # latest golden version; --strict: MISSING fails too
 ```
