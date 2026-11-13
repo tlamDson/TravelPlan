@@ -103,6 +103,11 @@ def _uplift_arm_summary(data: Data, params: Mapping[str, Any]) -> Mapping[str, A
     return arm_summary(counts)
 
 
+def _bh(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
+    result = stats.bh_fdr(data["p_value"], params["alpha"])
+    return {"p_adjusted": list(result.p_adjusted), "rejected": list(result.rejected)}
+
+
 def _causal(method: str) -> Implementation:
     """``params``: ``outcome`` column, plus the keywords of ``causal.estimate_effect``."""
 
@@ -124,6 +129,7 @@ IMPLEMENTATIONS: dict[str, Implementation] = {
     "mde_ttest_ind": _mde,
     "sample_size_proportions": _sample_size_proportions,
     "uplift_arm_summary": _uplift_arm_summary,
+    "bh_fdr": _bh,
     "naive_diff": _causal("naive_diff"),
     "ipw": _causal("ipw"),
     "aipw": _causal("aipw"),

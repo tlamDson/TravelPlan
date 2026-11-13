@@ -31,6 +31,17 @@ server-side exposure, and faults that map one-to-one onto the G-event ingest out
   `freeze_golden`): freezes the 50 simulated cases of `analytics/golden/v2/sim-*` with the
   true effect from both potential outcomes and the decision implied by the planted parameters
   (`analytics/golden/README.md`).
+- **Validation of abkit** (`simkit.validation_sim`, `simkit.validation_run`, B2 plan PR 14):
+  1,000 simulated experiments of 1k, 5k and 50k virtual users each, with +3% injected on the
+  population save rate, split by persona (relative lift ×0.5 browser, ×1 planner, ×2 power).
+  Each virtual user has one Bernoulli outcome, "the exposed session reached `trip_saved`",
+  whose control rate per persona is exact from the Markov chain (`simkit.conversion`), so the
+  true ATE and CATE are known in closed form. It records M2 (Welch power against the analytic
+  two-proportion power, A/A false positive rate, users per arm for 80% power), M5 (bias and
+  95% CI coverage of the ATE and of each persona's CATE) and CATE rows (RMSE, Cochran's Q
+  power and A/A false positive rate, persona-order accuracy) in `runs.csv`. On these virtual
+  users abkit recovered the known injected effect: at 50k users the Welch power was 0.579
+  (analytic 0.548) and +3% needs 45,282 users per arm for 80% power.
 - **Export:** canonical JSONL (`to_jsonl`, sorted keys, `\n`), and typed Parquet
   (`write_parquet`, schema-valid events only, `properties` as JSON text; `[parquet]` extra).
 
@@ -44,6 +55,7 @@ cd analytics/simkit && ../.venv/Scripts/python -m ruff check . && ../.venv/Scrip
 
 analytics/.venv/Scripts/python -m simkit.generate --users 500 --days 14 \
     --experiment experiment.json --duplicate 5 --missing-field 3 --parquet
+analytics/.venv/Scripts/python -m simkit.validation_run --pr 14   # M2, M5, CATE; --dry-run
 ```
 
 `experiment.json`:

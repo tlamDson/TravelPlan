@@ -90,8 +90,8 @@ def test_abkit_reproduces_the_published_hillstrom_lifts() -> None:
 def test_cuped_is_no_longer_missing_from_the_latest_dataset() -> None:
     report = run_golden(GOLDEN_LATEST)
     missing = {r.method for r in report.results if r.status is Status.MISSING}
-    # bh_fdr (PR 12) and readout (PR 15) land later.
-    assert missing == {"bh_fdr", "readout"}
+    # bh_fdr landed in PR 12; readout (PR 15) lands later.
+    assert missing == {"readout"}
     assert report.ok(strict=False)
 
 
