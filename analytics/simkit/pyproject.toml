@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools==75.6.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simkit"
+version = "0.1.0"
+description = "Seeded SIMULATED TravelPlan events with experiment and fault hooks (ported from RepoPulse)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+# abkit is the sibling package analytics/abkit: install it first (see README).
+dependencies = [
+  "abkit==0.1.0",
+  "jsonschema==4.23.0",
+]
+
+[project.optional-dependencies]
+parquet = [
+  "pyarrow==18.1.0",
+]
+dev = [
+  "pyarrow==18.1.0",
+  "pytest==8.3.4",
+  "ruff==0.8.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
