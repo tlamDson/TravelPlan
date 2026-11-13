@@ -10,6 +10,7 @@ from pathlib import Path
 from abkit.golden.case import GoldenCase, load_dataset
 from abkit.golden.compare import compare_outputs
 from abkit.golden.methods import IMPLEMENTATIONS, Implementation
+from abkit.golden.subsets import load_subset
 
 
 class Status(Enum):
@@ -31,6 +32,7 @@ class CaseResult:
 class GoldenReport:
     root: Path
     results: tuple[CaseResult, ...]
+    subset: str | None = None
 
     @property
     def counts(self) -> dict[Status, int]:
@@ -43,7 +45,8 @@ class GoldenReport:
         return bad == 0 and (not strict or counts[Status.MISSING] == 0)
 
     def format(self) -> str:
-        lines = [f"abkit golden: {self.root} ({len(self.results)} cases)"]
+        scope = f", subset {self.subset}" if self.subset else ""
+        lines = [f"abkit golden: {self.root} ({len(self.results)} cases{scope})"]
         for r in self.results:
             lines.append(f"{r.status.name:<8} {r.case_id}  [{r.method}]")
             lines.extend(f"         - {d}" for d in r.details)
@@ -70,9 +73,17 @@ def run_case(case: GoldenCase, implementations: Mapping[str, Implementation]) ->
 
 
 def run_golden(
-    root: Path, implementations: Mapping[str, Implementation] | None = None
+    root: Path,
+    implementations: Mapping[str, Implementation] | None = None,
+    subset: str | None = None,
 ) -> GoldenReport:
-    """Load the dataset at ``root`` (raises ``GoldenFormatError``) and run each case."""
+    """Load the dataset at ``root`` (raises ``GoldenFormatError``) and run each case.
+
+    With ``subset``, only the cases that ``<root>/subsets.json`` names under it run.
+    """
     impls = IMPLEMENTATIONS if implementations is None else implementations
     cases = load_dataset(root)
-    return GoldenReport(Path(root), tuple(run_case(c, impls) for c in cases))
+    if subset is not None:
+        chosen = load_subset(root, subset, cases)
+        cases = [c for c in cases if c.id in chosen]
+    return GoldenReport(Path(root), tuple(run_case(c, impls) for c in cases), subset)
