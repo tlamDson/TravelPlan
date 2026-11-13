@@ -37,7 +37,7 @@ Metric thuần (`recallAtK`, `precisionAtK`, `mrr`, `ndcgAtK`, `hitRate`, test t
 
 ## Golden `abkit` (`analytics/golden/`)
 
-`python -m abkit golden [root] [--strict]` chạy engine trên từng case và in PASS/FAIL/MISSING/ERROR theo dung sai trong `truth.json`; method chưa có implementation (đăng ký ở `abkit/golden/methods.py`) là MISSING, chỉ đỏ khi `--strict`. Đáp án G-ref tính bằng scipy/statsmodels ở `abkit/golden/ref_truth.py` (không import gì từ abkit; test AST chặn). Case đã đóng băng không sửa — đổi thì đóng băng sang `v2/` bằng `python -m abkit.golden.freeze_ref` (cần extra `[golden]`). Format và hợp đồng từng method: `analytics/golden/README.md`.
+`python -m abkit golden [root] [--strict]` chạy engine trên từng case và in PASS/FAIL/MISSING/ERROR theo dung sai trong `truth.json`; method chưa có implementation (đăng ký ở `abkit/golden/methods.py`) là MISSING, chỉ đỏ khi `--strict`. Đáp án G-ref tính bằng scipy/statsmodels ở `abkit/golden/ref_truth.py` (không import gì từ abkit; test AST chặn). Case đã đóng băng không sửa — đổi thì đóng băng sang `v2/` bằng `python -m abkit.golden.freeze_ref` (cần extra `[golden]`). Format và hợp đồng từng method: `analytics/golden/README.md`. G-public Hillstrom (`v2/hillstrom/`) lấy số đã công bố (Radcliffe 2008), đóng băng bằng `python -m abkit.golden.freeze_public <raw.csv>`; file gốc để ở `D:\data\b2\hillstrom.csv` (hoặc `ABKIT_HILLSTROM_CSV`), không commit — test so lại từ file gốc tự skip khi không có file (như trên CI).
 
 ## Script đo (`backend/scripts/`, chỉ đọc trừ khi ghi khác)
 

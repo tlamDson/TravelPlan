@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "id": "hillstrom/mens-visit",
+  "method": "cuped",
+  "description": "Hillstrom e-mail test, Mens E-Mail vs No E-Mail: two-week visit rate, CUPED-adjusted by recency (months since last purchase).",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "n_control": 21306,
+    "n_treatment": 21307,
+    "mean_control": 0.1062,
+    "mean_treatment": 0.1828,
+    "naive_estimate": 0.0766,
+    "estimate": 0.0766
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 0,
+      "rel": 0
+    },
+    "mean_control": {
+      "abs": 5e-05,
+      "rel": 0
+    },
+    "mean_treatment": {
+      "abs": 5e-05,
+      "rel": 0
+    },
+    "naive_estimate": {
+      "abs": 5e-05,
+      "rel": 0
+    },
+    "estimate": {
+      "abs": 0.0008635251838025712,
+      "rel": 0
+    }
+  },
+  "source": {
+    "tool": "published",
+    "version": "Radcliffe (2008), Stochastic Solutions, Tables 1-2",
+    "call": "Table 2, Men's row, Visit Rate: treated 18.28%, control 10.62%, uplift 7.66%; arm sizes from Table 1. Published numbers are unadjusted group means; CUPED keeps the same estimand.",
+    "url": "http://minethatdata.com/Stochastic_Solutions_E-Mail_Challenge_2008.04.30.pdf",
+    "data_url": "http://www.minethatdata.com/Kevin_Hillstrom_MineThatData_E-MailAnalytics_DataMiningChallenge_2008.03.20.csv",
+    "data_sha256": "0e5893329d8b93cefecc571777672028290ab69865718020c78c7284f291aece",
+    "generator": "abkit.golden.freeze_public",
+    "frozen_at": "2026-11-13"
+  }
+}

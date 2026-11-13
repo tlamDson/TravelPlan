@@ -24,17 +24,19 @@ def _strong(n: int = 1500, seed: int = 2):
 
 def test_bootstrap_recovers_the_predicted_variance_ratio() -> None:
     args = _strong()
-    boot = bootstrap_cuped(*args, n_boot=400, seed=1)
+    boot = bootstrap_cuped(*args, n_boot=1000, seed=1)
     full = cuped(*args)
-    assert boot.n_boot == 400 and boot.seed == 1
+    assert boot.n_boot == 1000 and boot.seed == 1
     assert boot.variance_reduction == pytest.approx(full.variance_reduction, rel=1e-12)
     assert boot.predicted_variance_ratio == pytest.approx(1 / full.sample_size_multiplier)
     assert boot.predicted_variance_ratio == pytest.approx(0.36, abs=0.04)
-    assert boot.bootstrap_variance_ratio == pytest.approx(boot.predicted_variance_ratio, abs=0.04)
+    # The ratio of two bootstrap variances is noisy: about +-0.02 (1 sd) at n_boot=1000 here.
+    assert boot.bootstrap_variance_ratio == pytest.approx(boot.predicted_variance_ratio, abs=0.06)
     assert boot.ratio_ci_low < boot.bootstrap_variance_ratio < boot.ratio_ci_high
     assert boot.bootstrap_se_cuped == pytest.approx(full.se, rel=0.1)
     assert boot.analytic_se_cuped == pytest.approx(full.se, rel=1e-12)
-    assert abs(boot.mean_shift) < full.se
+    # Replicates centre on the sample, so the mean shift is the sample's own adjustment.
+    assert boot.mean_shift == pytest.approx(full.estimate - full.naive_estimate, abs=0.1 * full.se)
 
 
 def test_bootstrap_is_reproducible_by_seed() -> None:
