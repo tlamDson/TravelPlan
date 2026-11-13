@@ -82,7 +82,8 @@ def _files(root: Path) -> dict[str, bytes]:
 
 def test_v1_is_kept_and_v2_changes_only_the_refrozen_cases() -> None:
     v1 = _files(GOLDEN_V1)
-    # v2 also holds G-sim (``sim-*``) and ``subsets.json`` (PR 13a); compare the G-ref part.
+    # v2 also holds G-sim (``sim-*``, ``subsets.json``, PR 13a) and G-public (``public/``,
+    # PR 17); compare the G-ref part.
     v2 = {k: v for k, v in _files(GOLDEN_LATEST).items() if k.split("/")[0] in G_REF_GROUPS}
     assert v1.keys() == v2.keys()
     changed = {"/".join(k.split("/")[:2]) for k in v1 if v1[k] != v2[k]}

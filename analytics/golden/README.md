@@ -59,8 +59,13 @@ control. Decisions: `reject_null` when `p_value < alpha`, else `fail_to_reject`.
 | `sample_size_proportions` | —                                                        | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                                                                                                                                        | —                |
 | `bh_fdr`                  | `hypothesis`, `p_value`                                  | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                                                                                                                                                | —                |
 | `readout`                 | `variant`, `persona`, metric columns (see below)         | see below                                                            | `srm`, `estimate`, plus `early_estimate` / `estimate_<persona>`                                                                                                                                                           | see below        |
+| `naive_diff`              | `treatment` (0/1), the `outcome` column                  | `outcome`, `alpha`, `se_type` (`welch` / `pooled`)                   | `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high`                                     | yes              |
+| `ipw`                     | `treatment`, `outcome`, covariates                       | `outcome`, `estimand` (`ate` / `att`), `propensity_terms`, `alpha`   | as `naive_diff` (normal-based)                                                                    | yes              |
+| `aipw`                    | `treatment`, `outcome`, covariates                       | as `ipw`, plus `outcome_terms`                                       | as `naive_diff` (normal-based)                                                                    | yes              |
 
-The exact formula behind each case is in its `source.call`.
+The exact formula behind each case is in its `source.call`. The causal methods take
+covariates as terms: `age`, `age^2`, `u74*black` (an intercept is always added); the
+formulas are in `abkit/causal/estimators.py`.
 
 ### `readout` (G-sim)
 
@@ -189,3 +194,27 @@ analytics/.venv/Scripts/python -m simkit.freeze_golden analytics/golden/v3   # r
 `simkit/tests/test_golden_sim.py` re-screens every committed case from its
 `data.csv` and rebuilds the `ci-fast` ones byte for byte from their seed;
 `SIMKIT_GOLDEN_FULL=1` rebuilds all 50 (minutes, nightly).
+
+## G-public: LaLonde NSW (`v2/public/`, B2 plan, PR 17)
+
+Truth is the published numbers of Dehejia & Wahba (1999), [NBER WP 6586](https://www.nber.org/papers/w6586)
+(JASA 94(448)), never abkit. Data: their NSW RE74 subsample and PSID-1 comparison group,
+[users.nber.org/~rdehejia/data](https://users.nber.org/~rdehejia/data/.nswdata2.html); the
+sha256 of each raw file is pinned in `abkit/golden/freeze_lalonde.py` and in `source.data_files`.
+
+| Case                          | Method       | Expected (published)                         | Tolerance                                   |
+| ----------------------------- | ------------ | -------------------------------------------- | ------------------------------------------- |
+| `lalonde-experimental`        | `naive_diff` | estimate 1,794, SE 633 (Table 2B/3, row NSW) | ±0.5 (rounding)                             |
+| `lalonde-psid-naive`          | `naive_diff` | estimate −15,205, SE 1,154/1,155 (Table 2/3) | ±0.5; SE ±1                                 |
+| `lalonde-psid-ipw`            | `ipw` (ATT)  | the experimental 1,794                       | ±1,240.66 = 1.96 × 633, the experimental CI |
+| `lalonde-psid-aipw`           | `aipw` (ATT) | the experimental 1,794                       | same                                        |
+
+The two observational cases pass when the estimate on NSW treated + PSID-1 controls lands
+inside the experimental 95% CI. The propensity model is DW's PSID-1 logit (Table 3, note c);
+the AIPW outcome model uses DW's regression covariates (Table 3, note a). The raw files stay
+outside the repo (`D:/data/b2/lalonde`); `tests/test_golden_causal.py` checks the committed
+data against them when present, and with NumPy alone that it reproduces 1,794, 633 and −15,205.
+
+```bash
+analytics/.venv/Scripts/python -m abkit.golden.freeze_lalonde D:/data/b2/lalonde   # --force to rewrite
+```
