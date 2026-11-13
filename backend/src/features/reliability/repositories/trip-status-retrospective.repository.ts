@@ -18,8 +18,8 @@ interface AggregateRow {
  * measure the real gemini-2.0-flash false-healthy window (fixed in
  * commit f62baef, 2026-08-15) on production Trip data. Deliberately its
  * own repository under reliability/ rather than a new method on the
- * already-200+-line trip.repository.ts (see tech-defaults.md "Nợ kỹ
- * thuật" — that file already violates the Rule of 200).
+ * already-200+-line trip.repository.ts (see tech-defaults.md "Technical
+ * debt" section — that file already violates the Rule of 200).
  */
 export class TripStatusRetrospectiveRepository {
   async countByStatusPerDay(

@@ -147,22 +147,22 @@ async function runSimulation(): Promise<void> {
 
   console.log("=".repeat(60));
   console.log(
-    `Q1  ${incidentJobCount}/${incidentJobCount} incident-window jobs báo sai (100%)`,
+    `Q1  ${incidentJobCount}/${incidentJobCount} incident-window jobs reported wrongly (100%)`,
   );
-  console.log(`    — mỗi job này BullMQ đều báo "completed" (fallback path`);
-  console.log(`    trả { success: true, status: "FALLBACK" } chứ không throw)`);
+  console.log(`    — BullMQ reported "completed" for each of these jobs (fallback path`);
+  console.log(`    returns { success: true, status: "FALLBACK" } instead of throwing)`);
   console.log(
-    `Q2  Bull Board       : không bao giờ tự phát hiện (không đọc job.returnvalue.status)`,
+    `Q2  Bull Board       : never detects it on its own (does not read job.returnvalue.status)`,
   );
   console.log(
     firstNonHealthyAt
-      ? `    /reliability (mô phỏng) : lần poll đầu rời healthy tại +${formatDuration(
+      ? `    /reliability (simulated) : first poll left healthy at +${formatDuration(
           firstNonHealthyAt.getTime() - incidentStart.getTime(),
-        )} (${totalReads} lần poll trong cửa sổ sự cố)`
-      : `    /reliability (mô phỏng) : KHÔNG rời healthy trong suốt cửa sổ sự cố — tín hiệu vẫn mù`,
+        )} (${totalReads} polls in the incident window)`
+      : `    /reliability (simulated) : did NOT leave healthy during the whole incident window — the signal stayed blind`,
   );
   console.log(
-    `Q3  ${healthyReads}/${totalReads} lần đọc healthy là giả (${((healthyReads / totalReads) * 100).toFixed(1)}%), thêm ${insufficientReads} lần đọc "insufficient data"`,
+    `Q3  ${healthyReads}/${totalReads} healthy reads were false (${((healthyReads / totalReads) * 100).toFixed(1)}%), plus ${insufficientReads} "insufficient data" reads`,
   );
   console.log("=".repeat(60));
   console.log(
@@ -225,23 +225,23 @@ async function runRetrospective(): Promise<void> {
 
   console.log("=".repeat(60));
   console.log(
-    `Q1  ${totalFallback} trip FALLBACK thật trong khoảng ${since.toISOString().slice(0, 10)}..${until.toISOString().slice(0, 10)}`,
+    `Q1  ${totalFallback} real FALLBACK trips in the range ${since.toISOString().slice(0, 10)}..${until.toISOString().slice(0, 10)}`,
   );
   console.log(
-    `    (mỗi trip này BullMQ đã báo "completed" — không phải giả thuyết)`,
+    `    (BullMQ reported "completed" for each of these trips — not hypothetical)`,
   );
-  console.log(`Q2  Bull Board       : không bao giờ tự phát hiện`);
+  console.log(`Q2  Bull Board       : never detects it on its own`);
   console.log(
     firstFallbackDay
-      ? `    Sự cố thật (Trip.status) : FALLBACK đầu tiên ${firstFallbackDay} → fix f62baef ${GEMINI_FIX_DATE.toISOString().slice(0, 10)} = ${incidentDays} ngày`
-      : `    Không tìm thấy trip FALLBACK nào trong khoảng đã quét — mở rộng --since nếu cần`,
+      ? `    Real incident (Trip.status) : first FALLBACK ${firstFallbackDay} → fix f62baef ${GEMINI_FIX_DATE.toISOString().slice(0, 10)} = ${incidentDays} days`
+      : `    No FALLBACK trips found in the scanned range — widen --since if needed`,
   );
   console.log(
-    `Q3  Tỷ lệ FALLBACK/(FALLBACK+FAILED) = ${
+    `Q3  FALLBACK/(FALLBACK+FAILED) ratio = ${
       totalFallback + totalFailed > 0
         ? ((totalFallback / (totalFallback + totalFailed)) * 100).toFixed(1)
         : "n/a"
-    }% — phần trăm lần AI-generation thất bại mà dashboard/BullMQ vẫn báo completed thay vì failed`,
+    }% — share of failed AI generations that the dashboard/BullMQ still reported as completed instead of failed`,
   );
   console.log("=".repeat(60));
   console.log(

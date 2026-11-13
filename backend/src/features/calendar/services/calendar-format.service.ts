@@ -48,7 +48,7 @@ export function itineraryToGoogleEvents(
   const tz = getTimezoneForDestination(destination);
   const events: EventWithKey[] = [];
   const tripLink = `${APP_URL}/trips/${tripId}`;
-  const footer = `\n\n✨ Xem chi tiết chuyến đi: ${tripLink}`;
+  const footer = `\n\n✨ View trip details: ${tripLink}`;
 
   for (let dayIdx = 0; dayIdx < itinerary.length; dayIdx++) {
     const day = itinerary[dayIdx]!;
@@ -60,7 +60,7 @@ export function itineraryToGoogleEvents(
     for (let actIdx = 0; actIdx < day.activities.length; actIdx++) {
       const act = day.activities[actIdx]!;
 
-      // ✅ Entity ID as key — bất biến khi user reorder activities
+      // ✅ Entity ID as key — stable when the user reorders activities
       const actWithId = act as IItineraryDay["activities"][0] & {
         _id?: Types.ObjectId;
       };

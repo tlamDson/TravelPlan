@@ -22,9 +22,9 @@ const THRESHOLDS_KM: Record<TransportMode, number> = {
 };
 
 const MODE_LABEL: Record<TransportMode, string> = {
-  walking: "đi bộ",
-  public_transport: "phương tiện công cộng",
-  car: "đi xe",
+  walking: "walk",
+  public_transport: "take public transport",
+  car: "drive",
 };
 
 export class GeoValidatorService {
@@ -73,7 +73,7 @@ export class GeoValidatorService {
     };
 
     if (requiresTransport) {
-      result.warningMessage = `Điểm tiếp theo cách ${km.toFixed(1)} km — khá xa để ${MODE_LABEL[mode]}, cân nhắc gọi xe.`;
+      result.warningMessage = `The next stop is ${km.toFixed(1)} km away — quite far to ${MODE_LABEL[mode]}, consider a taxi.`;
     }
 
     return result;

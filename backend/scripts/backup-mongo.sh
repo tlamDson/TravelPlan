@@ -8,7 +8,7 @@
 #   MONGO_URI               — same secret data-pipeline.yml already uses
 # Required for upload (soft-skip with exit 0 if any are missing — lets this
 # run safely before a backup bucket has been provisioned, see tech-defaults.md
-# "Cần bạn thao tác thủ công"):
+# "Manual steps you must do" section):
 #   BACKUP_S3_ENDPOINT       — e.g. https://<account-id>.r2.cloudflarestorage.com
 #   BACKUP_S3_BUCKET         — bucket name
 #   AWS_ACCESS_KEY_ID

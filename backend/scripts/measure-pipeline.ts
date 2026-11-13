@@ -198,9 +198,9 @@ function runReport(): void {
 
   const perDay = bucketPerDay(jobs);
   console.log(
-    `\nThroughput  ${perDay.totalJobs} job trong ${perDay.totalDays} ngày = ` +
-      `${perDay.averagePerDayAll.toFixed(2)}/ngày (${perDay.daysWithTraffic} ngày có traffic, ` +
-      `đỉnh ${perDay.peakPerDay}/ngày, ${perDay.averagePerDayWithTraffic.toFixed(2)}/ngày-có-traffic)`,
+    `\nThroughput  ${perDay.totalJobs} jobs in ${perDay.totalDays} days = ` +
+      `${perDay.averagePerDayAll.toFixed(2)}/day (${perDay.daysWithTraffic} days with traffic, ` +
+      `peak ${perDay.peakPerDay}/day, ${perDay.averagePerDayWithTraffic.toFixed(2)}/day-with-traffic)`,
   );
 
   const latency = latencyWindows(jobs);
@@ -214,7 +214,7 @@ function runReport(): void {
   );
   if (endToEndStats.count < 30) {
     console.log(
-      `            ⚠ n=${endToEndStats.count} → p95 là mẫu lớn thứ ${Math.max(1, Math.ceil(0.95 * endToEndStats.count))}, không phải ước lượng phân phối`,
+      `            ⚠ n=${endToEndStats.count} → p95 is the ${Math.max(1, Math.ceil(0.95 * endToEndStats.count))}th largest sample, not a distribution estimate`,
     );
   }
 
@@ -227,12 +227,12 @@ function runReport(): void {
   );
 
   console.log(
-    `Stall       trước ${new Date(TUNE_BOUNDARY).toISOString()} : ${stallBefore.stalledJobs}/${stallBefore.totalJobs} job ` +
-      `(cận trên 95%: ${resolution.nBeforeUpperBoundPct.toFixed(1)}%)`,
+    `Stall       before ${new Date(TUNE_BOUNDARY).toISOString()} : ${stallBefore.stalledJobs}/${stallBefore.totalJobs} jobs ` +
+      `(95% upper bound: ${resolution.nBeforeUpperBoundPct.toFixed(1)}%)`,
   );
   console.log(
-    `            sau                      : ${stallAfter.stalledJobs}/${stallAfter.totalJobs} job ` +
-      `(cận trên 95%: ${resolution.nAfterUpperBoundPct.toFixed(1)}%)`,
+    `            after                    : ${stallAfter.stalledJobs}/${stallAfter.totalJobs} jobs ` +
+      `(95% upper bound: ${resolution.nAfterUpperBoundPct.toFixed(1)}%)`,
   );
   console.log(`            → ${resolution.message}`);
 

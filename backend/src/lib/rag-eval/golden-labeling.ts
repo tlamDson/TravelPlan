@@ -32,7 +32,7 @@ export function initGoldenSet(
     version: 1,
     snapshotId: snapshot.meta.snapshotId,
     labeler,
-    gradeScale: { "1": "liên quan một phần", "2": "trả lời trực tiếp" },
+    gradeScale: { "1": "partially relevant", "2": "directly answers" },
     folds: makeFolds(snapshot.docs.map((d) => d.cityIdKey)),
     items: [],
   };

@@ -91,12 +91,12 @@ export function describeResolution(
     nAfterUpperBound <= RESOLVABLE_UPPER_BOUND_THRESHOLD;
 
   const message = resolvable
-    ? `n=${nBefore} trước / n=${nAfter} sau đủ lớn để kết luận: cận trên 95% cho tỷ lệ stall thật ` +
-      `là ${nBeforeUpperBoundPct.toFixed(1)}% (trước) và ${nAfterUpperBoundPct.toFixed(1)}% (sau).`
-    : `n=${nBefore} trước / n=${nAfter} sau — không thể kết luận được ở cỡ mẫu này: dù quan sát 0 stall, ` +
-      `tỷ lệ stall thật vẫn có thể lên tới ${nBeforeUpperBoundPct.toFixed(1)}% (trước) / ` +
-      `${nAfterUpperBoundPct.toFixed(1)}% (sau) ở độ tin cậy 95%. Không có phép so sánh thống kê nào ` +
-      `phân biệt được "tune có tác dụng" với "chưa từng có stall" ở n này.`;
+    ? `n=${nBefore} before / n=${nAfter} after is large enough to conclude: the 95% upper bound on the true stall rate ` +
+      `is ${nBeforeUpperBoundPct.toFixed(1)}% (before) and ${nAfterUpperBoundPct.toFixed(1)}% (after).`
+    : `n=${nBefore} before / n=${nAfter} after — cannot conclude at this sample size: even with 0 observed stalls, ` +
+      `the true stall rate could still be as high as ${nBeforeUpperBoundPct.toFixed(1)}% (before) / ` +
+      `${nAfterUpperBoundPct.toFixed(1)}% (after) at 95% confidence. No statistical comparison ` +
+      `can tell "the tune worked" apart from "there were never any stalls" at this n.`;
 
   return { resolvable, nBeforeUpperBoundPct, nAfterUpperBoundPct, message };
 }

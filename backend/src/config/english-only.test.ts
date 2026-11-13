@@ -27,6 +27,8 @@ const ALLOWED_DATA_LINES: Record<string, number> = {
   "src/features/destinations/services/seed-payload-upsert.test.ts": 4,
   "src/features/planner/utils/destination-utils.test.ts": 1,
   "src/lib/rag-eval/label.test.ts": 1,
+  "src/features/planner/services/validation.service.ts": 1,
+  "src/lib/rag-eval/constraints/day-count.test.ts": 1,
   // Vietnamese diacritic handling is the behaviour under test.
   "src/lib/rag-eval/tokenize.ts": 2,
   "src/lib/rag-eval/tokenize.test.ts": 4,
