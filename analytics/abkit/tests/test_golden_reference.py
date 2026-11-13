@@ -20,8 +20,6 @@ from abkit.golden.ref_cases import REF_CASES
 from abkit.golden.ref_truth import STATSMODELS_METHODS, compute_reference
 
 G_REF_GROUPS = {"welch", "delta", "cuped", "srm", "power", "bh"}
-#: G-public groups added to v2 without touching a frozen case (PR 11: Hillstrom).
-G_PUBLIC_GROUPS = {"hillstrom"}
 HAS_STATSMODELS = importlib.util.find_spec("statsmodels") is not None
 NEEDS_STATSMODELS = "statsmodels is in the [golden] extra; CI installs core + dev only"
 
@@ -37,10 +35,8 @@ def test_ref_cases_are_about_twenty_and_cover_every_g_ref_group() -> None:
     assert {c.method for c in REF_CASES} <= KNOWN_METHODS
 
 
-def test_latest_dataset_holds_exactly_the_ref_cases_plus_g_public() -> None:
-    cases = load_dataset(GOLDEN_LATEST)
-    assert {c.group for c in cases} - G_REF_GROUPS == G_PUBLIC_GROUPS
-    cases = [c for c in cases if c.group in G_REF_GROUPS]
+def test_latest_g_ref_groups_hold_exactly_the_ref_cases() -> None:
+    cases = [c for c in load_dataset(GOLDEN_LATEST) if c.group in G_REF_GROUPS]
     assert [c.id for c in cases] == sorted(_ids(REF_CASES))
     for case in cases:
         assert case.source["tool"] in {"scipy", "statsmodels", "numpy+scipy"}
@@ -85,8 +81,9 @@ def _files(root: Path) -> dict[str, bytes]:
 
 
 def test_v1_is_kept_and_v2_changes_only_the_refrozen_cases() -> None:
-    v1, v2 = _files(GOLDEN_V1), _files(GOLDEN_LATEST)
-    v2 = {k: v for k, v in v2.items() if k.split("/")[0] not in G_PUBLIC_GROUPS}
+    v1 = _files(GOLDEN_V1)
+    # v2 also holds G-sim (``sim-*``) and ``subsets.json`` (PR 13a); compare the G-ref part.
+    v2 = {k: v for k, v in _files(GOLDEN_LATEST).items() if k.split("/")[0] in G_REF_GROUPS}
     assert v1.keys() == v2.keys()
     changed = {"/".join(k.split("/")[:2]) for k in v1 if v1[k] != v2[k]}
     assert changed == REFROZEN_IN_V2

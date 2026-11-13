@@ -87,10 +87,11 @@ def test_abkit_reproduces_the_published_hillstrom_lifts() -> None:
     assert [(r.case_id, r.details) for r in public if r.status is not Status.PASS] == []
 
 
-def test_only_bh_is_still_missing_from_the_latest_dataset() -> None:
+def test_cuped_is_no_longer_missing_from_the_latest_dataset() -> None:
     report = run_golden(GOLDEN_LATEST)
     missing = {r.method for r in report.results if r.status is Status.MISSING}
-    assert missing == {"bh_fdr"}
+    # bh_fdr (PR 12) and readout (PR 15) land later.
+    assert missing == {"bh_fdr", "readout"}
     assert report.ok(strict=False)
 
 
