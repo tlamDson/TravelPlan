@@ -13,6 +13,7 @@ import { blobText } from "./blob-text";
 const sendBeacon = vi.fn<(url: string, body: Blob) => boolean>(() => true);
 
 beforeEach(() => {
+  vi.stubEnv("VITE_ANALYTICS_ENABLED", "true");
   Object.defineProperty(navigator, "sendBeacon", {
     configurable: true,
     value: sendBeacon,
@@ -20,6 +21,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   resetAnalyticsForTests();
   sendBeacon.mockClear();
   sessionStorage.clear();
