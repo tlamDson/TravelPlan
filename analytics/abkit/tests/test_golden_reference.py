@@ -36,7 +36,8 @@ def test_ref_cases_are_about_twenty_and_cover_every_g_ref_group() -> None:
 
 
 def test_latest_dataset_holds_exactly_the_ref_cases() -> None:
-    cases = load_dataset(GOLDEN_LATEST)
+    # G-public groups (PR 11, 17, 20) sit next to G-ref in the latest version.
+    cases = [c for c in load_dataset(GOLDEN_LATEST) if c.group in G_REF_GROUPS]
     assert [c.id for c in cases] == sorted(_ids(REF_CASES))
     for case in cases:
         assert case.source["tool"] in {"scipy", "statsmodels", "numpy+scipy"}
@@ -82,6 +83,7 @@ def _files(root: Path) -> dict[str, bytes]:
 
 def test_v1_is_kept_and_v2_changes_only_the_refrozen_cases() -> None:
     v1, v2 = _files(GOLDEN_V1), _files(GOLDEN_LATEST)
+    v2 = {k: v for k, v in v2.items() if k.split("/")[0] in G_REF_GROUPS}
     assert v1.keys() == v2.keys()
     changed = {"/".join(k.split("/")[:2]) for k in v1 if v1[k] != v2[k]}
     assert changed == REFROZEN_IN_V2
