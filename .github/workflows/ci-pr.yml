@@ -201,10 +201,23 @@ jobs:
       - name: Pytest
         run: python -m pytest -q
 
+      # Golden gate (B2 plan, PR 15a): G-ref + one G-sim case per group (subset ci-fast),
+      # then the 10 mutants planted in the engine must each fail it (M10). G-event replay is
+      # the step after the simkit install. Every case runs nightly (abkit-golden-nightly.yml).
+      - name: Golden gate (G-ref + G-sim ci-fast)
+        run: python -m abkit golden --subset ci-fast --strict
+
+      - name: Golden gate mutants (M10)
+        run: python -m abkit gate
+
       # analytics/simkit (B2 plan, PR 13) needs abkit installed first (step above).
       - name: Install simkit (core + dev)
         working-directory: analytics/simkit
         run: python -m pip install -e ".[dev]"
+
+      - name: Golden gate (G-event replay)
+        working-directory: analytics/simkit
+        run: python -m pytest -q tests/test_catalog.py
 
       - name: simkit Ruff lint
         working-directory: analytics/simkit

@@ -5,7 +5,7 @@ turns a readout into Markdown; ``abkit readout`` and the Streamlit app (``[app]`
 ``readout/app.py``) read a golden case directory or a CSV with its params.
 """
 
-from abkit.readout.analysis import Effect, Readout, run_readout
+from abkit.readout.analysis import Effect, Readout, measure_effect, run_readout
 from abkit.readout.inputs import ReadoutInput, list_readout_cases, load_readout_input
 from abkit.readout.memo import render_memo
 from abkit.readout.spec import MetricSpec, ReadoutSpec
@@ -18,6 +18,7 @@ __all__ = [
     "ReadoutSpec",
     "list_readout_cases",
     "load_readout_input",
+    "measure_effect",
     "render_memo",
     "run_readout",
 ]

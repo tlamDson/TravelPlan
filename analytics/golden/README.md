@@ -7,6 +7,7 @@ never vouch for itself (B2 plan, "Golden dataset").
 analytics/.venv/Scripts/python -m abkit golden                       # latest (v2); exit 1 on FAIL/ERROR
 analytics/.venv/Scripts/python -m abkit golden analytics/golden/v2 --strict   # MISSING fails too
 analytics/.venv/Scripts/python -m abkit golden --subset ci-fast             # CI gate subset
+analytics/.venv/Scripts/python -m abkit gate                                # 10 planted mutants must be blocked
 ```
 
 Statuses: `PASS` (every expected key within tolerance, decision equal),
@@ -47,21 +48,22 @@ column to a NumPy array (float64 when every cell is numeric, else str) or is
 `None`. `variant` is `control` / `treatment`; estimates are treatment minus
 control. Decisions: `reject_null` when `p_value < alpha`, else `fail_to_reject`.
 
-| Method                    | Data columns                                             | Params                                                               | Outputs                                                                                                                                                                                                                   | Decision         |
-| ------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| `welch_ttest`             | `variant`, `value`                                       | `alpha`, `alternative`                                               | `estimate`, `statistic`, `df`, `p_value`, `ci_low`, `ci_high` (CI two-sided only)                                                                                                                                         | yes              |
-| `delta_ratio`             | `variant`, `numerator`, `denominator` (one row per user) | `alpha`                                                              | `ratio_control`, `ratio_treatment`, `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high`                                                                                                                         | yes              |
-| `cuped`                   | `variant`, `value`, `covariate`                          | `alpha`, `alternative`                                               | `theta`, `variance_reduction`, then the Welch outputs on the adjusted values; also `sample_size_multiplier` (`1/(1-R²)`), `n_control`, `n_treatment`, raw `mean_control` / `mean_treatment`, `naive_estimate`, `naive_se` | yes              |
-| `srm_chisquare`           | `variant`, `count`, `expected_share`                     | `threshold`                                                          | `statistic`, `p_value`, `dof`                                                                                                                                                                                             | `srm` / `no_srm` |
-| `power_ttest_ind`         | —                                                        | `effect_size`, `nobs1`, `ratio`, `alpha`, `alternative`              | `power`                                                                                                                                                                                                                   | —                |
-| `sample_size_ttest_ind`   | —                                                        | `effect_size`, `power`, `ratio`, `alpha`, `alternative`              | `nobs1` (not rounded up)                                                                                                                                                                                                  | —                |
-| `mde_ttest_ind`           | —                                                        | `nobs1`, `power`, `ratio`, `alpha`, `alternative`                    | `effect_size` (Cohen's d)                                                                                                                                                                                                 | —                |
-| `sample_size_proportions` | —                                                        | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                                                                                                                                        | —                |
-| `bh_fdr`                  | `hypothesis`, `p_value`                                  | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                                                                                                                                                | —                |
-| `readout`                 | `variant`, `persona`, metric columns (see below)         | see below                                                            | `srm`, `estimate`, plus `early_estimate` / `estimate_<persona>`                                                                                                                                                           | see below        |
-| `naive_diff`              | `treatment` (0/1), the `outcome` column                  | `outcome`, `alpha`, `se_type` (`welch` / `pooled`)                   | `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high`                                     | yes              |
-| `ipw`                     | `treatment`, `outcome`, covariates                       | `outcome`, `estimand` (`ate` / `att`), `propensity_terms`, `alpha`   | as `naive_diff` (normal-based)                                                                    | yes              |
-| `aipw`                    | `treatment`, `outcome`, covariates                       | as `ipw`, plus `outcome_terms`                                       | as `naive_diff` (normal-based)                                                                    | yes              |
+| Method                    | Data columns                                                      | Params                                                               | Outputs                                                                                                                                                                                                                   | Decision         |
+| ------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `welch_ttest`             | `variant`, `value`                                                | `alpha`, `alternative`                                               | `estimate`, `statistic`, `df`, `p_value`, `ci_low`, `ci_high` (CI two-sided only)                                                                                                                                         | yes              |
+| `delta_ratio`             | `variant`, `numerator`, `denominator` (one row per user)          | `alpha`                                                              | `ratio_control`, `ratio_treatment`, `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high`                                                                                                                         | yes              |
+| `cuped`                   | `variant`, `value`, `covariate`                                   | `alpha`, `alternative`                                               | `theta`, `variance_reduction`, then the Welch outputs on the adjusted values; also `sample_size_multiplier` (`1/(1-R²)`), `n_control`, `n_treatment`, raw `mean_control` / `mean_treatment`, `naive_estimate`, `naive_se` | yes              |
+| `srm_chisquare`           | `variant`, `count`, `expected_share`                              | `threshold`                                                          | `statistic`, `p_value`, `dof`                                                                                                                                                                                             | `srm` / `no_srm` |
+| `power_ttest_ind`         | —                                                                 | `effect_size`, `nobs1`, `ratio`, `alpha`, `alternative`              | `power`                                                                                                                                                                                                                   | —                |
+| `sample_size_ttest_ind`   | —                                                                 | `effect_size`, `power`, `ratio`, `alpha`, `alternative`              | `nobs1` (not rounded up)                                                                                                                                                                                                  | —                |
+| `mde_ttest_ind`           | —                                                                 | `nobs1`, `power`, `ratio`, `alpha`, `alternative`                    | `effect_size` (Cohen's d)                                                                                                                                                                                                 | —                |
+| `sample_size_proportions` | —                                                                 | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                                                                                                                                        | —                |
+| `bh_fdr`                  | `hypothesis`, `p_value`                                           | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                                                                                                                                                | —                |
+| `readout`                 | `variant`, `persona`, metric columns (see below)                  | see below                                                            | `srm`, `estimate`, plus `early_estimate` / `estimate_<persona>`                                                                                                                                                           | see below        |
+| `naive_diff`              | `treatment` (0/1), the `outcome` column                           | `outcome`, `alpha`, `se_type` (`welch` / `pooled`)                   | `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high`                                                                                                                                                             | yes              |
+| `ipw`                     | `treatment`, `outcome`, covariates                                | `outcome`, `estimand` (`ate` / `att`), `propensity_terms`, `alpha`   | as `naive_diff` (normal-based)                                                                                                                                                                                            | yes              |
+| `aipw`                    | `treatment`, `outcome`, covariates                                | as `ipw`, plus `outcome_terms`                                       | as `naive_diff` (normal-based)                                                                                                                                                                                            | yes              |
+| `uplift_arm_summary`      | `variant`, `n`, `visit`, `conversion` (one row of totals per arm) | —                                                                    | `n_total`, `treatment_ratio`, `visit_rate`, `conversion_rate`, `ate_*`, `relative_uplift_*`                                                                                                                               | —                |
 
 The exact formula behind each case is in its `source.call`. The causal methods take
 covariates as terms: `age`, `age^2`, `u74*black` (an intercept is always added); the
@@ -97,6 +99,34 @@ tolerance is wide (see G-sim).
 group (`welch`) or one case id (`sim-aa/aa-01`), and must match at least one
 case. `ci-fast` is the required CI gate: every G-ref case plus one G-sim case
 per group. The full dataset runs nightly (B2 plan, PR 15a).
+
+## Gate (B2 plan, PR 15a, M10)
+
+The required job `abkit Lint + Test` runs, after pytest:
+
+1. `python -m abkit golden --subset ci-fast --strict`: G-ref plus one G-sim case per group;
+   MISSING fails too.
+2. `python -m abkit gate`: ten bugs planted on purpose in the engine
+   (`abkit/golden/mutants.py`: Welch df and sign, the CI quantile, the two-sided p-value,
+   the delta covariance, the CUPED sign, SRM degrees of freedom, the BH step-up, the
+   power tail, a readout deciding on the novelty window). Each is applied to a temporary
+   copy of the package, never to the installed one, and that copy runs step 1 in a fresh
+   interpreter. A mutant is blocked when some case fails. Exit 1 means a mutant
+   survived. Exit 2 means the clean copy does not pass, or a mutant crashed before any
+   case ran: a crash proves nothing, so it does not count as blocked.
+3. G-event: `simkit` `tests/test_catalog.py` replays `packages/shared/fixtures/golden-events/`.
+
+`.github/workflows/abkit-golden-nightly.yml` runs every case (`abkit golden --strict`),
+the mutants against every case (`abkit gate --full`) and the `SIMKIT_GOLDEN_FULL=1`
+rebuild. It is not a required check, and GitHub fires its `schedule` only from `main`.
+
+M10 in `analytics/runs/runs.csv` (`abkit gate --record --pr 15a`): 10 of 10 mutants
+blocked by the ci-fast gate (none without a gate). On every `v2` case, 29/29 G-ref and
+G-public cases pass, and 50/50 G-sim cases (simulated, virtual users) pass.
+
+A mutant whose `old` text no longer occurs exactly once fails
+`tests/test_golden_mutants.py`. When you change the engine on purpose, move the mutant
+to the new line; do not delete it.
 
 ## G-ref (`v2` latest, 22 cases; `v1` kept)
 
@@ -202,12 +232,12 @@ Truth is the published numbers of Dehejia & Wahba (1999), [NBER WP 6586](https:/
 [users.nber.org/~rdehejia/data](https://users.nber.org/~rdehejia/data/.nswdata2.html); the
 sha256 of each raw file is pinned in `abkit/golden/freeze_lalonde.py` and in `source.data_files`.
 
-| Case                          | Method       | Expected (published)                         | Tolerance                                   |
-| ----------------------------- | ------------ | -------------------------------------------- | ------------------------------------------- |
-| `lalonde-experimental`        | `naive_diff` | estimate 1,794, SE 633 (Table 2B/3, row NSW) | ±0.5 (rounding)                             |
-| `lalonde-psid-naive`          | `naive_diff` | estimate −15,205, SE 1,154/1,155 (Table 2/3) | ±0.5; SE ±1                                 |
-| `lalonde-psid-ipw`            | `ipw` (ATT)  | the experimental 1,794                       | ±1,240.66 = 1.96 × 633, the experimental CI |
-| `lalonde-psid-aipw`           | `aipw` (ATT) | the experimental 1,794                       | same                                        |
+| Case                   | Method       | Expected (published)                         | Tolerance                                   |
+| ---------------------- | ------------ | -------------------------------------------- | ------------------------------------------- |
+| `lalonde-experimental` | `naive_diff` | estimate 1,794, SE 633 (Table 2B/3, row NSW) | ±0.5 (rounding)                             |
+| `lalonde-psid-naive`   | `naive_diff` | estimate −15,205, SE 1,154/1,155 (Table 2/3) | ±0.5; SE ±1                                 |
+| `lalonde-psid-ipw`     | `ipw` (ATT)  | the experimental 1,794                       | ±1,240.66 = 1.96 × 633, the experimental CI |
+| `lalonde-psid-aipw`    | `aipw` (ATT) | the experimental 1,794                       | same                                        |
 
 The two observational cases pass when the estimate on NSW treated + PSID-1 controls lands
 inside the experimental 95% CI. The propensity model is DW's PSID-1 logit (Table 3, note c);
@@ -217,4 +247,48 @@ data against them when present, and with NumPy alone that it reproduces 1,794, 6
 
 ```bash
 analytics/.venv/Scripts/python -m abkit.golden.freeze_lalonde D:/data/b2/lalonde   # --force to rewrite
+```
+
+## G-public Criteo (`v2/criteo/`, B2 plan, PR 20)
+
+`criteo/v21-key-figures` holds the key figures that the
+[Criteo AI Lab page](https://ailab.criteo.com/criteo-uplift-prediction-dataset/)
+prints for the un-biased Criteo Uplift file (v2.1): 13,979,592 rows, visit rate
+.046992, conversion rate .00292 and treatment ratio .85. Each tolerance is half a
+unit of the last printed digit. Table 1 of
+[Diemert et al. (2021)](https://arxiv.org/abs/2111.10106) prints the same figures
+(4.70% / 0.29%). We checked every figure against the raw file before freezing.
+Table 1 also prints a "Relative Avg. Uplift" of 68.7% (visit) and 37.2%
+(conversion). The file gives 27.1% and 59.4% as (treated − control) / control,
+so the case does not use them.
+
+The dataset is CC BY-NC-SA and is not republished here, so `data.csv` has only
+the two arm totals. To re-freeze from the raw file (the sha256 is checked; the
+file is Criteo's own copy on Hugging Face, `abkit.criteo.CRITEO_MIRROR_URL`):
+
+```bash
+analytics/.venv/Scripts/python -m abkit.golden.freeze_criteo D:/data/b2/criteo/criteo-research-uplift-v2.1.csv.gz --root analytics/golden/v3
+```
+
+## G-decide (`decide/v1/`, 30 blinded readouts, B2 plan, PR 15b)
+
+The answer here is Lam's own call, not abkit's: gate G-B2-3, about 1–2 hours.
+
+| File                         | What                                                                                                                                                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `readouts/R01.md` … `R30.md` | The evidence of a readout without its conclusion: who the users are, the sample ratio numbers, every effect (also when SRM fails), the early window, persona table and interim looks where the case has them. No decision, no PASS/FAIL, no case name or description |
+| `key.json`                   | Blind id → case, `simulated`, abkit's `memo` label (SRM-blocked = `investigate`), and the `baseline` label (ship when `p < alpha` and the lift is positive, ignoring SRM). **Do not open it before labelling**                                                       |
+| `labels.csv`                 | Lam's labels (`readout,label,labelled_at`), written by `abkit decide label`; not committed until G-B2-3 is done                                                                                                                                                      |
+
+28 readouts are G-sim cases drawn per group with seed 1115 (A/A 5, effect 8, long tail 3,
+novelty 3, peeking 3, ratio 3, SRM 3), all simulated (virtual users); 2 are the real
+Hillstrom e-mail test (`hillstrom/mens-visit`, `hillstrom/mens-spend`, real shoppers,
+not TravelPlan users). `tests/test_labeling_export.py` re-exports and byte-compares
+this directory, so it is never edited by hand: `abkit decide export --force` rewrites it
+and refuses while a `labels.csv` exists.
+
+```bash
+analytics/.venv/Scripts/python -m abkit decide label            # s / n / i, q to stop; resumes
+analytics/.venv/Scripts/python -m abkit decide kappa            # kappa vs memo and vs p-only
+analytics/.venv/Scripts/python -m abkit decide kappa --record   # append the two M11 rows
 ```

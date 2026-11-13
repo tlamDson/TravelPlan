@@ -1,3 +1,5 @@
 # Offline RAG eval snapshot/caches (backend/eval/data/): raw float32 —
 # never let core.autocrlf touch their bytes.
 *.f32 binary
+# G-decide export (analytics/golden/decide/): byte-compared by tests on every OS.
+analytics/golden/decide/** text eol=lf
