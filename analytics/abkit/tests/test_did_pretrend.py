@@ -50,3 +50,33 @@ def test_the_att_interval_covers_the_injected_effect_on_unbalanced_panels() -> N
         study = sun_abraham(panel, pre=4, post=3)
         covered += study.att.ci_low <= 0.5 <= study.att.ci_high
     assert covered >= 102  # nominal 95% is 114 of 120
+
+
+def test_a_singular_covariance_tests_on_its_rank_not_its_size() -> None:
+    from abkit.did.results import wald_test
+
+    # two pre event times that move together: one independent direction only
+    cov = np.array([[1.0, 1.0], [1.0, 1.0]])
+    stat, df, p = wald_test(np.array([1.0, 1.0]), cov)
+    assert df == 1
+    assert stat == pytest.approx(1.0, rel=1e-12)  # (1, 1) on the eigenvalue-2 direction
+    assert p == pytest.approx(float(stats.chi2.sf(1.0, 1)), rel=1e-12)
+
+
+def test_a_full_rank_covariance_keeps_every_degree_of_freedom() -> None:
+    from abkit.did.results import wald_test
+
+    cov = np.array([[2.0, 0.5, 0.0], [0.5, 1.0, 0.2], [0.0, 0.2, 3.0]])
+    est = np.array([0.3, -0.4, 1.1])
+    stat, df, p = wald_test(est, cov)
+    assert df == 3
+    assert stat == pytest.approx(float(est @ np.linalg.solve(cov, est)), rel=1e-10)
+    assert p == pytest.approx(float(stats.chi2.sf(stat, 3)), rel=1e-10)
+
+
+def test_no_pre_period_information_gives_no_test() -> None:
+    from abkit.did.results import wald_test
+
+    for est, cov in ((np.zeros(0), np.zeros((0, 0))), (np.ones(2), np.zeros((2, 2)))):
+        stat, df, p = wald_test(est, cov)
+        assert df == 0 and np.isnan(stat) and np.isnan(p)
