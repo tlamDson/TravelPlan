@@ -4,6 +4,7 @@
     abkit readout PATH [--params JSON] [--simulated | --real] [--out FILE]
     abkit gate [ROOT] [--full] [--record [--pr PR] [--runs-csv PATH]]
     abkit decide export|label|kappa  (G-decide, see abkit/labeling)
+    abkit actions-panel --cache DIR [--n 400 --seed 18 --record]  (see abkit/actions)
 
 ``golden`` exit codes: 0 every case passes (MISSING allowed unless ``--strict``),
 1 a case fails, errors, or is MISSING under ``--strict``, 2 malformed dataset.
@@ -23,6 +24,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
+from abkit.actions.cli import add_actions_panel
 from abkit.bench import _git_sha
 from abkit.golden.case import GoldenFormatError
 from abkit.golden.gate import GATE_SUBSET, m10_records, run_gate
@@ -108,5 +110,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     _add_readout(commands)
     _add_gate(commands)
     add_decide(commands)
+    add_actions_panel(commands)
     args = parser.parse_args(argv)
     return args.handler(args)

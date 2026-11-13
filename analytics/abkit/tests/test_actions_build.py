@@ -20,12 +20,10 @@ REPOS = {
 
 def _fake() -> FakeGh:
     routes = {
-        "search/repositories": lambda p: {
-            "items": [
-                {"full_name": n, "created_at": c, "stargazers_count": 200}
-                for n, (c, _) in REPOS.items()
-            ]
-        }
+        "search/repositories": lambda p: [
+            {"full_name": n, "created_at": c, "stargazers_count": 200}
+            for n, (c, _) in REPOS.items()
+        ]
     }
     for name, (_, commits) in REPOS.items():
         if commits is None:

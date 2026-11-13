@@ -36,7 +36,7 @@ def test_build_frame_merges_months_dedups_and_sorts_by_name(tmp_path: Path) -> N
 
     def search(params):
         assert params["per_page"] == "100"
-        return {"items": next(v for k, v in by_month.items() if k in params["q"])}
+        return next(v for k, v in by_month.items() if k in params["q"])
 
     client = _client(tmp_path, FakeGh({"search/repositories": search}))
     frame = build_frame(client, ["2015-01", "2015-02"], min_stars=100, max_stars=2000)
