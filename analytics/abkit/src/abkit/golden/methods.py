@@ -91,6 +91,11 @@ def _sample_size_proportions(data: Data, params: Mapping[str, Any]) -> Mapping[s
     return asdict(stats.sample_size_proportions(**_pick(params, *keys)))
 
 
+def _bh(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
+    result = stats.bh_fdr(data["p_value"], params["alpha"])
+    return {"p_adjusted": list(result.p_adjusted), "rejected": list(result.rejected)}
+
+
 def _causal(method: str) -> Implementation:
     """``params``: ``outcome`` column, plus the keywords of ``causal.estimate_effect``."""
 
@@ -111,6 +116,7 @@ IMPLEMENTATIONS: dict[str, Implementation] = {
     "sample_size_ttest_ind": _sample_size,
     "mde_ttest_ind": _mde,
     "sample_size_proportions": _sample_size_proportions,
+    "bh_fdr": _bh,
     "naive_diff": _causal("naive_diff"),
     "ipw": _causal("ipw"),
     "aipw": _causal("aipw"),

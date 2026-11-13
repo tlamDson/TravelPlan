@@ -10,6 +10,13 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   the two-sample t-test and two proportions (Cohen's h). Estimates are
   treatment minus control. Bad input raises `ValueError`, so a function never
   returns NaN. These must pass the golden G-ref cases of each method.
+  It also has the mSPRT (normal mixture, Johari et al.): always-valid p-values
+  and confidence sequences that may be read after every look, and
+  Benjamini-Hochberg FDR adjustment across metrics.
+- `abkit.peeking`: simulated A/A experiments (virtual users) read every day for
+  14 days, for the daily-peek false positive rate of the t-test against the
+  mSPRT (M1), and the coverage of 95% intervals under an injected effect (M3).
+  It appends its rows to `runs.csv` (`simulated=true`).
 - `abkit.stats.cuped`: CUPED (Deng et al., 2013) with a pooled `theta`; it
   reports `variance_reduction` (R²) and `sample_size_multiplier` = `1/(1-R²)`,
   the users an unadjusted test needs per CUPED user. `cuped_sample_size(n, R²)`
@@ -53,6 +60,7 @@ python -m venv analytics/.venv
 analytics/.venv/Scripts/python -m pip install -e "analytics/abkit[dev]"   # bin/ on Linux/macOS
 cd analytics/abkit && ../.venv/Scripts/python -m ruff check . && ../.venv/Scripts/python -m ruff format --check . && ../.venv/Scripts/python -m pytest -q
 analytics/.venv/Scripts/python -m abkit.bench assignment --pr 9
+analytics/.venv/Scripts/python -m abkit.peeking --pr 12   # 10,000 A/A x 14 days; --dry-run to print only
 analytics/.venv/Scripts/python -m abkit golden   # latest golden version; --strict: MISSING fails too; --subset ci-fast
 analytics/.venv/Scripts/python -m abkit.cuped_check D:/data/b2/hillstrom.csv --pr 11   # M4
 analytics/.venv/Scripts/python -m simkit.generate --seed 42 --users 1000 --days 112 --out analytics/data/simulated/m9
