@@ -38,6 +38,7 @@ vi.mock("../repositories/analytics-quarantine.repository", () => ({
 
 import {
   ingestClientEvents,
+  ingestSimulatedEvents,
   ingestTrustedEvents,
 } from "./analytics-ingest.service";
 
@@ -337,5 +338,44 @@ describe("ingestClientEvents — HTTP channel cannot spoof", () => {
       duplicates: 0,
       quarantined: 1,
     });
+  });
+});
+
+describe("ingestSimulatedEvents — simkit load driver channel", () => {
+  const sim = (i: number, over: Record<string, unknown> = {}) => ({
+    ...input.events[i],
+    userId: "sim-u-000001",
+    ...over,
+  });
+
+  it("accepts simulated users' events, including the server-sourced exposure", async () => {
+    const events = [sim(0), sim(SERVER_EXPOSURE_INDEX)];
+    const result = await ingestSimulatedEvents(events, NOW);
+    expect(result).toEqual({
+      received: 2,
+      accepted: 2,
+      duplicates: 0,
+      quarantined: 0,
+    });
+    expect(stored.get(events[1].eventId)?.userId).toBe(hash("sim-u-000001"));
+  });
+
+  it("quarantines a real-looking userId as user_mismatch", async () => {
+    const result = await ingestSimulatedEvents([input.events[0]], NOW);
+    expect(result).toMatchObject({ accepted: 0, quarantined: 1 });
+    expect(quarantined()[0]).toMatchObject({
+      reason: "user_mismatch",
+      issues: [{ path: "userId", code: "not_simulated" }],
+    });
+  });
+
+  it("keeps the G-event rules: schema-bad events quarantined, repeats counted as duplicates", async () => {
+    const events = input.events.map((e: Record<string, unknown>) =>
+      typeof e === "object" && e !== null && typeof e.userId === "string"
+        ? { ...e, userId: "sim-u-000001" }
+        : e,
+    );
+    const result = await ingestSimulatedEvents(events, NOW);
+    expect(result).toEqual(truth.expected);
   });
 });
