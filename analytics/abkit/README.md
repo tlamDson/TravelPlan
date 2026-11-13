@@ -25,6 +25,11 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   propensity value of a targeting policy on randomized data. A user's cost is
   the predicted chance their ad is shown, `P(exposure | x)`, because Criteo has
   no price and an ad is paid when shown. The LP and top-k get the same budget.
+  On the 10% sample, 5 seeds (`runs.csv`, PR 20), the LP beats top-k with the
+  T-learner (+5.3%, +9.3%, +3.7% extra conversions at 10/20/30% budgets) and
+  loses with the X-learner (-12.0%, -10.0%, -15.9%). The inverse propensity
+  spend shows why: with the X-learner the LP picks users whose exposure the cost
+  model underestimates, and it spends about 1.2x the budget.
 
 ```bash
 python -m venv analytics/.venv
