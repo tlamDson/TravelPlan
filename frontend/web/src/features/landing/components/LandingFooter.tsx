@@ -4,8 +4,10 @@
 
 import { Link } from "react-router-dom";
 import { Plane } from "lucide-react";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 
 export function LandingFooter() {
+  const { t } = useTranslationStore();
   return (
     <footer className="py-12 border-t border-border">
       <div className="container mx-auto px-4">
@@ -19,19 +21,19 @@ export function LandingFooter() {
               to="/about"
               className="hover:text-foreground transition-colors"
             >
-              About
+              {t("landing.footer.about")}
             </Link>
             <Link
               to="/privacy"
               className="hover:text-foreground transition-colors"
             >
-              Privacy
+              {t("landing.footer.privacy")}
             </Link>
             <Link
               to="/terms"
               className="hover:text-foreground transition-colors"
             >
-              Terms
+              {t("landing.footer.terms")}
             </Link>
           </div>
           <p className="text-sm text-muted-foreground">
