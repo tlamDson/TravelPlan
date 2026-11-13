@@ -9,7 +9,7 @@ import pytest
 from conftest import GOLDEN_LATEST
 
 from abkit.cli import main
-from abkit.labeling import agreement, export_blinded, label_session, read_labels
+from abkit.labeling import agreement, export_blinded, label_session, read_labels, to_run_records
 from abkit.runs import read_runs
 
 
@@ -139,6 +139,26 @@ def test_cli_kappa_prints_and_records_m11(export: Path, tmp_path: Path, capsys) 
     assert rows[0].value == pytest.approx(1.0)
     assert all(r.n == 30 and r.pr == "15b" and r.simulated for r in rows)
     assert "real=2" in rows[0].notes and "simulated=28" in rows[0].notes
+
+
+def test_cli_kappa_record_takes_the_rater_label(export: Path, tmp_path: Path) -> None:
+    key = _key(export)
+    _write_labels(export / "labels.csv", {rid: e["memo"] for rid, e in key.items()})
+    runs = tmp_path / "runs.csv"
+    rater = "LLM subagent, no context, owner-reviewed"
+    argv = ["decide", "kappa", str(export), "--record", "--runs-csv", str(runs)]
+    assert main([*argv, "--rater", rater]) == 0
+    rows = read_runs(runs)
+    assert all(f"rater={rater}" in r.notes for r in rows)
+    assert all("rater=Lam" not in r.notes for r in rows)
+
+
+def test_to_run_records_rater_defaults_to_lam(export: Path) -> None:
+    key = _key(export)
+    _write_labels(export / "labels.csv", {rid: e["memo"] for rid, e in key.items()})
+    result = agreement(export, export / "labels.csv")
+    assert all("rater=Lam " in r.notes for r in to_run_records(result))
+    assert all("rater=X y " in r.notes for r in to_run_records(result, rater="X y"))
 
 
 def test_cli_kappa_exits_two_without_labels(export: Path, capsys) -> None:
