@@ -13,6 +13,7 @@ import { installUnloadFlush } from "./lib/unload-flush";
 const logger = createBrowserLogger("analytics");
 
 let client: AnalyticsClient | null = null;
+let sessionIdGetter: (() => string) | null = null;
 let uninstall: (() => void) | null = null;
 /** "name:key" pairs already sent by trackOnce() during this page load. */
 const sentOnce = new Set<string>();
@@ -22,7 +23,7 @@ function getClient(): AnalyticsClient {
   if (!client) {
     client = createAnalyticsClient({
       transport: createHttpTransport({ url: `${API_URL}/analytics/events` }),
-      getSessionId: createSessionIdGetter(),
+      getSessionId: getAnalyticsSessionId,
       onDrop: (events, reason) =>
         logger.warn(
           { count: events.length, reason },
@@ -35,6 +36,16 @@ function getClient(): AnalyticsClient {
     uninstall = installUnloadFlush(client);
   }
   return client;
+}
+
+/**
+ * This tab's analytics session id, the one every tracked event carries.
+ * Server-side events for the same session (experiment exposures) use it
+ * so they join the client events.
+ */
+export function getAnalyticsSessionId(): string {
+  sessionIdGetter ??= createSessionIdGetter();
+  return sessionIdGetter();
 }
 
 export function track<N extends ClientEventName>(
@@ -69,5 +80,6 @@ export function resetAnalyticsForTests(): void {
   uninstall?.();
   uninstall = null;
   client = null;
+  sessionIdGetter = null;
   sentOnce.clear();
 }

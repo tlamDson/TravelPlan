@@ -88,13 +88,19 @@ describe("trackOnce()", () => {
     } as const;
     trackOnce("trip_generation_completed", props, "job-1");
     trackOnce("trip_generation_completed", props, "job-1");
-    trackOnce("trip_generation_completed", { ...props, jobId: "job-2" }, "job-2");
+    trackOnce(
+      "trip_generation_completed",
+      { ...props, jobId: "job-2" },
+      "job-2",
+    );
 
     window.dispatchEvent(new Event("pagehide"));
 
     const { body } = await beaconBody();
     expect(
-      body.events.map((e: { properties: { jobId: string } }) => e.properties.jobId),
+      body.events.map(
+        (e: { properties: { jobId: string } }) => e.properties.jobId,
+      ),
     ).toEqual(["job-1", "job-2"]);
   });
 
