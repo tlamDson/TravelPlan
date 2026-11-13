@@ -218,6 +218,56 @@ describe("batching", () => {
   });
 });
 
+describe("event immutability", () => {
+  it("snapshots properties, so a caller mutating them cannot change a retry under the same eventId", async () => {
+    const { transport, sends } = fakeTransport([
+      { ok: false, retryable: true },
+      { ok: true },
+    ]);
+    const client = makeClient(transport);
+    const props = { tripId: "original" };
+
+    client.track("trip_viewed", props);
+    props.tripId = "before-first-send";
+    await client.flush();
+    props.tripId = "before-retry";
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(sends).toHaveLength(2);
+    expect(sends[0].events[0].properties).toEqual({ tripId: "original" });
+    expect(sends[1].events).toEqual(sends[0].events);
+  });
+
+  it("snapshots properties for the unload beacon too", () => {
+    const { transport, beacons } = fakeTransport();
+    const client = makeClient(transport, { batchSize: 10 });
+    const props = { tripId: "original" };
+
+    client.track("trip_viewed", props);
+    props.tripId = "mutated";
+    client.flushOnUnload();
+
+    expect(beacons[0][0].properties).toEqual({ tripId: "original" });
+  });
+
+  it("freezes queued events so a transport cannot alter a later resend", async () => {
+    const { transport, sends } = fakeTransport([
+      { ok: false, retryable: true },
+      { ok: true },
+    ]);
+    const client = makeClient(transport);
+
+    client.track("trip_viewed", { tripId: "a" });
+    await client.flush();
+    const [event] = sends[0].events;
+
+    expect(Object.isFrozen(event)).toBe(true);
+    expect(Object.isFrozen(event.properties)).toBe(true);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(sends[1].events[0].properties).toEqual({ tripId: "a" });
+  });
+});
+
 describe("retry", () => {
   it("resends the same eventIds after a retryable failure, with backoff", async () => {
     const { transport, sends } = fakeTransport([
