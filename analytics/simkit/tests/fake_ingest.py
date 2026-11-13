@@ -63,9 +63,13 @@ class FakeIngest:
                 "quarantined": quarantined,
             }
 
-    def export(self, out_dir: Path) -> list[Path]:
-        """``events-<day>.jsonl.gz`` per UTC day, rows shaped like export-row.ts."""
-        by_day: dict[str, list[dict]] = {}
+    def export(self, out_dir: Path, days: list[str] | None = None) -> list[Path]:
+        """``events-<day>.jsonl.gz`` per UTC day, rows shaped like export-row.ts.
+
+        ``days``: write exactly these days (an empty file for a day without events, like
+        ``analytics-export.service.ts``); by default every day that has events.
+        """
+        by_day: dict[str, list[dict]] = {} if days is None else {day: [] for day in days}
         for event in self.stored.values():
             row = {
                 "eventId": event["eventId"],
@@ -78,7 +82,9 @@ class FakeIngest:
                 "source": event["source"],
                 "properties": event["properties"],
             }
-            by_day.setdefault(event["occurredAt"][:10], []).append(row)
+            day = event["occurredAt"][:10]
+            if days is None or day in by_day:
+                by_day.setdefault(day, []).append(row)
         out_dir.mkdir(parents=True, exist_ok=True)
         files = []
         for day, rows in sorted(by_day.items()):
