@@ -92,12 +92,14 @@ def _git_sha() -> str:
     return out.stdout.strip() or "unknown"
 
 
-def to_run_records(result: Agreement, run_at: str | None = None) -> list[RunRecord]:
+def to_run_records(
+    result: Agreement, run_at: str | None = None, rater: str = "Lam"
+) -> list[RunRecord]:
     """Two M11 rows; ``simulated`` is true because most readouts are virtual users."""
     run_at = run_at or datetime.now(UTC).isoformat(timespec="seconds")
     notes = (
         f"readouts={result.n} simulated={result.simulated} real={result.real} "
-        f"labels=ship/no_ship/investigate rater=Lam"
+        f"labels=ship/no_ship/investigate rater={rater}"
     )
     sha = _git_sha()
     rows = (("decision_kappa_memo", result.memo), ("decision_kappa_p05_baseline", result.baseline))
