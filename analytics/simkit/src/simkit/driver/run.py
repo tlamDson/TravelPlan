@@ -39,13 +39,12 @@ from simkit.driver.analysis import (
     prepare,
 )
 from simkit.driver.client import Tally
-from simkit.driver.exported import read_export
+from simkit.driver.daily_export import export_run
 from simkit.driver.plan import write_plan
 from simkit.driver.reconcile import Reconciliation, reconcile
 from simkit.driver.stack import (
     backend_env,
     check_local_mongo_uri,
-    export_day,
     mongo_counts,
     reset_sim_db,
     run_locust,
@@ -218,10 +217,7 @@ def _load(args, prepared: Prepared, work: Path) -> tuple[Tally, float, tuple[int
     (work / "locust.log").write_text(proc.stdout + proc.stderr, encoding="utf-8")
     tally = Tally.from_dict(json.loads(tally_path.read_text(encoding="utf-8")))
     counts = mongo_counts(args.mongo_uri)
-    out = work / "export"
-    for day in export_days(prepared.accepted_events):
-        export_day(day, out, env)
-    return tally, load_seconds, counts, read_export(out)
+    return tally, load_seconds, counts, export_run(prepared.accepted_events, work / "export", env)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
