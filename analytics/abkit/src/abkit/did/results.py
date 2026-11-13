@@ -57,3 +57,24 @@ def normal_inference(estimate: float, se: float, alpha: float) -> tuple[float, f
     with np.errstate(divide="ignore", invalid="ignore"):
         p = float(2 * sps.norm.sf(abs(estimate / se))) if se > 0 else float("nan")
     return estimate - z * se, estimate + z * se, p
+
+
+def wald_test(estimate: np.ndarray, cov: np.ndarray) -> tuple[float, int, float]:
+    """Joint Wald chi-square that ``estimate`` is zero: (statistic, df, p).
+
+    The statistic uses the generalized inverse of ``cov`` and the degrees of freedom are its
+    numerical rank, so a singular covariance (event times that move together) is tested on
+    the directions it identifies only. With no identified direction the test is NaN, df 0.
+    """
+    estimate, cov = np.asarray(estimate, dtype=np.float64), np.asarray(cov, dtype=np.float64)
+    if estimate.size == 0:
+        return float("nan"), 0, float("nan")
+    values, vectors = np.linalg.eigh((cov + cov.T) / 2)
+    top = float(values.max())
+    keep = values > max(top, 0.0) * estimate.size * np.finfo(float).eps
+    if top <= 0 or not keep.any():
+        return float("nan"), 0, float("nan")
+    projected = vectors[:, keep].T @ estimate
+    stat = float(np.sum(projected**2 / values[keep]))
+    df = int(keep.sum())
+    return stat, df, float(sps.chi2.sf(stat, df))

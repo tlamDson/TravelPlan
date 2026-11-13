@@ -10,8 +10,9 @@ the variance. A cohort with no row at event time -1 is not identified and is dro
 
 ``att`` is the mean of the post event times 0..post. The pre-trend test is the joint Wald
 chi-square of the pre event times ``-pre..-2`` (all zero under parallel trends and no
-anticipation). Errors are clustered by unit (CR1, ``abkit.did.fe``); intervals and p-values
-are normal-based.
+anticipation), with the rank of their covariance as degrees of freedom
+(``abkit.did.results.wald_test``). Errors are clustered by unit (CR1, ``abkit.did.fe``);
+intervals and p-values are normal-based.
 
 The pooled TWFE event study uses one dummy per event time on the same sample; under
 heterogeneous cohort effects its coefficients mix in other event times (Sun & Abraham 2021).
@@ -20,12 +21,11 @@ heterogeneous cohort effects its coefficients mix in other event times (Sun & Ab
 from __future__ import annotations
 
 import numpy as np
-from scipy import stats as sps
 
 from abkit.causal.estimators import CausalResult
 from abkit.did.fe import fe_ols
 from abkit.did.panel import CONTROLS, NEVER, DidPanel
-from abkit.did.results import EventStudy, EventTime, normal_inference
+from abkit.did.results import EventStudy, EventTime, normal_inference, wald_test
 from abkit.stats._common import check_alpha
 
 REF = -1
@@ -102,8 +102,7 @@ def _study(panel: DidPanel, pre: int, post: int, alpha: float, controls: str, po
     a[post_k] = 1.0 / len(post_k)
     att, att_se = float(a @ nu), float(np.sqrt(max(a @ sigma @ a, 0.0)))
     low, high, p = normal_inference(att, att_se, alpha)
-    pre_nu = nu[pre_k]
-    stat = float(pre_nu @ np.linalg.pinv(sigma[np.ix_(pre_k, pre_k)]) @ pre_nu)
+    stat, df, pretrend_p = wald_test(nu[pre_k], sigma[np.ix_(pre_k, pre_k)])
     units_treated = np.unique(unit[treated]).size
     units_control = np.unique(unit[~treated]).size
     return EventStudy(
@@ -127,8 +126,8 @@ def _study(panel: DidPanel, pre: int, post: int, alpha: float, controls: str, po
             n_control=units_control,
         ),
         pretrend_stat=stat,
-        pretrend_df=len(pre_k),
-        pretrend_p=float(sps.chi2.sf(stat, len(pre_k))),
+        pretrend_df=df,
+        pretrend_p=pretrend_p,
         cohort_effects={} if pooled else {key: float(fit.coef[j]) for key, j in index.items()},
         cohorts=tuple(int(c) for c in np.unique(cohort[treated])),
         dropped_cohorts=dropped,
