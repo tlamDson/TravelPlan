@@ -3,15 +3,20 @@ import type { Request, Response } from "express";
 import { ANALYTICS_BATCH_MAX_EVENTS } from "@travelplan/shared";
 
 const mockIngest = vi.fn();
+const mockSimIngest = vi.fn();
 vi.mock("../services/analytics-ingest.service", () => ({
   ingestClientEvents: (...args: unknown[]) => mockIngest(...args),
+  ingestSimulatedEvents: (...args: unknown[]) => mockSimIngest(...args),
 }));
 
 vi.mock("../../../lib/logger", () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-import { postAnalyticsEvents } from "./analytics.controller";
+import {
+  postAnalyticsEvents,
+  postSimulatedAnalyticsEvents,
+} from "./analytics.controller";
 
 function makeReq(body: unknown, userId?: string | null): Request {
   if (userId === undefined) return { body } as Request;
@@ -94,6 +99,44 @@ describe("postAnalyticsEvents", () => {
     mockIngest.mockResolvedValue({ ...okResult, accepted: 5 });
     const res = makeRes();
     await postAnalyticsEvents(makeReq({ events: [{}] }), res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+});
+
+describe("postSimulatedAnalyticsEvents", () => {
+  beforeEach(() => {
+    mockIngest.mockReset();
+    mockSimIngest.mockReset();
+  });
+
+  it("passes the raw events to the simulated channel, never the client one", async () => {
+    mockSimIngest.mockResolvedValue(okResult);
+    const res = makeRes();
+    await postSimulatedAnalyticsEvents(
+      makeReq({ events: [{ a: 1 }] }, "user_1"),
+      res,
+    );
+    expect(mockSimIngest).toHaveBeenCalledWith([{ a: 1 }]);
+    expect(mockIngest).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(okResult);
+  });
+
+  it("400s on a batch over the size cap without calling the service", async () => {
+    const res = makeRes();
+    const events = Array.from(
+      { length: ANALYTICS_BATCH_MAX_EVENTS + 1 },
+      () => ({}),
+    );
+    await postSimulatedAnalyticsEvents(makeReq({ events }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(mockSimIngest).not.toHaveBeenCalled();
+  });
+
+  it("500s when the service throws, so the driver retries with the same ids", async () => {
+    mockSimIngest.mockRejectedValue(new Error("mongo down"));
+    const res = makeRes();
+    await postSimulatedAnalyticsEvents(makeReq({ events: [{}] }), res);
     expect(res.status).toHaveBeenCalledWith(500);
   });
 });

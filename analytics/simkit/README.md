@@ -45,6 +45,22 @@ server-side exposure, and faults that map one-to-one onto the G-event ingest out
 - **Export:** canonical JSONL (`to_jsonl`, sorted keys, `\n`), and typed Parquet
   (`write_parquet`, schema-valid events only, `properties` as JSON text; `[parquet]` extra).
 
+- **Load driver** (`simkit.driver`, B2 plan PR 16, `[load]` extra): Locust virtual users replay
+  every simulated user's events, in order and in batches of the shared batch cap, through the
+  real backend ingest (`POST /api/analytics/sim/events`, a local-only route that accepts
+  server-sourced exposures but only `sim-` userIds), then the backend's `analytics:export`
+  writes the daily files and abkit reads them. The run checks that sent, ingest answers, Mongo
+  documents, exported rows and the fault manifest agree, and that the abkit readout on the
+  export equals the readout on the simulated events. It owns its stack: it drops and refills a
+  local `travelplan_sim` database (any other host or name is refused) and boots the backend
+  with dummy keys. Rows go to `runs.csv` with `simulated=true`. No Locust user sends before all
+  of them have spawned, and the run fails unless every requested user spawned and as many as
+  there is work for were sending at the same moment. With 1,000 virtual users replayed by 1,000
+  Locust users (all 1,000 sending at once; 500 planted duplicates, 40 planted schema faults),
+  all 10 count checks agreed and the readout on the export equalled the readout on the simulated events (absolute
+  difference 0); the same held with 50 Locust users. The planted lift is far below what about
+  400 enrolled virtual users can detect, so this run checks the pipeline, not the effect.
+
 The relative lift acts on one transition, so the lift on a user-level metric is close to but not
 exactly `relativeLift`; compare arms of the same seed to get the realised effect.
 
@@ -56,6 +72,10 @@ cd analytics/simkit && ../.venv/Scripts/python -m ruff check . && ../.venv/Scrip
 analytics/.venv/Scripts/python -m simkit.generate --users 500 --days 14 \
     --experiment experiment.json --duplicate 5 --missing-field 3 --parquet
 analytics/.venv/Scripts/python -m simkit.validation_run --pr 14   # M2, M5, CATE; --dry-run
+
+docker compose up -d mongodb redis                                # needs the [load] extra
+analytics/.venv/Scripts/python -m simkit.driver --users 1000 --vus 1000 --duplicate 500 \
+    --missing-field 10 --wrong-type 10 --unknown-event 10 --wrong-source 10   # --dry-run
 ```
 
 `experiment.json`:
