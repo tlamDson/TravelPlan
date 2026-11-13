@@ -19,11 +19,7 @@ interface ImportMetaEnv {
   /** Legacy Mapbox token key */
   readonly VITE_MAPBOX_TOKEN?: string;
 
-  /** OpenWeather API key */
-  readonly VITE_OPENWEATHER_API_KEY?: string;
 
-  /** OpenWeather base URL override */
-  readonly VITE_OPENWEATHER_BASE_URL?: string;
 
   /** Environment name */
   readonly VITE_ENV: "development" | "staging" | "production";

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { LANDING_INFO_TRANSLATIONS } from "@/features/landing/constants/info-page-translations";
 import { getUserPreferences } from "@/features/settings/types/user-preferences.types";
 
 export type Language = "English (US)" | "French" | "Vietnamese";
@@ -463,7 +464,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.weatherMissingConfig":
       "Forecasts can't be shown because the weather service isn't configured for this deployment.",
     "trip.weatherMissingConfigDev":
-      "Local dev: add VITE_OPENWEATHER_API_KEY to your .env file.",
+      "Local dev: add OPENWEATHER_API_KEY to backend/.env and restart the API.",
     "trip.weatherLoadErrorTitle": "Couldn't load weather",
     "trip.weatherLoadError": "We couldn't load the forecast. Try again later.",
     "trip.weatherExpectedForSelectedDay":
@@ -537,6 +538,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.workerAlive": "Worker alive",
     "reliability.signals.workerDown": "Worker down",
     "reliability.signals.stalledCount": "Stalled jobs",
+    ...LANDING_INFO_TRANSLATIONS.en,
   },
   French: {
     // Landing
@@ -995,7 +997,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.weatherMissingConfig":
       "Les prévisions ne peuvent pas s'afficher car le service météo n'est pas configuré pour ce déploiement.",
     "trip.weatherMissingConfigDev":
-      "Développement local : ajoutez VITE_OPENWEATHER_API_KEY dans votre fichier .env.",
+      "Développement local : ajoutez OPENWEATHER_API_KEY dans backend/.env puis redémarrez l'API.",
     "trip.weatherLoadErrorTitle": "Impossible de charger la météo",
     "trip.weatherLoadError":
       "Nous n'avons pas pu charger les prévisions. Réessayez plus tard.",
@@ -1072,6 +1074,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.workerAlive": "Worker actif",
     "reliability.signals.workerDown": "Worker arrêté",
     "reliability.signals.stalledCount": "Tâches bloquées",
+    ...LANDING_INFO_TRANSLATIONS.fr,
   },
   Vietnamese: {
     // Landing
@@ -1523,7 +1526,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.weatherMissingConfig":
       "Không hiển thị dự báo vì dịch vụ thời tiết chưa được cấu hình trên phiên bản này.",
     "trip.weatherMissingConfigDev":
-      "Khi dev local: thêm VITE_OPENWEATHER_API_KEY vào file .env.",
+      "Khi dev local: thêm OPENWEATHER_API_KEY vào backend/.env rồi khởi động lại API.",
     "trip.weatherLoadErrorTitle": "Không tải được dự báo",
     "trip.weatherLoadError": "Không thể tải dự báo. Vui lòng thử lại sau.",
     "trip.weatherExpectedForSelectedDay":
@@ -1597,6 +1600,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.workerAlive": "Worker đang sống",
     "reliability.signals.workerDown": "Worker đã chết",
     "reliability.signals.stalledCount": "Job bị kẹt",
+    ...LANDING_INFO_TRANSLATIONS.vi,
   },
 };
 

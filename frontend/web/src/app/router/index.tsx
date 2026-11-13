@@ -12,6 +12,7 @@ import { PageLoader } from "@/components/PageLoader";
 
 // Public pages (can be eagerly loaded for better UX)
 import LandingPage from "@/features/landing/pages/LandingPage";
+import InfoPage from "@/features/landing/pages/InfoPage";
 
 // Section 5: Performance - lazy-loaded pages, see ./lazy-pages.ts
 import {
@@ -43,6 +44,9 @@ export function AppRouter() {
         {/* PUBLIC ROUTES */}
         {/* ================================ */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<InfoPage page="about" />} />
+        <Route path="/privacy" element={<InfoPage page="privacy" />} />
+        <Route path="/terms" element={<InfoPage page="terms" />} />
 
         <Route
           path="/signin"

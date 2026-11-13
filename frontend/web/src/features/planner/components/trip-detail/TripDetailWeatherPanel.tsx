@@ -5,7 +5,7 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { useTripDayWeather } from "@/features/planner/hooks";
-import { canFetchWeather } from "@/features/planner/api/weather.api";
+import { isWeatherNotConfiguredError } from "@/features/planner/api/weather.api";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 
 interface TripDetailWeatherPanelProps {
@@ -22,7 +22,7 @@ export function TripDetailWeatherPanel({
     destination,
     dayDateIso: activeDayDate,
   });
-  const weatherConfigReady = canFetchWeather();
+  const weatherConfigReady = !isWeatherNotConfiguredError(weatherQuery.error);
 
   return (
     <div className="rounded-xl border bg-card/50 backdrop-blur-sm shadow-sm p-5 space-y-3 transition-shadow duration-200 hover:shadow-md">
