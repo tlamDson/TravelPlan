@@ -97,7 +97,10 @@ export function SettingsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden gap-0 bg-background h-[85vh] md:h-[700px] flex flex-col md:flex-row">
+      {/* No description: the title plus the labelled tabs say what this is. */}
+      <DialogContent
+        aria-describedby={undefined}
+        className="max-w-4xl p-0 overflow-hidden gap-0 bg-background h-[85vh] md:h-[700px] flex flex-col md:flex-row">
         <DialogTitle className="sr-only">{t("settings.title")}</DialogTitle>
         {/* Sidebar Navigation */}
         <aside className="w-full md:w-64 bg-muted/30 border-r md:h-full flex flex-col shrink-0">

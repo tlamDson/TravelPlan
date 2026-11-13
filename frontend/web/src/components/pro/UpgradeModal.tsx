@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -66,9 +67,9 @@ export function UpgradeModal() {
         </DialogHeader>
 
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
+          <DialogDescription>
             {reasonText[upgradeReason] ?? reasonText["general-upgrade"]}
-          </p>
+          </DialogDescription>
           <div className="rounded-lg border border-tag-purple-text/60 bg-background/70 p-3">
             <p className="text-sm text-muted-foreground">Pro plan</p>
             <p className="text-2xl font-bold">$10/month</p>
