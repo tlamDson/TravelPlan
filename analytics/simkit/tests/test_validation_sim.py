@@ -119,6 +119,8 @@ def test_cate_rmse_is_the_root_mean_squared_error(effect_runs) -> None:
     s = summarize(SCENARIO, effect_runs)
     errors = effect_runs.cate - np.array(SCENARIO.truth)
     np.testing.assert_allclose(s.cate_rmse, np.sqrt(np.mean(errors**2, axis=0)), rtol=1e-12)
+    mse_se = np.std(errors**2, axis=0, ddof=1) / math.sqrt(N_RUNS)
+    np.testing.assert_allclose(s.cate_rmse_se, mse_se / (2 * np.array(s.cate_rmse)), rtol=1e-12)
 
 
 def test_aa_false_positive_rates_stay_at_alpha(aa_runs) -> None:

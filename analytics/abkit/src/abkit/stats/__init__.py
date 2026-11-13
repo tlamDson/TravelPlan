@@ -1,11 +1,12 @@
 """Core A/B statistics: Welch, delta method, CUPED, SRM, power/MDE (B2 plan, PR 10-11);
-mSPRT and Benjamini-Hochberg (PR 12).
+mSPRT and Benjamini-Hochberg (PR 12); CATE by group (PR 14).
 
 Estimates are always treatment minus control. Each function validates its
 input and raises ``ValueError`` instead of returning NaN.
 """
 
 from abkit.stats.bh import BhResult, bh_fdr
+from abkit.stats.cate import CateResult, GroupEffect, cate_by_group
 from abkit.stats.cuped import CupedResult, cuped, cuped_sample_size, sample_size_multiplier
 from abkit.stats.delta import DeltaResult, delta_ratio
 from abkit.stats.msprt import (
@@ -31,14 +32,17 @@ from abkit.stats.welch import WelchResult, welch_ttest
 __all__ = [
     "SRM_THRESHOLD",
     "BhResult",
+    "CateResult",
     "CupedResult",
     "DeltaResult",
+    "GroupEffect",
     "MsprtResult",
     "MsprtSequence",
     "ProportionSampleSize",
     "SrmResult",
     "WelchResult",
     "bh_fdr",
+    "cate_by_group",
     "cohens_h",
     "cuped",
     "cuped_sample_size",
