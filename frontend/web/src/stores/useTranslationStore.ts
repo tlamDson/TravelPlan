@@ -15,6 +15,9 @@ interface TranslationState {
 
 export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   "English (US)": {
+    // Landing
+    "landing.hero.howItWorks": "See How It Works",
+
     // Settings Nav
     "nav.personal": "Personal Information",
     "nav.security": "Security & Access",
@@ -533,6 +536,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.stalledCount": "Stalled jobs",
   },
   French: {
+    // Landing
+    "landing.hero.howItWorks": "Voir comment ça marche",
+
     // Settings Nav
     "nav.personal": "Informations Personnelles",
     "nav.security": "Sécurité et Accès",
@@ -1063,6 +1069,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.stalledCount": "Tâches bloquées",
   },
   Vietnamese: {
+    // Landing
+    "landing.hero.howItWorks": "Xem cách hoạt động",
+
     // Settings Nav
     "nav.personal": "Thông tin Cáo nhân",
     "nav.security": "Bảo mật & Truy cập",
