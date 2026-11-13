@@ -37,6 +37,56 @@ const CORRECTED: Record<string, string> = {
   "map.flyToDay": "Chuyển đến ngày",
   "trip.noItineraryDesc":
     "Tạo chuyến đi mới từ “Chuyến đi của tôi” và chúng tôi sẽ lập kế hoạch cho bạn.",
+  "wizard.hiking": "Đi bộ đường dài",
+  "wizard.focusNatureDesc": "Bãi biển, công viên, đi bộ đường dài",
+  "wizard.db_longWalks": "Đi bộ nhiều",
+  "wizard.paceLabel": "Nhịp độ chuyến đi",
+  "wizard.travelers": "Số người đi",
+  "wizard.adultsAge": "Từ 13 tuổi",
+  "wizard.meal_breakfast": "Bữa sáng",
+  "wizard.meal_lunch": "Bữa trưa",
+  "wizard.meal_dinner": "Bữa tối",
+  "wizard.constraintMobility": "♿ Thân thiện với người khó đi lại",
+  "wizard.constraintMobilityDesc": "Tối đa 800 m đi bộ hoặc chặng xe ngắn",
+  "wizard.constraintIndoor": "🏠 Chỉ trong nhà",
+  "wizard.transportCar": "Ô tô / taxi",
+  "nav.subscription": "Nâng cấp lên Pro",
+  "sub.usageTitle": "Mức sử dụng trong chu kỳ này",
+  "sub.resetsAt": "Đặt lại vào",
+  "pref.travelStyle": "Phong cách du lịch (từ lúc đăng ký)",
+  "pref.interests": "Sở thích (từ lúc đăng ký)",
+  "pref.1bed": "1 giường",
+  "pref.2beds": "2 giường",
+  "pref.smoking": "Tùy chọn hút thuốc",
+  "pref.routingTitle": "Tùy chọn lộ trình",
+  "pref.avoidTrafficDesc": "Đổi lộ trình để tránh các khu vực ùn tắc đã biết.",
+  "ai.strictBudget": "Tuân thủ ngân sách nghiêm ngặt",
+  "ai.displayLogoDesc":
+    "Hiển thị quả cầu AI chuyển động trên nút nổi khi đóng.",
+  "personal.address": "Địa chỉ",
+  "security.passwordDesc": "Cập nhật mật khẩu hiện tại của bạn.",
+  "security.pageSubtitle":
+    "Quản lý bảo mật tài khoản, xác thực hai yếu tố (2FA) và các thiết bị được ủy quyền.",
+  "dash.planNew": "Lên kế hoạch chuyến đi mới",
+  "dash.activeNow": "Đang diễn ra",
+  "dash.avgTravelers": "Số người đi trung bình",
+  "trip.nearbySuggestionsSummary": "Gợi ý gần đây ({count} gợi ý)",
+  "trip.lifecycle_completed": "Đã hoàn thành",
+  "reliability.pageSubtitle":
+    "SLO, ngân sách lỗi và các tín hiệu vàng cho quy trình tạo chuyến đi",
+  "reliability.errorBudget.statusHealthy": "Ổn định",
+  "reliability.latency.subtitle":
+    "p50 / p95 / p99 qua 3 giai đoạn của một tác vụ — khoảng cách lớn giữa xử lý và toàn trình nghĩa là nghẽn hàng đợi, không phải AI chậm",
+  "reliability.latency.endToEnd": "Toàn trình",
+  "reliability.signals.latencyDef": "Thời gian để hoàn thành một yêu cầu",
+  "reliability.signals.errorsDef": "Tỉ lệ yêu cầu thất bại",
+  "reliability.signals.saturationDef":
+    "Hệ thống đang đầy tới đâu — độ sâu hàng đợi và năng lực tiến trình xử lý",
+  "reliability.signals.jobsPerHour": "tác vụ/giờ",
+  "reliability.signals.fallbackRate": "Tỉ lệ dùng phương án dự phòng",
+  "reliability.signals.workerAlive": "Tiến trình xử lý đang chạy",
+  "reliability.signals.workerDown": "Tiến trình xử lý đã dừng",
+  "reliability.signals.stalledCount": "Tác vụ bị kẹt",
 };
 
 // Words that keep their capital letter mid-sentence in Vietnamese
@@ -112,6 +162,20 @@ describe("Vietnamese dictionary — no mixed English in the trip planner", () =>
       .filter(([, v]) => LEFTOVER_ENGLISH.test(v))
       .map(([k]) => k);
     expect(bad).toEqual([]);
+  });
+
+  it("reliability strings contain no leftover English words", () => {
+    const ENGLISH =
+      /\b(pipeline|jobs?|requests?|workers?|fallback|end-to-end)\b/i;
+    const bad = Object.entries(vi)
+      .filter(([k]) => k.startsWith("reliability."))
+      .filter(([, v]) => ENGLISH.test(v))
+      .map(([k]) => k);
+    expect(bad).toEqual([]);
+  });
+
+  it("hiking and long walks are not given the same Vietnamese label", () => {
+    expect(vi["wizard.hiking"]).not.toBe(vi["wizard.db_longWalks"]);
   });
 });
 
