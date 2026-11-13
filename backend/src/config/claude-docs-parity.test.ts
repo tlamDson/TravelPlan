@@ -127,7 +127,7 @@ describe("[Guard] .claude/reference holds on-demand knowledge", () => {
 });
 
 describe("[Guard] Claude docs are written in English", () => {
-  // Vietnamese letters (precomposed, with tone marks) plus the d-with-stroke letter.
+  // Vietnamese letters (precomposed, with tone marks) plus the d-with-stroke letters.
   const VIETNAMESE =
     /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/u;
 
