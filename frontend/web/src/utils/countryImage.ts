@@ -86,7 +86,6 @@ const CITY_KEYWORDS: Record<CountryKey, string[]> = {
     "normandie",
     "versailles",
     "cannes",
-    "monaco",
     "avignon",
   ],
 };
@@ -169,6 +168,30 @@ function findCountry(
   return null;
 }
 
+// The country slot of a destination: the last comma segment of
+// "City, Country" ("Trip to Tokyo, Japan" -> "japan"), or the whole text when
+// there is no comma ("Trip to Hanoi").
+function countrySlot(lower: string): string {
+  const segments = lower
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (segments.length > 1) {
+    return segments[segments.length - 1];
+  }
+  return lower;
+}
+
+function detectCountry(lower: string): CountryKey | null {
+  // When the destination names a country ("Hue, Japan", "France St, Tokyo,
+  // Japan"), only the country slot decides: a city alias or country word
+  // elsewhere in the text must not pick another country's photo.
+  const slot = countrySlot(lower);
+  return (
+    findCountry(slot, COUNTRY_NAME_KEYWORDS) ?? findCountry(slot, CITY_KEYWORDS)
+  );
+}
+
 /**
  * Detects the country from a destination/trip title string and returns an
  * image path for that country, or null when the country is unknown or has no
@@ -180,15 +203,8 @@ export function getCountryImage(
   seedString?: string,
 ): string | null {
   if (!tripTitle) return null;
-  const lower = tripTitle.toLowerCase();
-
-  const country =
-    findCountry(lower, COUNTRY_NAME_KEYWORDS) ??
-    findCountry(lower, CITY_KEYWORDS);
-  if (country) {
-    const images = COUNTRY_IMAGES[country];
-    return images[hashIndex(seedString, tripTitle, images.length)];
-  }
-
-  return null;
+  const country = detectCountry(tripTitle.toLowerCase());
+  if (!country) return null;
+  const images = COUNTRY_IMAGES[country];
+  return images[hashIndex(seedString, tripTitle, images.length)];
 }

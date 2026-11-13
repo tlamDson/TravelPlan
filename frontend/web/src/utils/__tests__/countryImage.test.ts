@@ -75,6 +75,7 @@ describe("getCountryImage", () => {
       "Nice, Italy",
       "Chicago, Japan",
       "Trip to Da Nang, South Korea",
+      "France Street, Tokyo, Japan",
     ]) {
       expect(getCountryImage(destination, "t-5")).toBeNull();
     }
