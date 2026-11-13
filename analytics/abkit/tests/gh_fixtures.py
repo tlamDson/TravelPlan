@@ -14,11 +14,11 @@ class Completed:
     stderr: str = ""
 
 
-def _parse(args: list[str]) -> tuple[str, dict[str, str], str | None]:
-    """(endpoint, params, jq) of a ``gh api -X GET <endpoint> -f k=v ... --jq <expr>`` call."""
+def _parse(args: list[str]) -> tuple[str, dict[str, str]]:
+    """(endpoint, params) of a ``gh api -X GET <endpoint> -f k=v ...`` call."""
     assert args[:2] == ["gh", "api"], args
     rest = args[2:]
-    endpoint, params, jq = None, {}, None
+    endpoint, params = None, {}
     i = 0
     while i < len(rest):
         token = rest[i]
@@ -29,22 +29,20 @@ def _parse(args: list[str]) -> tuple[str, dict[str, str], str | None]:
             key, value = rest[i + 1].split("=", 1)
             params[key] = value
             i += 2
-        elif token == "--jq":
-            jq = rest[i + 1]
-            i += 2
         else:
             assert endpoint is None, args
             endpoint = token
             i += 1
     assert endpoint is not None, args
-    return endpoint, params, jq
+    return endpoint, params
 
 
 @dataclass
 class FakeGh:
     """Answers ``gh api`` calls from ``routes``: endpoint -> handler(params) -> value.
 
-    A handler returns a JSON value (exit 0) or a ``Completed`` (to fail).
+    A handler returns a raw GitHub JSON value (exit 0) or a ``Completed`` (to fail); the
+    client's projections run on it as they would on a real answer.
     """
 
     routes: dict[str, Any] = field(default_factory=dict)
@@ -52,7 +50,7 @@ class FakeGh:
 
     def __call__(self, args: list[str]) -> Completed:
         self.calls.append(list(args))
-        endpoint, params, _ = _parse(args)
+        endpoint, params = _parse(args)
         if endpoint not in self.routes:
             return Completed(1, "", f"gh: Not Found (HTTP 404)\n{endpoint}")
         result = self.routes[endpoint](params)
@@ -76,4 +74,26 @@ def pages(items: list[Any], per_page: int = 100):
 
 
 def pr(created: str, merged: str | None, bot: bool = False) -> dict[str, Any]:
+    """A PR as the panel sees it (after ``project_pulls``)."""
     return {"created_at": created, "merged_at": merged, "bot": bot}
+
+
+def raw_pr(
+    created: str, merged: str | None, user_type: str = "User", login: str = "dev"
+) -> dict[str, Any]:
+    """A PR as ``GET repos/{o}/{r}/pulls`` returns it (the fields abkit reads, plus noise)."""
+    return {
+        "number": 1,
+        "title": "t",
+        "created_at": created,
+        "merged_at": merged,
+        "user": {"login": login, "type": user_type, "id": 7},
+    }
+
+
+def raw_commit(date: str) -> dict[str, Any]:
+    return {"sha": "abc", "commit": {"committer": {"date": date}, "author": {"date": "x"}}}
+
+
+def raw_search(*items: dict[str, Any]) -> dict[str, Any]:
+    return {"total_count": len(items), "items": [{**item, "id": 1} for item in items]}

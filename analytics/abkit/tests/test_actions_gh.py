@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from gh_fixtures import Completed, FakeGh
 
-from abkit.actions.gh import GhClient, GhError, RateLimited, gh_args
+from abkit.actions.gh import GhClient, GhError, Projection, RateLimited, gh_args
 
 
 def _client(tmp_path: Path, fake: FakeGh, **kw) -> GhClient:
@@ -11,18 +11,17 @@ def _client(tmp_path: Path, fake: FakeGh, **kw) -> GhClient:
     return GhClient(tmp_path / "cache", runner=fake, **kw)
 
 
-def test_gh_args_are_get_only_with_params_and_jq() -> None:
-    args = gh_args("repos/a/b/pulls", {"state": "closed", "page": "2"}, ".[]")
+def test_gh_args_are_get_only_with_params_and_no_jq() -> None:
+    args = gh_args("repos/a/b/pulls", {"state": "closed", "page": "2"})
     assert args == [
-        "gh", "api", "-X", "GET", "repos/a/b/pulls",
-        "-f", "page=2", "-f", "state=closed", "--jq", ".[]",
+        "gh", "api", "-X", "GET", "repos/a/b/pulls", "-f", "page=2", "-f", "state=closed",
     ]  # fmt: skip
 
 
 @pytest.mark.parametrize("endpoint", ["-X", "graphql", "repos/a b", "repos/a?x=1", "", "/repos/a"])
 def test_endpoints_that_are_not_plain_rest_paths_are_refused(endpoint: str) -> None:
     with pytest.raises(ValueError):
-        gh_args(endpoint, {}, ".")
+        gh_args(endpoint, {})
 
 
 def test_a_second_identical_get_is_served_from_the_cache(tmp_path: Path) -> None:
@@ -35,13 +34,24 @@ def test_a_second_identical_get_is_served_from_the_cache(tmp_path: Path) -> None
     assert (client.calls, again.calls, again.hits) == (1, 0, 1)
 
 
-def test_the_cache_key_includes_params_and_jq(tmp_path: Path) -> None:
+def test_the_cache_key_includes_params_and_the_projection_id(tmp_path: Path) -> None:
     fake = FakeGh({"r": lambda p: p})
     client = _client(tmp_path, fake)
     assert client.get("r", {"page": "1"}) == {"page": "1"}
     assert client.get("r", {"page": "2"}) == {"page": "2"}
-    client.get("r", {"page": "1"}, jq=".page")
+    page = Projection("page/v1", lambda raw: raw["page"])
+    assert client.get("r", {"page": "1"}, project=page) == "1"
     assert len(fake.calls) == 3
+
+
+def test_only_the_projected_value_is_cached(tmp_path: Path) -> None:
+    fake = FakeGh({"r": lambda p: {"keep": 1, "noise": "x" * 1000}})
+    keep = Projection("keep/v1", lambda raw: raw["keep"])
+    assert _client(tmp_path, fake).get("r", project=keep) == 1
+    (path,) = (tmp_path / "cache").rglob("*.json")
+    assert "noise" not in path.read_text(encoding="utf-8")
+    assert _client(tmp_path, fake).get("r", project=keep) == 1
+    assert len(fake.calls) == 1
 
 
 def test_a_404_raises_with_its_status_and_is_cached(tmp_path: Path) -> None:
@@ -59,7 +69,9 @@ def test_a_rate_limit_waits_for_the_reset_of_its_resource_then_retries(tmp_path:
     fake = FakeGh(
         {
             "search/repositories": lambda p: answers.pop() if answers else {"items": []},
-            "rate_limit": lambda p: {"core": {"reset": 5000}, "search": {"reset": 1100}},
+            "rate_limit": lambda p: {
+                "resources": {"core": {"reset": 5000}, "search": {"reset": 1100}}
+            },
         }
     )
     slept: list[float] = []
@@ -73,7 +85,7 @@ def test_a_rate_limit_that_never_clears_raises_rate_limited(tmp_path: Path) -> N
     fake = FakeGh(
         {
             "repos/a/b": lambda p: Completed(1, "", "secondary rate limit (HTTP 403)"),
-            "rate_limit": lambda p: {"core": {"reset": 0}, "search": {"reset": 0}},
+            "rate_limit": lambda p: {"resources": {"core": {"reset": 0}, "search": {"reset": 0}}},
         }
     )
     client = _client(tmp_path, fake, max_retries=2)

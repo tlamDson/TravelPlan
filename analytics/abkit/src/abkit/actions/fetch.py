@@ -8,7 +8,9 @@ so the same frame and seed give the same repositories.
 Adoption is the committer date of the oldest commit on the default branch that touches
 ``.github/workflows``. PRs are the closed pull requests, newest first, read back to the
 start of the window or until ``max_pages`` (then ``truncated``); only merged ones are
-kept, with bot authors flagged rather than dropped.
+kept, with bot authors flagged rather than dropped. A bot is a user of type ``Bot`` or a
+login ending in ``[bot]`` (GitHub App accounts); a deleted (ghost) author is not a bot.
+The projections below turn raw GitHub answers into the few fields kept in the cache.
 """
 
 from __future__ import annotations
@@ -19,12 +21,36 @@ from typing import Any
 
 import numpy as np
 
-from abkit.actions.gh import GhClient, GhError
+from abkit.actions.gh import GhClient, GhError, Projection
 
 WORKFLOWS_PATH = ".github/workflows"
-_SEARCH_JQ = "[.items[] | {full_name, created_at, stargazers_count}]"
-_COMMITS_JQ = "[.[] | .commit.committer.date]"
-_PULLS_JQ = '[.[] | {created_at, merged_at, bot: (.user.type == "Bot")}]'
+
+
+def is_bot(user: dict[str, Any] | None) -> bool:
+    if not user:
+        return False
+    return user.get("type") == "Bot" or str(user.get("login", "")).endswith("[bot]")
+
+
+def project_search(raw: dict[str, Any]) -> list[dict[str, Any]]:
+    keep = ("full_name", "created_at", "stargazers_count")
+    return [{k: item[k] for k in keep} for item in raw["items"]]
+
+
+def project_commits(raw: list[dict[str, Any]]) -> list[str]:
+    return [c["commit"]["committer"]["date"] for c in raw]
+
+
+def project_pulls(raw: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {"created_at": p["created_at"], "merged_at": p["merged_at"], "bot": is_bot(p["user"])}
+        for p in raw
+    ]
+
+
+SEARCH = Projection("search/v1", project_search)
+COMMITS = Projection("commit-dates/v1", project_commits)
+PULLS = Projection("pulls/v2", project_pulls)
 
 
 @dataclass
@@ -58,7 +84,7 @@ def build_frame(
             items = client.get(
                 "search/repositories",
                 {"q": query, "per_page": "100", "page": str(page)},
-                jq=_SEARCH_JQ,
+                project=SEARCH,
             )
             for item in items:
                 by_name.setdefault(item["full_name"], item)
@@ -84,7 +110,7 @@ def first_workflow_commit(
             dates = client.get(
                 f"repos/{full_name}/commits",
                 {"path": WORKFLOWS_PATH, "per_page": str(per_page), "page": str(page)},
-                jq=_COMMITS_JQ,
+                project=COMMITS,
             )
         except GhError as err:
             if err.status == 409:  # an empty repository has no commits
@@ -113,7 +139,7 @@ def merged_prs(
                 "per_page": str(per_page),
                 "page": str(page),
             },
-            jq=_PULLS_JQ,
+            project=PULLS,
         )
         in_window = [r for r in rows if r["created_at"][:7] >= since]
         kept += [r for r in in_window if r["merged_at"]]

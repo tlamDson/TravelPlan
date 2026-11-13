@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 import pytest
-from gh_fixtures import FakeGh, pr
+from gh_fixtures import FakeGh, raw_commit, raw_pr, raw_search
 
 import abkit.actions.gh as gh_module
 from abkit.actions.build import BuildConfig, build_actions_panel, summary_records
@@ -20,18 +20,20 @@ REPOS = {
 
 def _fake() -> FakeGh:
     routes = {
-        "search/repositories": lambda p: [
-            {"full_name": n, "created_at": c, "stargazers_count": 200}
-            for n, (c, _) in REPOS.items()
-        ]
+        "search/repositories": lambda p: raw_search(
+            *[
+                {"full_name": n, "created_at": c, "stargazers_count": 200}
+                for n, (c, _) in REPOS.items()
+            ]
+        )
     }
     for name, (_, commits) in REPOS.items():
         if commits is None:
             continue
-        routes[f"repos/{name}/commits"] = lambda p, c=commits: c
+        routes[f"repos/{name}/commits"] = lambda p, c=commits: [raw_commit(d) for d in c]
         routes[f"repos/{name}/pulls"] = lambda p: [
-            pr("2018-01-02T00:00:00Z", "2018-01-02T04:00:00Z"),
-            pr("2018-03-02T00:00:00Z", "2018-03-03T00:00:00Z"),
+            raw_pr("2018-01-02T00:00:00Z", "2018-01-02T04:00:00Z"),
+            raw_pr("2018-03-02T00:00:00Z", "2018-03-03T00:00:00Z"),
         ]
     return FakeGh(routes)
 
