@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 
 function CloseLabel() {
-  const t = useTranslationStore((state) => state.t);
-  return <span className="sr-only">{t("common.close")}</span>;
+  // Select the string, not the stable `t`, so a language change re-renders.
+  const label = useTranslationStore((state) => state.t("common.close"));
+  return <span className="sr-only">{label}</span>;
 }
 
 const Dialog = DialogPrimitive.Root;
