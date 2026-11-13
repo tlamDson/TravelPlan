@@ -58,11 +58,7 @@ interface ImportMetaEnv {
   /** Clerk publishable key (public) */
   readonly VITE_CLERK_PUBLISHABLE_KEY?: string;
 
-  /** OpenWeather API key (public key for client forecast requests) */
-  readonly VITE_OPENWEATHER_API_KEY?: string;
 
-  /** OpenWeather base URL override */
-  readonly VITE_OPENWEATHER_BASE_URL?: string;
 
   // ============================================
   // FORBIDDEN - NEVER ADD THESE:

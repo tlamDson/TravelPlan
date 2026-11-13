@@ -1,8 +1,8 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  canFetchWeather,
   getTripDayWeatherForecast,
+  isWeatherNotConfiguredError,
 } from "@/features/planner/api/weather.api";
 
 interface UseTripDayWeatherParams {
@@ -26,12 +26,13 @@ export function useTripDayWeather({
     enabled: Boolean(
       destination &&
         dayDateIso &&
-        canFetchWeather() &&
         isLoaded &&
         isSignedIn,
     ),
     staleTime: 10 * 60 * 1000,
     gcTime: 20 * 60 * 1000,
-    retry: 1,
+    // A missing server key won't fix itself on retry.
+    retry: (failureCount, error) =>
+      !isWeatherNotConfiguredError(error) && failureCount < 1,
   });
 }

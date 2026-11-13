@@ -23,6 +23,20 @@ export function isOpenWeatherConfigured(): boolean {
   return Boolean(normalizedKey());
 }
 
+/** OpenWeather's 3-hourly forecast changes slowly; one upstream call per city per window. */
+const FORECAST_CACHE_TTL_MS = 10 * 60 * 1000;
+const FORECAST_CACHE_MAX_ENTRIES = 500;
+const forecastCache = new Map<string, { data: unknown; expiresAt: number }>();
+
+function cacheKey(q: string): string {
+  return q.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Test hook: drop all cached forecasts. */
+export function clearOpenWeatherForecastCache(): void {
+  forecastCache.clear();
+}
+
 export class OpenWeatherProxyError extends Error {
   constructor(
     message: string,
@@ -43,6 +57,13 @@ export async function fetchOpenWeatherForecastJson(q: string): Promise<unknown> 
     throw new OpenWeatherProxyError("OPENWEATHER_NOT_CONFIGURED", 503);
   }
 
+  const key = cacheKey(q);
+  const cached = forecastCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+  forecastCache.delete(key);
+
   const url = `${openWeatherBaseUrl()}/forecast`;
   const response = await axios.get(url, {
     params: { q, units: "metric", appid },
@@ -52,6 +73,14 @@ export async function fetchOpenWeatherForecastJson(q: string): Promise<unknown> 
 
   const data = response.data;
   if (response.status === 200) {
+    if (forecastCache.size >= FORECAST_CACHE_MAX_ENTRIES) {
+      const oldest = forecastCache.keys().next().value;
+      if (oldest !== undefined) forecastCache.delete(oldest);
+    }
+    forecastCache.set(key, {
+      data,
+      expiresAt: Date.now() + FORECAST_CACHE_TTL_MS,
+    });
     return data;
   }
 
