@@ -15,6 +15,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 PACKAGE_DIR = Path(__file__).resolve().parents[1]
+#: Where the copy goes under ``dest``: the repo layout, because modules resolve repo files
+#: from ``Path(__file__).parents[N]`` at import time (N up to 4). In a shallow temp dir such
+#: as ``/tmp/x/abkit`` that index runs past ``/`` and the copy dies with ``IndexError``.
+COPY_LAYOUT = Path("analytics/abkit/src/abkit")
 
 
 class MutantError(ValueError):
@@ -122,7 +126,7 @@ def write_package(
     dest: Path, mutant: Mutant | None = None, package_dir: Path = PACKAGE_DIR
 ) -> Path:
     """Copy ``package_dir`` to ``dest/abkit`` (patched with ``mutant``) and return that path."""
-    target = Path(dest) / "abkit"
+    target = Path(dest) / COPY_LAYOUT
     shutil.copytree(package_dir, target, ignore=shutil.ignore_patterns("__pycache__"))
     if mutant is not None:
         path = target / mutant.path

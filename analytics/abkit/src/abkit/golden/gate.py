@@ -70,8 +70,8 @@ def check_package(
     name = None if mutant is None else mutant.id
     env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
     with tempfile.TemporaryDirectory(prefix="abkit-gate-") as tmp:
-        write_package(Path(tmp), mutant, package_dir)
-        cmd = [sys.executable, "-c", _BOOT, tmp, *args]
+        copy = write_package(Path(tmp), mutant, package_dir)
+        cmd = [sys.executable, "-c", _BOOT, str(copy.parent), *args]
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
         except subprocess.TimeoutExpired:
