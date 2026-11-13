@@ -59,33 +59,43 @@ interface ItineraryDayCardProps {
 
 const TYPE_META: Record<
   Activity["type"],
-  { icon: React.ElementType; label: string; color: string; bg: string }
+  { icon: React.ElementType; labelKey: string; color: string; bg: string }
 > = {
   accommodation: {
     icon: Building2,
-    label: "Stay",
+    labelKey: "trip.type.accommodation",
     color: "text-violet-600 dark:text-violet-400",
     bg: "bg-violet-100 dark:bg-violet-950",
   },
   poi: {
     icon: MapPin,
-    label: "Activity",
+    labelKey: "trip.type.poi",
     color: "text-primary",
     bg: "bg-primary/10",
   },
   transport: {
     icon: Train,
-    label: "Transport",
+    labelKey: "trip.type.transport",
     color: "text-amber-600 dark:text-amber-400",
     bg: "bg-amber-100 dark:bg-amber-950",
   },
   custom: {
     icon: Pencil,
-    label: "Custom",
+    labelKey: "trip.type.custom",
     color: "text-muted-foreground",
     bg: "bg-muted",
   },
 };
+
+// ─── Meal codes ───────────────────────────────────────────
+
+/** The itinerary builder writes the meal slot code ("Lunch") into `notes`. */
+const MEAL_CODES = ["breakfast", "lunch", "dinner"] as const;
+
+function mealLabelKey(notes?: string): string | null {
+  const code = notes?.trim().toLowerCase();
+  return MEAL_CODES.find((m) => m === code) ? `trip.meal.${code}` : null;
+}
 
 // ─── Status badge variant ──────────────────────────────────
 
@@ -204,6 +214,7 @@ function ActivityRow({
   const meta = TYPE_META[activity.type] ?? TYPE_META.custom;
   const Icon = meta.icon;
   const timeLabel = formatTimeRange(activity.time, derivedEndTime);
+  const mealKey = mealLabelKey(activity.notes);
 
   // Format distance based on user preference
   const formatDistance = (km: number) => {
@@ -315,7 +326,7 @@ function ActivityRow({
                   variant={STATUS_VARIANT[activity.status]}
                   className="text-xs capitalize h-5"
                 >
-                  {activity.status}
+                  {t(`trip.status.${activity.status}`)}
                 </Badge>
               ) : null}
             </div>
@@ -336,7 +347,9 @@ function ActivityRow({
             aria-label={`View ${activity.name} on Google Maps`}
           >
             <MapPin className="h-3 w-3" aria-hidden="true" />
-            <span className="truncate hover:underline">View on map</span>
+            <span className="truncate hover:underline">
+              {t("map.viewOnMap")}
+            </span>
             <ExternalLink className="h-3 w-3 ml-0.5" aria-hidden="true" />
           </a>
 
@@ -433,7 +446,7 @@ function ActivityRow({
           <div className="mt-auto">
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/40 flex-wrap gap-1">
               <span className={`text-xs font-medium ${meta.color}`}>
-                {meta.label}
+                {t(meta.labelKey)}
               </span>
               {activity.cost != null && activity.cost > 0 && (
                 <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
@@ -453,7 +466,7 @@ function ActivityRow({
             {/* Notes */}
             {activity.notes && (
               <p className="mt-2 pt-2 border-t border-border/40 text-xs text-muted-foreground italic line-clamp-2">
-                {activity.notes}
+                {mealKey ? t(mealKey) : activity.notes}
               </p>
             )}
           </div>
@@ -474,10 +487,12 @@ export function ItineraryDayCard({
   onRegenActivity,
 }: ItineraryDayCardProps) {
   const {
+    t,
     language,
     distanceUnit,
     currency: preferredCurrency,
   } = useTranslationStore();
+  const dayLabel = t("trip.dayLabel").replace("{n}", String(day.day));
 
   const dateLabel = (() => {
     try {
@@ -492,7 +507,7 @@ export function ItineraryDayCard({
         day: "numeric",
       });
     } catch {
-      return `Day ${day.day}`;
+      return dayLabel;
     }
   })();
 
@@ -505,7 +520,7 @@ export function ItineraryDayCard({
       <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Day {day.day}
+            {dayLabel}
           </span>
           <p
             className="font-semibold text-sm text-foreground"
@@ -515,8 +530,11 @@ export function ItineraryDayCard({
           </p>
         </div>
         <Badge variant="secondary" className="text-xs">
-          {day.activities.length}{" "}
-          {day.activities.length === 1 ? "activity" : "activities"}
+          {t(
+            day.activities.length === 1
+              ? "trip.activityCountOne"
+              : "trip.activityCountOther",
+          ).replace("{count}", String(day.activities.length))}
         </Badge>
       </div>
 
@@ -524,7 +542,7 @@ export function ItineraryDayCard({
       <div className="px-4 pt-4">
         {day.activities.length === 0 ? (
           <p className="text-sm text-muted-foreground pb-4">
-            No activities for this day yet.
+            {t("trip.noActivitiesForDay")}
           </p>
         ) : (
           (() => {
