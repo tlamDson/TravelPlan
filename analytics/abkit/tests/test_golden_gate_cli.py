@@ -94,15 +94,19 @@ def test_m10_records_count_mutants_and_split_real_from_simulated_cases() -> None
     assert "subset=ci-fast" in blocked.notes and "survived=m2" in blocked.notes
     assert "baseline_without_gate=0/3" in blocked.notes
 
-    # Full v2 run of the installed engine: 28 G-ref + G-public cases, 50 SIMULATED G-sim cases.
+    # Full run of the installed engine over every case of the latest dataset. The counts come
+    # from the case directories, so a new G-public / G-sim case does not break this test.
+    groups = [d.parent.parent.name for d in GOLDEN_LATEST.glob("*/*/truth.json")]
+    n_sim = sum(g.startswith("sim-") for g in groups)
+    assert n_sim == 50  # G-sim is frozen at 50 cases (B2 plan, PR 13a)
     assert (real.metric_id, real.value, real.unit, real.n, real.simulated) == (
         "M10",
         1.0,
         "share",
-        28,
+        len(groups) - n_sim,
         False,
     )
-    assert (simulated.value, simulated.n, simulated.simulated) == (1.0, 50, True)
+    assert (simulated.value, simulated.n, simulated.simulated) == (1.0, n_sim, True)
     assert "simulated" in simulated.notes
     assert {r.pr for r in (blocked, real, simulated)} == {"15a"}
     assert {r.git_sha for r in (blocked, real, simulated)} == {"abc"}

@@ -15,6 +15,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# The budget LP of abkit.uplift (PuLP ships the CBC solver in its wheel).
+uplift = [
+  "pulp==2.9.0",
+]
 # ETS and ARIMA (abkit.forecast); seasonal naive and the backtest need only the core.
 forecast = [
   "pandas==2.2.3",
@@ -24,9 +28,10 @@ forecast = [
 app = [
   "streamlit==1.40.2",
 ]
-# dev includes forecast so the CI job (core + dev) runs the forecast tests.
+# dev includes uplift and forecast so the CI job (core + dev) runs their tests.
 dev = [
   "pandas==2.2.3",
+  "pulp==2.9.0",
   "pytest==8.3.4",
   "ruff==0.8.4",
   "statsmodels==0.14.4",

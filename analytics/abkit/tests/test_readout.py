@@ -208,3 +208,24 @@ def test_a_persona_missing_from_one_arm_raises_value_error() -> None:
     data["persona"][:3] = "solo"  # three control users, no treatment users
     with pytest.raises(ValueError, match="solo"):
         run_readout(data, _params(by_persona=True))
+
+
+def test_effects_can_be_measured_for_a_blinded_readout_without_unblocking_it() -> None:
+    data = _data(n_control=2000, n_treatment=1700, lift=5.0)
+    r = run_readout(data, _params(), effects_when_blocked=True)
+    assert r.blocked and r.decision == "invalid"
+    assert r.primary is not None and r.primary.estimate == pytest.approx(5.0, abs=0.3)
+    assert r.golden_outputs() == {"srm": True, "decision": "invalid"}
+
+
+def test_measure_effect_is_the_primary_effect_on_a_subset_of_users() -> None:
+    from abkit.readout import MetricSpec, measure_effect
+
+    data = _data(lift=0.5)
+    everyone = np.ones(4000, dtype=bool)
+    spec = MetricSpec.from_params("metric", {"kind": "mean", "column": "saves"})
+    full = measure_effect(spec, data, everyone, 0.05)
+    assert full == run_readout(data, _params()).primary
+    early = data["exposure_day"] < 3
+    part = measure_effect(spec, data, early, 0.05)
+    assert part.n_control + part.n_treatment == int(early.sum())

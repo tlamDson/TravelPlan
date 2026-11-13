@@ -18,6 +18,7 @@ import numpy as np
 from abkit import causal, stats
 from abkit.golden.case import KNOWN_METHODS
 from abkit.readout.analysis import run_readout
+from abkit.uplift.evaluate import arm_summary
 
 Data = dict[str, np.ndarray] | None
 __all__ = ["IMPLEMENTATIONS", "KNOWN_METHODS", "Data", "Implementation"]
@@ -92,6 +93,17 @@ def _sample_size_proportions(data: Data, params: Mapping[str, Any]) -> Mapping[s
     return asdict(stats.sample_size_proportions(**_pick(params, *keys)))
 
 
+def _uplift_arm_summary(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
+    labels = ("n", "visit", "conversion")
+    counts = {}
+    for variant in _VARIANTS:
+        rows = data["variant"] == variant
+        if rows.sum() != 1:
+            raise ValueError(f"need exactly one row of totals for {variant!r}")
+        counts[variant] = {label: float(data[label][rows][0]) for label in labels}
+    return arm_summary(counts)
+
+
 def _bh(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
     result = stats.bh_fdr(data["p_value"], params["alpha"])
     return {"p_adjusted": list(result.p_adjusted), "rejected": list(result.rejected)}
@@ -121,6 +133,7 @@ IMPLEMENTATIONS: dict[str, Implementation] = {
     "sample_size_ttest_ind": _sample_size,
     "mde_ttest_ind": _mde,
     "sample_size_proportions": _sample_size_proportions,
+    "uplift_arm_summary": _uplift_arm_summary,
     "bh_fdr": _bh,
     "readout": _readout,
     "naive_diff": _causal("naive_diff"),

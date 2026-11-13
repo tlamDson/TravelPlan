@@ -114,9 +114,10 @@ def _pooled_sd(c: np.ndarray, t: np.ndarray) -> float:
     return math.sqrt(pooled)
 
 
-def _effect(
+def measure_effect(
     metric: MetricSpec, data: Data, mask: np.ndarray, alpha: float, group: str | None = None
 ) -> Effect:
+    """Treatment minus control on ``metric`` among the users where ``mask`` is true."""
     variant = np.asarray(data["variant"])
     ctrl, treat = mask & (variant == "control"), mask & (variant == "treatment")
     n_c, n_t = int(ctrl.sum()), int(treat.sum())
@@ -139,8 +140,14 @@ def _effect(
     return Effect(group, n_c, n_t, *values, r.estimate, r.se, r.ci_low, r.ci_high, r.p_value, mde)
 
 
-def run_readout(data: Data, params: Mapping[str, Any]) -> Readout:
-    """``data``: one row per enrolled user (``variant`` plus metric columns)."""
+def run_readout(
+    data: Data, params: Mapping[str, Any], *, effects_when_blocked: bool = False
+) -> Readout:
+    """``data``: one row per enrolled user (``variant`` plus metric columns).
+
+    ``effects_when_blocked`` still measures the effects when SRM fails, for a blinded
+    readout that shows the evidence; the readout stays blocked and its decision ``invalid``.
+    """
     spec = ReadoutSpec.from_params(params)
     variant = _column(data, "variant").astype(str)
     for name in spec.metric.columns + (spec.early_metric.columns if spec.early_metric else ()):
@@ -149,18 +156,18 @@ def run_readout(data: Data, params: Mapping[str, Any]) -> Readout:
     srm = stats.srm_chisquare(
         list(counts.values()), list(spec.expected_shares.values()), spec.srm_threshold
     )
-    if srm.srm:
+    if srm.srm and not effects_when_blocked:
         return Readout(spec, counts, srm, primary=None)
     everyone = np.ones(variant.size, dtype=bool)
-    primary = _effect(spec.metric, data, everyone, spec.alpha)
+    primary = measure_effect(spec.metric, data, everyone, spec.alpha)
     early = None
     if spec.early_metric is not None:
-        early = _effect(spec.early_metric, data, everyone, spec.alpha)
+        early = measure_effect(spec.early_metric, data, everyone, spec.alpha)
     personas, q_p = (), None
     if spec.by_persona:
         persona = _column(data, "persona").astype(str)
         personas = tuple(
-            _effect(spec.metric, data, persona == p, spec.alpha, group=str(p))
+            measure_effect(spec.metric, data, persona == p, spec.alpha, group=str(p))
             for p in np.unique(persona)
         )
         if spec.metric.kind == "mean":

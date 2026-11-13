@@ -101,8 +101,8 @@ MUTANTS: tuple[Mutant, ...] = (
     Mutant(
         "readout-decides-early-window",
         "readout/analysis.py",
-        "primary = _effect(spec.metric, data, everyone, spec.alpha)",
-        "primary = _effect(spec.early_metric or spec.metric, data, everyone, spec.alpha)",
+        "primary = measure_effect(spec.metric, data, everyone, spec.alpha)",
+        "primary = measure_effect(spec.early_metric or spec.metric, data, everyone, spec.alpha)",
         "readout decides on the novelty window instead of the lasting metric",
     ),
 )
