@@ -127,9 +127,9 @@ describe("formatDateRange — calendar dates in a negative-offset timezone", () 
   });
 
   it("runs under a negative UTC offset (guards the fixture itself)", () => {
-    expect(new Date("2026-11-18T12:00:00Z").getTimezoneOffset()).toBeGreaterThan(
-      0,
-    );
+    expect(
+      new Date("2026-11-18T12:00:00Z").getTimezoneOffset(),
+    ).toBeGreaterThan(0);
   });
 
   it("keeps Nov 18 – 21 when the API sends UTC-midnight date-only values", () => {
