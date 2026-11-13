@@ -19,7 +19,7 @@ File này và `.claude/rules/*` được nạp vào **mọi** phiên, nên chỉ
 | `frontend/web/`    | SPA chính                                                                                                    |
 | `frontend/mobile/` | Expo/React Native, giai đoạn sớm                                                                             |
 | `packages/shared/` | `@travelplan/shared`: Zod schema, type, constant dùng chung (build bằng `tsup`)                              |
-| `analytics/`       | Python: `abkit` (experimentation), `simkit` (mô phỏng) — B2, thêm dần                                        |
+| `analytics/`       | Python: `abkit` (experimentation), `simkit` (mô phỏng), `runs/runs.csv` (nguồn mọi số đo B2) — B2 xong       |
 | `services/`        | Python service của B3 — thêm dần                                                                             |
 | `e2e/`             | Playwright, không thuộc workspace npm nào                                                                    |
 
@@ -46,7 +46,7 @@ File này và `.claude/rules/*` được nạp vào **mọi** phiên, nên chỉ
 | E2E Playwright          | `npm run e2e`                                                | Cần `.env.e2e`; job CI không bắt buộc                                               |
 
 Gate chung: `npm run lint`, `npm run typecheck`, `npm run build` (chạy `build:shared` trước nếu sửa shared).
-Python `analytics/abkit` và `analytics/simkit` (cài abkit trước): job CI `abkit Lint + Test` (`ruff check`, `ruff format --check`, `pytest -q` cho từng package; chỉ cài core + dev), kèm cổng golden `abkit golden --subset ci-fast --strict` + `abkit gate` (10 mutant phải bị chặn; xem `analytics/golden/README.md`).
+Python `analytics/abkit` và `analytics/simkit` (cài abkit trước): job CI `abkit Lint + Test` (`ruff check`, `ruff format --check`, `pytest -q` cho từng package; chỉ cài core + dev), kèm cổng golden `abkit golden --subset ci-fast --strict` + `abkit gate` (10 mutant phải bị chặn; xem `analytics/golden/README.md`). Bảng kết quả trong `analytics/abkit/README.md` và `docs/results.md` sinh từ `runs.csv` bằng `python -m abkit.readme_results --write` (test chặn nếu lệch); bullet resume ở `analytics/runs/resume-bullets.md`, mọi số phải có trong bảng nguồn ở cuối file.
 
 **Môi trường:** `develop` → staging (Railway env `staging` + Vercel Preview), `main` → production. 3 check bắt buộc trên PR: `Lint + Unit Tests`, `Typecheck + Build`, `Backend Docker Build`. Chi tiết hạ tầng: `.claude/reference/deploy-ops.md`.
 
