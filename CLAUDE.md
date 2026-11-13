@@ -30,7 +30,7 @@ File này và `.claude/rules/*` được nạp vào **mọi** phiên, nên chỉ
 - **AI là service không tin cậy:** AI không gọi API ngoài trực tiếp, chỉ qua tool ở `backend/src/features/planner/tools/`; mọi place AI sinh phải đối chiếu qua `searchPlaces`; circuit breaker `opossum` bọc Places/Mapbox; retry AI tối đa 3 lần rồi fail gracefully.
 - Pipeline lịch trình (6 bước cố định): xem skill `itinerary-builder`.
 
-**Shared Kernel:** `packages/shared` là nguồn sự thật duy nhất của data contract — chỉ Zod schema, TS type, error code, constant; cấm UI, business logic, model DB. Thay đổi chéo lớp đi theo thứ tự `packages/shared` → backend → frontend (chạy `npm run build:shared` sau khi sửa shared). Sửa catalog analytics (`schemas/analytics.schema.ts`) thì chạy `npm run export:json-schema -w packages/shared` để cập nhật `packages/shared/json-schema/` (Python đọc file này; test parity chặn nếu lệch).
+**Shared Kernel:** `packages/shared` là nguồn sự thật duy nhất của data contract — chỉ Zod schema, TS type, error code, constant; cấm UI, business logic, model DB. Thay đổi chéo lớp đi theo thứ tự `packages/shared` → backend → frontend (chạy `npm run build:shared` sau khi sửa shared). Sửa catalog analytics (`schemas/analytics.schema.ts`) thì chạy `npm run export:json-schema -w packages/shared` để cập nhật `packages/shared/json-schema/` (Python đọc file này; test parity chặn nếu lệch). Event web mới trong catalog phải có call site `track()`/`trackOnce()` từ `@/features/analytics` trong `frontend/web` — `tracking-coverage.test.ts` chặn nếu thiếu.
 
 **Repository Symmetry:** mỗi domain có mặt đối xứng ở `frontend/web/src/features/<domain>/`, `backend/src/features/<domain>/` và (khi có contract chung) `packages/shared/src/schemas/<domain>.ts`.
 

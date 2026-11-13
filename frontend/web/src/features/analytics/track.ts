@@ -14,6 +14,8 @@ const logger = createBrowserLogger("analytics");
 
 let client: AnalyticsClient | null = null;
 let uninstall: (() => void) | null = null;
+/** "name:key" pairs already sent by trackOnce() during this page load. */
+const sentOnce = new Set<string>();
 
 /** Created on first use, so pages that never track add no listeners. */
 function getClient(): AnalyticsClient {
@@ -42,6 +44,22 @@ export function track<N extends ClientEventName>(
   getClient().track(name, properties);
 }
 
+/**
+ * Tracks an event at most once per key for the life of the page. For
+ * signals the UI can see more than once, such as a polled job that reaches
+ * a final state again after a remount.
+ */
+export function trackOnce<N extends ClientEventName>(
+  name: N,
+  properties: ClientEventProperties<N>,
+  key: string,
+): void {
+  const onceKey = `${name}:${key}`;
+  if (sentOnce.has(onceKey)) return;
+  sentOnce.add(onceKey);
+  track(name, properties);
+}
+
 /** Pass the Clerk userId after sign-in, null after sign-out. */
 export function identify(userId: string | null): void {
   getClient().identify(userId);
@@ -51,4 +69,5 @@ export function resetAnalyticsForTests(): void {
   uninstall?.();
   uninstall = null;
   client = null;
+  sentOnce.clear();
 }

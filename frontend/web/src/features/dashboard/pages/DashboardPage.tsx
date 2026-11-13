@@ -157,6 +157,7 @@ export default function DashboardPage() {
             </Button>
           ) : (
             <CreateTripDialog
+              entryPoint="dashboard"
               trigger={
                 <Button data-testid="dashboard-new-trip-button">
                   <Plus className="h-4 w-4 mr-2" />
@@ -245,6 +246,7 @@ export default function DashboardPage() {
                     {t("dash.startPlanning")}
                   </p>
                   <CreateTripDialog
+                    entryPoint="dashboard"
                     trigger={
                       <Button data-testid="dashboard-empty-create-button">
                         <Plus className="h-4 w-4 mr-2" />

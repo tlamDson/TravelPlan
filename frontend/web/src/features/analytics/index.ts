@@ -1,4 +1,5 @@
-export { identify, track } from "./track";
+export { identify, track, trackOnce } from "./track";
+export { AnalyticsIdentity } from "./components/AnalyticsIdentity";
 export type {
   ClientEventName,
   ClientEventProperties,

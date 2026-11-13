@@ -7,6 +7,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query-client";
+import { track } from "@/features/analytics";
 import * as tripsApi from "../api/trips.api";
 import type {
   CreateTripRequest,
@@ -79,6 +80,7 @@ export function useUpdateTrip() {
       data: UpdateTripRequest;
     }) => tripsApi.updateTrip(tripId, data),
     onSuccess: (updatedTrip) => {
+      track("trip_saved", { tripId: updatedTrip._id });
       // Update cache
       queryClient.setQueryData(
         queryKeys.trips.detail(updatedTrip._id),

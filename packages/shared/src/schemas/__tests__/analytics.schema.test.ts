@@ -7,6 +7,7 @@ import {
   analyticsEventSchema,
   analyticsIngestResultSchema,
 } from "../analytics.schema";
+import { MAX_TRIP_DAYS } from "../../constants/trip";
 
 const envelope = {
   eventId: "0b7c6f0e-0000-4000-8000-000000000001",
@@ -148,6 +149,22 @@ describe("analytics catalog", () => {
     ] as const) {
       const ev = eventOf("experiment_exposure", {
         properties: { ...validByName.experiment_exposure, bucket },
+      });
+      expect(analyticsEventSchema.safeParse(ev).success).toBe(ok);
+    }
+  });
+
+  it("bounds durationDays to the longest trip the wizard allows", () => {
+    expect(MAX_TRIP_DAYS).toBe(90);
+    for (const [durationDays, ok] of [
+      [1, true],
+      [61, true],
+      [MAX_TRIP_DAYS, true],
+      [MAX_TRIP_DAYS + 1, false],
+      [0, false],
+    ] as const) {
+      const ev = eventOf("trip_generation_requested", {
+        properties: { ...validByName.trip_generation_requested, durationDays },
       });
       expect(analyticsEventSchema.safeParse(ev).success).toBe(ok);
     }
