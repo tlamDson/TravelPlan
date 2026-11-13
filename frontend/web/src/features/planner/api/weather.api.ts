@@ -3,6 +3,7 @@ import { isAxiosError } from "axios";
 import { apiClient } from "@/lib/axios";
 import { validateAPI } from "@/utils/validation";
 import { createBrowserLogger } from "@/lib/logger";
+import type { Language } from "@/stores/useTranslationStore";
 
 const weatherLogger = createBrowserLogger("weather-forecast");
 
@@ -47,7 +48,15 @@ export interface TripDayWeather {
 interface GetTripDayWeatherParams {
   destination: string;
   dayDateIso: string;
+  /** UI language; weather descriptions are requested in it. */
+  language?: Language;
 }
+
+const WEATHER_LANG: Record<Language, string> = {
+  "English (US)": "en",
+  French: "fr",
+  Vietnamese: "vi",
+};
 
 function toTimezoneDayKey(epochSeconds: number, timezoneOffsetSeconds: number): string {
   return new Date((epochSeconds + timezoneOffsetSeconds) * 1000)
@@ -85,6 +94,7 @@ export function isWeatherNotConfiguredError(error: unknown): boolean {
 export async function getTripDayWeatherForecast({
   destination,
   dayDateIso,
+  language = "English (US)",
 }: GetTripDayWeatherParams): Promise<TripDayWeather | null> {
   weatherLogger.info(
     { destination, dayDateIso },
@@ -92,7 +102,7 @@ export async function getTripDayWeatherForecast({
   );
 
   const response = await apiClient.get<unknown>("/weather/forecast", {
-    params: { q: destination },
+    params: { q: destination, lang: WEATHER_LANG[language] },
   });
 
   const rawData: unknown = response.data;

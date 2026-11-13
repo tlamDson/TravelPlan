@@ -36,7 +36,8 @@ export async function getWeatherForecast(
       return;
     }
 
-    const data = await fetchOpenWeatherForecastJson(q.trim());
+    const lang = typeof req.query.lang === "string" ? req.query.lang : undefined;
+    const data = await fetchOpenWeatherForecastJson(q.trim(), lang);
     res.json(data);
   } catch (err: unknown) {
     if (err instanceof OpenWeatherProxyError) {
