@@ -139,3 +139,10 @@ backend/test-db.js
 backend/.pipeline-snapshot.json
 # analytics:export output (hashed, but event logs stay out of git)
 analytics/data/
+# Python (analytics/, services/): per-worktree venvs and tool caches
+analytics/.venv/
+services/**/.venv/
+analytics/**/__pycache__/
+analytics/**/*.egg-info/
+analytics/**/.pytest_cache/
+analytics/**/.ruff_cache/
