@@ -93,7 +93,7 @@ Python `analytics/abkit`: job CI `abkit Lint + Test` (`ruff check`, `ruff format
 | `.claude/reference/pitfalls.md`      | Đụng BullMQ/Redis, Mongoose, Pino, CORS, Gemini quota, CI workflow, MCP/OAuth, Docker local, Windows shell |
 | `.claude/reference/tech-debt.md`     | Trước khi sửa một module (xem nó có bug đã biết không); khi ghi nợ mới                                     |
 | `.claude/reference/deploy-ops.md`    | Railway, Vercel, staging, Sentry, backup Mongo, billing/quota GCP, `railway.toml`                          |
-| `.claude/reference/test-infra.md`    | Dựng/sửa test integration, E2E Playwright, RAG eval, các script đo (`measure:*`)                           |
+| `.claude/reference/test-infra.md`    | Dựng/sửa test integration, E2E Playwright, RAG eval, golden `abkit`, các script đo (`measure:*`)           |
 | `.claude/reference/ui-design.md`     | Mọi thay đổi UI ở `frontend/web`: pre-flight `ui-ux-pro-max`, quy ước UI, i18n 3 ngôn ngữ, `data-testid`   |
 | `.claude/reference/debug-browser.md` | Sửa bug quan sát được qua trình duyệt (verify bằng `chrome-devtools` trước và sau khi sửa)                 |
 

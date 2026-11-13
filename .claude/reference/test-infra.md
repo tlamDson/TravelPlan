@@ -35,6 +35,10 @@ Quy trình TDD: `.claude/rules/tdd.md`. File này là chi tiết setup và cạm
 
 Metric thuần (`recallAtK`, `precisionAtK`, `mrr`, `ndcgAtK`, `hitRate`, test tính tay), 5 constraint check không tốn LLM (`geoOutliers` dùng **median**, không mean), snapshot corpus offline, golden-set + CLI gán nhãn, runner offline với baseline/BM25/RRF/query rewrite có cache. Corpus thật: staging `travelplan_staging`, 26 thành phố (`npm run seed:eval-corpus` tốn Serper + Gemini thật). `Trip.generationMeta` ghi `ragUsed`/`ragResultCount`/`model`/`aiAttempts`/token/`latencyMs` mỗi lần sinh trip (chỉ ở backend model).
 
+## Golden `abkit` (`analytics/golden/`)
+
+`python -m abkit golden [root] [--strict]` chạy engine trên từng case và in PASS/FAIL/MISSING/ERROR theo dung sai trong `truth.json`; method chưa có implementation (đăng ký ở `abkit/golden/methods.py`) là MISSING, chỉ đỏ khi `--strict`. Đáp án G-ref tính bằng scipy/statsmodels ở `abkit/golden/ref_truth.py` (không import gì từ abkit; test AST chặn). Case đã đóng băng không sửa — đổi thì đóng băng sang `v2/` bằng `python -m abkit.golden.freeze_ref` (cần extra `[golden]`). Format và hợp đồng từng method: `analytics/golden/README.md`.
+
 ## Script đo (`backend/scripts/`, chỉ đọc trừ khi ghi khác)
 
 | Lệnh                                                                                   | Đo                                                                                                                                                                                                                     |

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "srm/balanced-ok",
+  "method": "srm_chisquare",
+  "description": "Planned 50/50, observed 5,012 / 4,988.",
+  "data": "data.csv",
+  "params": {
+    "threshold": 0.0005
+  },
+  "expected": {
+    "statistic": 0.0576,
+    "p_value": 0.8103302566044083,
+    "dof": 1
+  },
+  "decision": "no_srm",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "scipy",
+    "version": "1.14.1",
+    "call": "scipy.stats.chisquare(count, expected_share / sum(expected_share) * sum(count)); decision srm when p_value < threshold",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13"
+  }
+}

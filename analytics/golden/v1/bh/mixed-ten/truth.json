@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "bh/mixed-ten",
+  "method": "bh_fdr",
+  "description": "Ten metrics, three clearly moved, alpha 0.05.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05
+  },
+  "expected": {
+    "p_adjusted": [
+      0.001,
+      0.004,
+      0.013,
+      0.0525,
+      0.082,
+      0.1,
+      0.10571428571428572,
+      0.25625,
+      0.5688888888888889,
+      0.9
+    ],
+    "rejected": [
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "statsmodels",
+    "version": "0.14.4",
+    "call": "statsmodels.stats.multitest.multipletests(p_value, alpha, method='fdr_bh'); outputs in input row order",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13"
+  }
+}

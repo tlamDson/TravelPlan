@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "delta/unequal-sizes",
+  "method": "delta_ratio",
+  "description": "400 control against 1,200 treatment users, CTR 20% against 21%, alpha 0.1.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.1
+  },
+  "expected": {
+    "ratio_control": 0.19640287769784173,
+    "ratio_treatment": 0.20708511650023775,
+    "estimate": 0.010682238802396021,
+    "se": 0.008511232242861558,
+    "statistic": 1.255075469401661,
+    "p_value": 0.20945136453922353,
+    "ci_low": -0.003317492422101125,
+    "ci_high": 0.024681970026893166
+  },
+  "decision": "fail_to_reject",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "numpy+scipy",
+    "version": "numpy 2.1.3, scipy 1.14.1",
+    "call": "delta method for a ratio of means (Deng, Knoblich & Lu, KDD 2018): per group R = mean(y)/mean(x), Var(R) = (var_y - 2 R cov_xy + R^2 var_x) / (n mean_x^2) with ddof=1; two-sided z-test on R_t - R_c via scipy.stats.norm",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13",
+    "seed": 203
+  }
+}
