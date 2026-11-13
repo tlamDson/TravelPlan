@@ -113,11 +113,19 @@ def _per_100k(outcomes: Sequence[PolicyOutcome], attr: str) -> np.ndarray:
     return np.array([getattr(o, attr) / o.n_test * PER for o in outcomes])
 
 
+def _gain(topk: float, lp: float) -> float | None:
+    """LP over top-k in percent of top-k; ``None`` when top-k is 0 (undefined, not infinite)."""
+    if topk == 0:
+        return None
+    return float((lp - topk) / abs(topk) * 100)
+
+
 def summarize(
     outcomes: Sequence[PolicyOutcome], git_sha: str, pr: str, run_at: str, source: str = ""
 ) -> list[RunRecord]:
     """Three M8 rows per (learner, budget): top-k and LP extra conversions per 100k test
-    users (mean over seeds), and the LP's gain over top-k in percent of top-k."""
+    users (mean over seeds), and the LP's gain over top-k in percent of top-k. The gain row
+    is left out when the top-k mean is 0 (the notes say so); the value rows still count."""
     groups: dict[tuple[str, float], list[PolicyOutcome]] = {}
     for o in outcomes:
         groups.setdefault((o.learner, o.budget_share), []).append(o)
@@ -125,8 +133,8 @@ def summarize(
     records = []
     for (learner, share), group in groups.items():
         topk, lp = _per_100k(group, "topk_value"), _per_100k(group, "lp_value")
-        gains = (lp - topk) / np.abs(topk) * 100
-        gain = (lp.mean() - topk.mean()) / abs(topk.mean()) * 100
+        gains = [_gain(b, a) for b, a in zip(topk, lp, strict=True)]
+        gain = _gain(topk.mean(), lp.mean())
         spend = {
             k: np.mean([getattr(o, f"{k}_spend") / o.budget for o in group]) for k in ("topk", "lp")
         }
@@ -136,7 +144,8 @@ def summarize(
             f"per 100k test users: topk_sd={topk.std(ddof=1) if len(group) > 1 else 0:.2f} "
             f"lp_sd={lp.std(ddof=1) if len(group) > 1 else 0:.2f} "
             f"random={_per_100k(group, 'random_value').mean():.2f}; "
-            f"gain_per_seed=[{' '.join(f'{g:.1f}' for g in gains)}]; "
+            f"gain_per_seed=[{' '.join('n/a' if g is None else f'{g:.1f}' for g in gains)}]; "
+            f"{'gain undefined: top-k baseline is 0; ' if gain is None else ''}"
             f"treated topk={np.mean([o.topk_treated for o in group]):.0f} "
             f"lp={np.mean([o.lp_treated for o in group]):.0f}; "
             f"realized spend/budget (IPW) topk={spend['topk']:.3f} lp={spend['lp']:.3f}; {source}"
@@ -166,13 +175,16 @@ def summarize(
                 unit=unit,
                 **common,
             ),
-            RunRecord(
-                metric=f"m8_lp_gain_over_topk_{suffix}",
-                value=round(float(gain), 4),
-                unit="%",
-                **common,
-            ),
         ]
+        if gain is not None:
+            records.append(
+                RunRecord(
+                    metric=f"m8_lp_gain_over_topk_{suffix}",
+                    value=round(gain, 4),
+                    unit="%",
+                    **common,
+                )
+            )
     return records
 
 
