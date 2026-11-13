@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { LANDING_INFO_TRANSLATIONS } from "@/features/landing/constants/info-page-translations";
 import { getUserPreferences } from "@/features/settings/types/user-preferences.types";
 
 export type Language = "English (US)" | "French" | "Vietnamese";
@@ -537,6 +538,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.workerAlive": "Worker alive",
     "reliability.signals.workerDown": "Worker down",
     "reliability.signals.stalledCount": "Stalled jobs",
+    ...LANDING_INFO_TRANSLATIONS.en,
   },
   French: {
     // Landing
@@ -1072,6 +1074,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.workerAlive": "Worker actif",
     "reliability.signals.workerDown": "Worker arrêté",
     "reliability.signals.stalledCount": "Tâches bloquées",
+    ...LANDING_INFO_TRANSLATIONS.fr,
   },
   Vietnamese: {
     // Landing
@@ -1594,6 +1597,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.workerAlive": "Worker đang sống",
     "reliability.signals.workerDown": "Worker đã chết",
     "reliability.signals.stalledCount": "Job bị kẹt",
+    ...LANDING_INFO_TRANSLATIONS.vi,
   },
 };
 
