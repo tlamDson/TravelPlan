@@ -30,7 +30,10 @@ const CORRECTED: Record<string, string> = {
   "trip.reGeocoding": "Đang xác định tọa độ...",
   "trip.reGeocodeLoading": "Đang xác định lại tọa độ các hoạt động...",
   "trip.reGeocodeFailed":
-    "Xác định lại tọa độ thất bại. Vui lòng kiểm tra API key.",
+    "Xác định lại tọa độ thất bại. Vui lòng kiểm tra khóa API.",
+  "explore.mapboxTokenError": "Chưa cấu hình mã truy cập Mapbox",
+  "trip.weatherMissingConfigDev":
+    "Khi chạy cục bộ: thêm OPENWEATHER_API_KEY vào backend/.env rồi khởi động lại API.",
   "map.flyToDay": "Chuyển đến ngày",
   "trip.noItineraryDesc":
     "Tạo chuyến đi mới từ “Chuyến đi của tôi” và chúng tôi sẽ lập kế hoạch cho bạn.",
@@ -101,11 +104,11 @@ describe("Vietnamese dictionary — corrected translations", () => {
 
 describe("Vietnamese dictionary — no mixed English in the trip planner", () => {
   const LEFTOVER_ENGLISH =
-    /\b(nightlife|malls?|boutique|hidden gems|focus|bars|geocod\w*|tram)\b/i;
+    /\b(nightlife|malls?|boutique|hidden gems|focus|bars|geocod\w*|tram|api key|token|dev|local)\b/i;
 
   it("wizard, trip and map strings contain no leftover English words", () => {
     const bad = Object.entries(vi)
-      .filter(([k]) => /^(wizard|trip|map)\./.test(k))
+      .filter(([k]) => /^(wizard|trips?|map|explore)\./.test(k))
       .filter(([, v]) => LEFTOVER_ENGLISH.test(v))
       .map(([k]) => k);
     expect(bad).toEqual([]);
