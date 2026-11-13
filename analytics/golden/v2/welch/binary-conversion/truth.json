@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "welch/binary-conversion",
+  "method": "welch_ttest",
+  "description": "0/1 conversion, 2,000 vs 2,000 users, 10% against 12%.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "estimate": 0.024500000000000008,
+    "statistic": 2.3960877293593055,
+    "df": 3966.3102015972618,
+    "p_value": 0.016617175544812072,
+    "ci_low": 0.004453248368293146,
+    "ci_high": 0.04454675163170687
+  },
+  "decision": "reject_null",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "scipy",
+    "version": "1.14.1",
+    "call": "scipy.stats.ttest_ind(treatment, control, equal_var=False, alternative=alternative); estimate = mean(treatment) - mean(control); CI = confidence_interval(1 - alpha)",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13",
+    "seed": 106
+  }
+}
