@@ -54,6 +54,13 @@ def _delta(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
     )
 
 
+def _cuped(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
+    (y_c, y_t), (x_c, x_t) = _split(data, "value"), _split(data, "covariate")
+    return _with_decision(
+        stats.cuped(y_c, x_c, y_t, x_t, params["alpha"], params.get("alternative", "two-sided"))
+    )
+
+
 def _srm(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
     result = stats.srm_chisquare(data["count"], data["expected_share"], params["threshold"])
     return _with_decision(result)
@@ -87,6 +94,7 @@ def _sample_size_proportions(data: Data, params: Mapping[str, Any]) -> Mapping[s
 IMPLEMENTATIONS: dict[str, Implementation] = {
     "welch_ttest": _welch,
     "delta_ratio": _delta,
+    "cuped": _cuped,
     "srm_chisquare": _srm,
     "power_ttest_ind": _power,
     "sample_size_ttest_ind": _sample_size,
