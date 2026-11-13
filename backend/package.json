@@ -18,6 +18,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "seed:destinations": "tsx scripts/seed-destinations.ts",
     "seed:eval-corpus": "tsx scripts/seed-eval-corpus.ts",
+    "seed:experiments": "tsx scripts/seed-experiments.ts",
     "ensure:vector-index": "tsx scripts/ensure-vector-index.ts",
     "check:services": "tsx scripts/check-services.ts",
     "seed:job-metrics": "tsx scripts/seed-job-metrics.ts",

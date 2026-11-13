@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { Check, Edit2, X } from "lucide-react";
+import { Edit2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslationStore } from "@/stores/useTranslationStore";
+import { SaveTripCta } from "./SaveTripCta";
 
 interface TripDetailHeaderProps {
   tripTitleLocalized: string;
@@ -46,16 +47,7 @@ export function TripDetailHeader({
               className="h-9 md:h-10 text-xl font-bold md:text-3xl w-[200px] md:min-w-[280px] md:max-w-[min(100%,420px)] shadow-sm"
               aria-label={t("trip.editTitle")}
             />
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer transition-colors duration-200"
-              onClick={onSaveTitle}
-              disabled={isUpdatingTrip}
-              aria-label={t("trip.saveTitle")}
-            >
-              <Check className="h-4 w-4" />
-            </Button>
+            <SaveTripCta onSave={onSaveTitle} disabled={isUpdatingTrip} />
             <Button
               size="icon"
               variant="ghost"

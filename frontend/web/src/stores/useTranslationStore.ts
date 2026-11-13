@@ -429,6 +429,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.budgetLabel": "Budget",
     "trip.editTitle": "Edit trip name",
     "trip.saveTitle": "Save trip name",
+    "trip.saveTripCta": "Save trip",
     "trip.cancelEdit": "Cancel editing",
     "trip.longTripBanner":
       "Long-trip generation may take longer. You can leave this page and come back later.",
@@ -954,6 +955,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.budgetLabel": "Budget",
     "trip.editTitle": "Modifier le nom du voyage",
     "trip.saveTitle": "Enregistrer le nom",
+    "trip.saveTripCta": "Enregistrer le voyage",
     "trip.cancelEdit": "Annuler",
     "trip.longTripBanner":
       "La génération d'un long voyage peut prendre plus de temps. Vous pouvez quitter cette page et revenir plus tard.",
@@ -1473,6 +1475,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.budgetLabel": "Ngân sách",
     "trip.editTitle": "Sửa tên chuyến đi",
     "trip.saveTitle": "Lưu tên chuyến đi",
+    "trip.saveTripCta": "Lưu chuyến đi",
     "trip.cancelEdit": "Hủy chỉnh sửa",
     "trip.longTripBanner":
       "Chuyến đi dài có thể mất thêm thời gian tạo. Bạn có thể rời trang và quay lại sau.",
