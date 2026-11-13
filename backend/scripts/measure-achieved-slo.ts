@@ -103,11 +103,11 @@ async function main(): Promise<void> {
   await mongoose.disconnect();
 
   console.log("=".repeat(60));
-  console.log("Q1  SLI đạt được (compliance window, 28 ngày):");
+  console.log("Q1  Achieved SLI (compliance window, 28 days):");
   if (compliance.sli.insufficientData) {
     console.log(
-      `    insufficientData=true — chỉ có ${compliance.sli.validEvents} event hợp lệ, ` +
-        `cần tối thiểu ${MIN_EVENTS_FOR_SLI} để tin một con số SLI.`,
+      `    insufficientData=true — only ${compliance.sli.validEvents} valid events, ` +
+        `need at least ${MIN_EVENTS_FOR_SLI} to trust an SLI figure.`,
     );
   } else {
     console.log(
@@ -120,40 +120,40 @@ async function main(): Promise<void> {
     `    raw outcome counts    : completed=${rawCounts.completed} fallback=${rawCounts.fallback} failed=${rawCounts.failed}`,
   );
   console.log(
-    `    completed nhưng vượt ${SLO_LATENCY_THRESHOLD_MS / 1000}s (tính là bad event): ${slowCompletedCount}`,
+    `    completed but over ${SLO_LATENCY_THRESHOLD_MS / 1000}s (counted as bad event): ${slowCompletedCount}`,
   );
   console.log(
-    `    breakdown lý do fail/fallback: ${
+    `    fail/fallback reason breakdown: ${
       Object.keys(failureBreakdown).length > 0
         ? JSON.stringify(failureBreakdown)
-        : "(không có job non-completed nào trong window)"
+        : "(no non-completed jobs in the window)"
     }`,
   );
 
-  console.log("\nQ2  Error budget đã tiêu:");
+  console.log("\nQ2  Error budget consumed:");
   console.log(
     `    consumedRatio=${(compliance.errorBudget.consumedRatio * 100).toFixed(1)}% ` +
       `(budgetConsumed=${compliance.errorBudget.budgetConsumed.toFixed(2)}, ` +
       `budgetRemaining=${compliance.errorBudget.budgetRemaining.toFixed(2)} / total=${compliance.errorBudget.budgetTotal.toFixed(2)})`,
   );
   console.log(`    burnRate=${compliance.errorBudget.burnRate.toFixed(2)}x`);
-  console.log(`    trạng thái dashboard: ${status}`);
+  console.log(`    dashboard status: ${status}`);
 
-  console.log("\nQ3  Coverage của lớp đo trên chính load run vừa chạy:");
+  console.log("\nQ3  Coverage of the measurement layer over the load run that just ran:");
   console.log(
-    `    cửa sổ quét           : ${loadRunStart.toISOString()} → ${now.toISOString()} (${formatDuration(now.getTime() - loadRunStart.getTime())})`,
+    `    sweep window          : ${loadRunStart.toISOString()} → ${now.toISOString()} (${formatDuration(now.getTime() - loadRunStart.getTime())})`,
   );
   console.log(
-    `    số lần poll           : ${sweep.totalReads} (mỗi ${pollIntervalMs / 1000}s)`,
+    `    poll count            : ${sweep.totalReads} (every ${pollIntervalMs / 1000}s)`,
   );
-  console.log(`    lần đọc healthy       : ${sweep.healthyReads}`);
-  console.log(`    lần đọc insufficient  : ${sweep.insufficientReads}`);
+  console.log(`    healthy reads        : ${sweep.healthyReads}`);
+  console.log(`    insufficient reads   : ${sweep.insufficientReads}`);
   console.log(
     sweep.firstNonHealthyAt
-      ? `    rời healthy lần đầu tại: ${sweep.firstNonHealthyAt.toISOString()} (+${formatDuration(
+      ? `    first left healthy at: ${sweep.firstNonHealthyAt.toISOString()} (+${formatDuration(
           sweep.firstNonHealthyAt.getTime() - loadRunStart.getTime(),
-        )} từ đầu cửa sổ quét)`
-      : `    KHÔNG rời healthy trong suốt cửa sổ quét ở trên`,
+        )} from the start of the sweep window)`
+      : `    did NOT leave healthy during the whole sweep window above`,
   );
 
   console.log("\nLatency (compliance window):");

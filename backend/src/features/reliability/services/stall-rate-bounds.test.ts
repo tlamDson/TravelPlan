@@ -68,18 +68,18 @@ describe("wilsonInterval — 95% confidence interval for a proportion (z=1.96)",
 });
 
 describe("describeResolution — can this sample size distinguish 'tune worked' from 'never had stalls'?", () => {
-  it("nBefore=33, nAfter=11 (the real B3 split): cận trên 95% cho nAfter ≈27.3% > 10% ngưỡng → không kết luận được", () => {
+  it("nBefore=33, nAfter=11 (the real B3 split): 95% upper bound for nAfter ≈27.3% > 10% threshold → cannot conclude", () => {
     const result = describeResolution(33, 11);
     expect(result.resolvable).toBe(false);
     expect(result.nBeforeUpperBoundPct).toBeCloseTo((3 / 33) * 100, 1);
     expect(result.nAfterUpperBoundPct).toBeCloseTo((3 / 11) * 100, 1);
-    expect(result.message).toMatch(/không (thể )?(kết luận|rút ra)/i);
+    expect(result.message).toMatch(/cannot conclude/i);
   });
 
-  it("large samples on both sides (n=1000 each) → cận trên <10% cả hai phía → kết luận được", () => {
+  it("large samples on both sides (n=1000 each) → upper bound <10% on both sides → can conclude", () => {
     const result = describeResolution(1000, 1000);
     expect(result.resolvable).toBe(true);
-    expect(result.message).not.toMatch(/không (thể )?(kết luận|rút ra)/i);
+    expect(result.message).not.toMatch(/cannot conclude/i);
   });
 
   it("boundary is driven by the smaller of the two samples (worse bound dominates)", () => {

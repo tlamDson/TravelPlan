@@ -34,7 +34,7 @@ export const syncTripToCalendar = async (
         res.status(403).json({
           success: false,
           code: "CALENDAR_VIP_REQUIRED",
-          message: "Không xác định được email tài khoản để kiểm tra quyền đồng bộ lịch.",
+          message: "Could not determine the account email to check calendar sync access.",
         });
         return;
       }
@@ -42,7 +42,7 @@ export const syncTripToCalendar = async (
         success: false,
         code: "CALENDAR_VIP_ONLY",
         message:
-          "Tính năng đồng bộ Google Calendar chỉ dành cho tài khoản được mời (VIP/Tester).",
+          "Google Calendar sync is only available to invited accounts (VIP/Tester).",
       });
       return;
     }
