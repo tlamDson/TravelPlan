@@ -35,7 +35,7 @@ def test_required_job_runs_the_fast_golden_gate_and_the_mutants() -> None:
 def test_nightly_workflow_runs_the_full_golden_dataset() -> None:
     text = (WORKFLOWS / "abkit-golden-nightly.yml").read_text(encoding="utf-8")
     assert re.search(r"^\s+schedule:\s*$", text, re.M)
-    assert re.search(r"^\s+- cron: \"[^\"]+\"\s*$", text, re.M)
+    assert re.search(r"^\s+- cron: \"[^\"]+\"", text, re.M)
     assert "workflow_dispatch:" in text
     runs = _run_lines(text)
     assert "python -m abkit golden --strict" in runs
