@@ -1,3 +1,4 @@
+import { analyticsEventSchema } from "@travelplan/shared";
 import type { z } from "zod";
 
 /**
@@ -16,16 +17,48 @@ export const QUARANTINE_REASONS = [
 ] as const;
 export type QuarantineReason = (typeof QUARANTINE_REASONS)[number];
 
+/**
+ * What is stored about one validation issue. Nothing here is copied from
+ * the client: zod's `message` is dropped on purpose (it quotes unknown key
+ * names and can quote values), and `path` / `code` are masked unless they
+ * are names this codebase defines.
+ */
 export interface QuarantineIssue {
-  /** Dotted path into the raw event ("" for the event itself). */
+  /**
+   * Dotted path into the raw event ("" for the event itself). A segment
+   * that is not a catalog field name (a client-chosen key, an array index)
+   * is stored as "*".
+   */
   path: string;
+  /** Zod issue code or a policy code; "unknown" when not code-shaped. */
   code: string;
-  message: string;
 }
 
 export const QUARANTINE_MAX_ISSUES = 20;
 
 type ZodIssue = z.core.$ZodIssue;
+
+/** Every field name the catalog defines: envelope keys and property keys. */
+const CATALOG_FIELDS: ReadonlySet<string> = new Set(
+  analyticsEventSchema.options.flatMap((o) => [
+    ...Object.keys(o.shape),
+    ...Object.keys(o.shape.properties.shape),
+  ]),
+);
+const MASKED_SEGMENT = "*";
+const CODE_SHAPE = /^[a-z_]{1,40}$/;
+
+function safePath(path: readonly PropertyKey[]): string {
+  return path
+    .map((key) =>
+      typeof key === "string" && CATALOG_FIELDS.has(key) ? key : MASKED_SEGMENT,
+    )
+    .join(".");
+}
+
+function safeCode(code: unknown): string {
+  return typeof code === "string" && CODE_SHAPE.test(code) ? code : "unknown";
+}
 
 function valueAt(raw: unknown, path: readonly PropertyKey[]): unknown {
   let cur: unknown = raw;
@@ -57,9 +90,8 @@ export function classifyQuarantine(
   return {
     reason,
     issues: issues.slice(0, QUARANTINE_MAX_ISSUES).map((i) => ({
-      path: i.path.map(String).join("."),
-      code: i.code,
-      message: i.message,
+      path: safePath(i.path),
+      code: safeCode(i.code),
     })),
   };
 }

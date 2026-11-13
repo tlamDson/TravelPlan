@@ -38,9 +38,7 @@ describe("clientPolicyViolation", () => {
   it("rejects a userId that is not the signed-in user as user_mismatch", () => {
     const out = clientPolicyViolation(ev({ userId: "user_2" }), "user_1");
     expect(out?.reason).toBe("user_mismatch");
-    expect(out?.issues).toEqual([
-      { path: "userId", code: "user_mismatch" },
-    ]);
+    expect(out?.issues).toEqual([{ path: "userId", code: "user_mismatch" }]);
   });
 
   it("rejects a claimed userId on an anonymous request as user_mismatch", () => {
@@ -52,9 +50,7 @@ describe("clientPolicyViolation", () => {
   it("rejects any source:'server' event over HTTP as wrong_source (exposure is server-written only)", () => {
     const out = clientPolicyViolation(exposure, null);
     expect(out?.reason).toBe("wrong_source");
-    expect(out?.issues).toEqual([
-      { path: "source", code: "server_only" },
-    ]);
+    expect(out?.issues).toEqual([{ path: "source", code: "server_only" }]);
   });
 
   it("reports wrong_source before user_mismatch", () => {

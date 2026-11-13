@@ -17,25 +17,13 @@ export function clientPolicyViolation(
   if (event.source === "server") {
     return {
       reason: "wrong_source",
-      issues: [
-        {
-          path: "source",
-          code: "server_only",
-          message: 'source "server" events are not accepted over HTTP',
-        },
-      ],
+      issues: [{ path: "source", code: "server_only" }],
     };
   }
   if (event.userId !== null && event.userId !== authUserId) {
     return {
       reason: "user_mismatch",
-      issues: [
-        {
-          path: "userId",
-          code: "user_mismatch",
-          message: "userId does not match the signed-in user",
-        },
-      ],
+      issues: [{ path: "userId", code: "user_mismatch" }],
     };
   }
   return null;

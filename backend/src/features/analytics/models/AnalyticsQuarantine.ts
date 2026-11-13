@@ -8,8 +8,9 @@ import {
 /**
  * An event that failed `analyticsEventSchema` or the client policy. No raw
  * payload is kept — an invalid event can carry anything, PII included —
- * only id-shaped identifiers (null when not id-shaped), the HMAC of the
- * claimed userId and the validation issues. Never deduplicated.
+ * only the eventId when it is a UUID, the name when it is in the catalog,
+ * the HMAC of the claimed userId and each issue's masked path and code
+ * (see QuarantineIssue). No free text from the client. Never deduplicated.
  */
 export interface IAnalyticsQuarantine {
   reason: QuarantineReason;
@@ -24,7 +25,6 @@ const IssueSchema = new Schema<QuarantineIssue>(
   {
     path: { type: String, default: "" },
     code: { type: String, required: true },
-    message: { type: String, required: true },
   },
   { _id: false },
 );

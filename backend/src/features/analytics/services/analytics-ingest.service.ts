@@ -1,4 +1,6 @@
+import { z } from "zod";
 import {
+  ANALYTICS_EVENT_NAMES,
   analyticsEventSchema,
   type AnalyticsEvent,
   type AnalyticsIngestResult,
@@ -15,8 +17,8 @@ type Violation = ReturnType<typeof classifyQuarantine>;
 /** Extra rule applied to a schema-valid event; null means allowed. */
 type Policy = (event: AnalyticsEvent) => Violation | null;
 
-const EVENT_ID_SHAPE = /^[A-Za-z0-9-]{1,128}$/;
-const EVENT_NAME_SHAPE = /^[a-z0-9_]{1,64}$/;
+const uuidSchema = z.uuid();
+const CATALOG_NAMES: ReadonlySet<string> = new Set(ANALYTICS_EVENT_NAMES);
 
 function field(raw: unknown, key: string): unknown {
   return raw !== null && typeof raw === "object"
@@ -24,14 +26,20 @@ function field(raw: unknown, key: string): unknown {
     : undefined;
 }
 
-function idShaped(value: unknown, shape: RegExp): string | null {
-  return typeof value === "string" && shape.test(value) ? value : null;
+/** A well-formed eventId (a random UUID) is the only id worth keeping. */
+function uuidOrNull(value: unknown): string | null {
+  return uuidSchema.safeParse(value).success ? (value as string) : null;
+}
+
+/** A name is kept only when it is one of ours, never a client's string. */
+function catalogNameOrNull(value: unknown): string | null {
+  return typeof value === "string" && CATALOG_NAMES.has(value) ? value : null;
 }
 
 /**
  * Quarantine keeps no raw payload: an invalid event can carry anything
- * (emails, free text), so only id-shaped identifiers, the hashed userId
- * and the validation issues are stored.
+ * (emails, free text), so only a UUID eventId, a catalog event name, the
+ * hashed userId and the issues' masked path + code are stored.
  */
 function toQuarantineDoc(
   raw: unknown,
@@ -42,8 +50,8 @@ function toQuarantineDoc(
   return {
     reason: violation.reason,
     issues: violation.issues,
-    eventId: idShaped(field(raw, "eventId"), EVENT_ID_SHAPE),
-    eventName: idShaped(field(raw, "name"), EVENT_NAME_SHAPE),
+    eventId: uuidOrNull(field(raw, "eventId")),
+    eventName: catalogNameOrNull(field(raw, "name")),
     userIdHash:
       typeof userId === "string" && userId.length > 0 && userId.length <= 128
         ? hashUserId(userId)

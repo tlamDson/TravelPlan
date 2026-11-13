@@ -102,7 +102,7 @@ describe("classifyQuarantine", () => {
   it("does not echo an unknown property key", () => {
     const out = classify({
       ...valid,
-      properties: { tripId: "t-1", "user_2abcDEF": "x" },
+      properties: { tripId: "t-1", user_2abcDEF: "x" },
     });
     expect(out.issues).toEqual([
       { path: "properties", code: "unrecognized_keys" },
