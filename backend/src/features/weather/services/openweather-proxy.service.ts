@@ -28,8 +28,16 @@ const FORECAST_CACHE_TTL_MS = 10 * 60 * 1000;
 const FORECAST_CACHE_MAX_ENTRIES = 500;
 const forecastCache = new Map<string, { data: unknown; expiresAt: number }>();
 
-function cacheKey(q: string): string {
-  return q.trim().toLowerCase().replace(/\s+/g, " ");
+/** Languages the UI ships (en/vi/fr); anything else falls back to English. */
+const SUPPORTED_LANGS = ["en", "vi", "fr"] as const;
+type WeatherLang = (typeof SUPPORTED_LANGS)[number];
+
+function normalizeLang(lang: string | undefined): WeatherLang {
+  return SUPPORTED_LANGS.find((l) => l === lang) ?? "en";
+}
+
+function cacheKey(q: string, lang: WeatherLang): string {
+  return `${lang}:${q.trim().toLowerCase().replace(/\s+/g, " ")}`;
 }
 
 /** Test hook: drop all cached forecasts. */
@@ -50,14 +58,19 @@ export class OpenWeatherProxyError extends Error {
 
 /**
  * Returns raw JSON body from OpenWeather /forecast (same shape as direct API).
+ * `lang` selects the language of the weather descriptions (en | vi | fr).
  */
-export async function fetchOpenWeatherForecastJson(q: string): Promise<unknown> {
+export async function fetchOpenWeatherForecastJson(
+  q: string,
+  lang?: string,
+): Promise<unknown> {
   const appid = normalizedKey();
   if (!appid) {
     throw new OpenWeatherProxyError("OPENWEATHER_NOT_CONFIGURED", 503);
   }
 
-  const key = cacheKey(q);
+  const weatherLang = normalizeLang(lang);
+  const key = cacheKey(q, weatherLang);
   const cached = forecastCache.get(key);
   if (cached && cached.expiresAt > Date.now()) {
     return cached.data;
@@ -66,7 +79,7 @@ export async function fetchOpenWeatherForecastJson(q: string): Promise<unknown> 
 
   const url = `${openWeatherBaseUrl()}/forecast`;
   const response = await axios.get(url, {
-    params: { q, units: "metric", appid },
+    params: { q, units: "metric", appid, lang: weatherLang },
     validateStatus: () => true,
     timeout: 20_000,
   });

@@ -58,6 +58,32 @@ describe("getTripDayWeatherForecast", () => {
     });
   });
 
+  it.each([
+    ["Vietnamese", "vi"],
+    ["French", "fr"],
+    ["English (US)", "en"],
+  ] as const)(
+    "requests %s descriptions with lang=%s",
+    async (language, expectedLang) => {
+      const seen: URL[] = [];
+      server.use(
+        http.get("*/api/weather/forecast", ({ request }) => {
+          seen.push(new URL(request.url));
+          return HttpResponse.json(forecastBody);
+        }),
+      );
+
+      await getTripDayWeatherForecast({
+        destination: "Da Nang",
+        dayDateIso: "2026-11-14T00:00:00.000Z",
+        language,
+      });
+
+      expect(seen).toHaveLength(1);
+      expect(seen[0].searchParams.get("lang")).toBe(expectedLang);
+    },
+  );
+
   it("does not ship an OpenWeather key in the frontend config", () => {
     expect(Object.keys(appEnv)).not.toContain("OPENWEATHER_API_KEY");
     expect(Object.keys(appEnv)).not.toContain("OPENWEATHER_BASE_URL");

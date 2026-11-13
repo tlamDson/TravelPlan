@@ -42,9 +42,53 @@ describe("fetchOpenWeatherForecastJson", () => {
     expect(axios.get).toHaveBeenCalledWith(
       "https://api.openweathermap.org/data/2.5/forecast",
       expect.objectContaining({
-        params: { q: "Da Nang", units: "metric", appid: "server-side-key" },
+        params: {
+          q: "Da Nang",
+          units: "metric",
+          appid: "server-side-key",
+          lang: "en",
+        },
       }),
     );
+  });
+
+  it.each(["vi", "fr"])(
+    "asks OpenWeather for %s descriptions when that language is requested",
+    async (lang) => {
+      vi.mocked(axios.get).mockResolvedValue({ status: 200, data: forecastBody });
+
+      await fetchOpenWeatherForecastJson("Da Nang", lang);
+
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          params: expect.objectContaining({ lang }),
+        }),
+      );
+    },
+  );
+
+  it("falls back to English for a language it does not support", async () => {
+    vi.mocked(axios.get).mockResolvedValue({ status: 200, data: forecastBody });
+
+    await fetchOpenWeatherForecastJson("Da Nang", "xx&appid=evil");
+
+    expect(axios.get).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        params: expect.objectContaining({ lang: "en" }),
+      }),
+    );
+  });
+
+  it("caches each language separately for the same city", async () => {
+    vi.mocked(axios.get).mockResolvedValue({ status: 200, data: forecastBody });
+
+    await fetchOpenWeatherForecastJson("Da Nang", "vi");
+    await fetchOpenWeatherForecastJson("Da Nang", "en");
+    await fetchOpenWeatherForecastJson("Da Nang", "vi");
+
+    expect(axios.get).toHaveBeenCalledTimes(2);
   });
 
   it("serves repeat lookups for the same city from cache", async () => {
