@@ -1437,7 +1437,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "explore.tripMapSubtitle": "Xem lịch trình của bạn trên bản đồ",
     "explore.mapUnavailable": "Bản đồ không khả dụng",
     "explore.mapError": "Không thể tải bản đồ. Vui lòng thử lại sau.",
-    "explore.mapboxTokenError": "Mapbox token chưa được cấu hình",
+    "explore.mapboxTokenError": "Chưa cấu hình mã truy cập Mapbox",
 
     // General App
     "dashboard.title": "Bảng điều khiển",
@@ -1519,14 +1519,14 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.reGeocodeLoading": "Đang xác định lại tọa độ các hoạt động...",
     "trip.reGeocodeSuccess": "Đã cập nhật {updated} hoạt động ({failed} lỗi).",
     "trip.reGeocodeFailed":
-      "Xác định lại tọa độ thất bại. Vui lòng kiểm tra API key.",
+      "Xác định lại tọa độ thất bại. Vui lòng kiểm tra khóa API.",
     "trip.weatherTitle": "Dự báo thời tiết",
     "trip.weatherLoading": "Đang tải thời tiết dự kiến...",
     "trip.weatherMissingConfigTitle": "Không tải được thời tiết",
     "trip.weatherMissingConfig":
       "Không hiển thị dự báo vì dịch vụ thời tiết chưa được cấu hình trên phiên bản này.",
     "trip.weatherMissingConfigDev":
-      "Khi dev local: thêm OPENWEATHER_API_KEY vào backend/.env rồi khởi động lại API.",
+      "Khi chạy cục bộ: thêm OPENWEATHER_API_KEY vào backend/.env rồi khởi động lại API.",
     "trip.weatherLoadErrorTitle": "Không tải được dự báo",
     "trip.weatherLoadError": "Không thể tải dự báo. Vui lòng thử lại sau.",
     "trip.weatherExpectedForSelectedDay":
