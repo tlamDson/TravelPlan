@@ -1,0 +1,58 @@
+name: abkit Golden Nightly
+
+# B2 plan, PR 15a: every golden case (G-ref, G-public, all 50 G-sim), the 10 planted
+# mutants against the full dataset (M10), and a byte-for-byte rebuild of every G-sim case
+# from its seed. The required job `abkit Lint + Test` runs only the ci-fast subset.
+# Not a required check. GitHub runs `schedule` only from the default branch (main).
+on:
+  schedule:
+    - cron: "30 19 * * *" # 02:30 Asia/Ho_Chi_Minh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: abkit-golden-nightly
+  cancel-in-progress: true
+
+jobs:
+  golden-full:
+    name: abkit Golden Full
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: analytics/abkit
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            analytics/abkit/pyproject.toml
+            analytics/simkit/pyproject.toml
+
+      - name: Install abkit (core + dev)
+        run: python -m pip install -e ".[dev]"
+
+      - name: Golden, every case
+        run: python -m abkit golden --strict
+
+      - name: Golden gate mutants, every case (M10)
+        run: python -m abkit gate --full
+
+      - name: Install simkit (core + dev)
+        working-directory: analytics/simkit
+        run: python -m pip install -e ".[dev]"
+
+      - name: Rebuild every G-sim case from its seed
+        working-directory: analytics/simkit
+        env:
+          SIMKIT_GOLDEN_FULL: "1"
+        run: python -m pytest -q tests/test_golden_sim.py

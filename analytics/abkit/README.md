@@ -99,6 +99,7 @@ analytics/.venv/Scripts/python -m abkit.bench assignment --pr 9
 analytics/.venv/Scripts/python -m abkit.uplift --raw D:/data/b2/criteo/criteo-research-uplift-v2.1.csv.gz --save-sample D:/data/b2/criteo/criteo-uplift-v2.1-10pct-seed20.npz --pr 20   # M8, 5 seeds; later runs: --sample <npz>; --dry-run
 analytics/.venv/Scripts/python -m abkit.peeking --pr 12   # 10,000 A/A x 14 days; --dry-run to print only
 analytics/.venv/Scripts/python -m abkit golden   # latest golden version; --strict: MISSING fails too; --subset ci-fast
+analytics/.venv/Scripts/python -m abkit gate     # 10 planted mutants vs ci-fast (M10); --full; --record --pr 15a
 analytics/.venv/Scripts/python -m abkit readout analytics/golden/v2/sim-srm/loss-15-aa   # memo; --out memo.md
 analytics/.venv/Scripts/python -m abkit decide label            # G-B2-3: label the 30 blinded readouts
 analytics/.venv/Scripts/python -m abkit decide kappa --record   # M11 after every readout has a label
