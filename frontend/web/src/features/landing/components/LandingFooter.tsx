@@ -2,6 +2,7 @@
  * Landing Page Footer Component
  */
 
+import { Link } from "react-router-dom";
 import { Plane } from "lucide-react";
 
 export function LandingFooter() {
@@ -14,18 +15,24 @@ export function LandingFooter() {
             <span className="font-semibold">TravelPlan</span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">
+            <Link
+              to="/about"
+              className="hover:text-foreground transition-colors"
+            >
               About
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </Link>
+            <Link
+              to="/privacy"
+              className="hover:text-foreground transition-colors"
+            >
               Privacy
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </Link>
+            <Link
+              to="/terms"
+              className="hover:text-foreground transition-colors"
+            >
               Terms
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
-              Contact
-            </a>
+            </Link>
           </div>
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} TravelPlan. All rights reserved.
