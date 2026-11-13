@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   getLocaleCode,
   getTripDuration,
@@ -111,5 +111,42 @@ describe("formatDateRange", () => {
     );
     expect(result).toContain("2026");
     expect(result).toContain("2027");
+  });
+});
+
+describe("formatDateRange — calendar dates in a negative-offset timezone", () => {
+  const originalTZ = process.env.TZ;
+
+  beforeEach(() => {
+    process.env.TZ = "America/New_York";
+  });
+
+  afterEach(() => {
+    if (originalTZ === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTZ;
+  });
+
+  it("runs under a negative UTC offset (guards the fixture itself)", () => {
+    expect(new Date("2026-11-18T12:00:00Z").getTimezoneOffset()).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it("keeps Nov 18 – 21 when the API sends UTC-midnight date-only values", () => {
+    const result = formatDateRange(
+      "2026-11-18T00:00:00.000Z",
+      "2026-11-21T00:00:00.000Z",
+      "English (US)",
+    );
+    expect(result).toContain("18");
+    expect(result).toContain("21");
+    expect(result).not.toContain("17");
+    expect(result).not.toContain("20");
+  });
+
+  it("keeps the calendar dates when given bare YYYY-MM-DD strings", () => {
+    const result = formatDateRange("2026-11-18", "2026-11-21", "English (US)");
+    expect(result).toContain("18");
+    expect(result).toContain("21");
   });
 });
