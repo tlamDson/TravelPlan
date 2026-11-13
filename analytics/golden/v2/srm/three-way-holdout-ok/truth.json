@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "srm/three-way-holdout-ok",
+  "method": "srm_chisquare",
+  "description": "Planned 10% holdout and 45/45, observed 1,003 / 4,511 / 4,486.",
+  "data": "data.csv",
+  "params": {
+    "threshold": 0.0005
+  },
+  "expected": {
+    "statistic": 0.07944444444444444,
+    "p_value": 0.9610563621785695,
+    "dof": 2
+  },
+  "decision": "no_srm",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "scipy",
+    "version": "1.14.1",
+    "call": "scipy.stats.chisquare(count, expected_share / sum(expected_share) * sum(count)); decision srm when p_value < threshold",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13"
+  }
+}

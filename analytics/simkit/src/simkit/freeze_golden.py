@@ -1,4 +1,4 @@
-"""Freeze the G-sim cases into ``analytics/golden/v1/sim-*`` (SIMULATED virtual users).
+"""Freeze the G-sim cases into ``analytics/golden/v2/sim-*`` (SIMULATED virtual users).
 
     python -m simkit.freeze_golden [ROOT] [--only ID ...] [--force] [--frozen-at YYYY-MM-DD]
 
@@ -31,7 +31,7 @@ from simkit.golden_reference import early_test, naive_peek, screen, verdict
 from simkit.golden_truth import TOLERANCE_SE, data_columns, observe, truth
 
 GENERATOR = "simkit.freeze_golden"
-DEFAULT_ROOT = Path(__file__).resolve().parents[3] / "golden/v1"
+DEFAULT_ROOT = Path(__file__).resolve().parents[3] / "golden/v2"
 DEFAULT_MAX_ATTEMPTS = 200
 CALL = (
     "simkit.golden_truth.observe: the same simulated users run in both arms; "

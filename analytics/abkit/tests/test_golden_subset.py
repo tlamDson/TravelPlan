@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-from conftest import GOLDEN_V1, write_case
+from conftest import GOLDEN_LATEST, write_case
 
 from abkit.cli import main
 from abkit.golden.case import GoldenFormatError, load_dataset
@@ -85,8 +85,8 @@ def test_cli_subset_flag(dataset: Path, monkeypatch, capsys) -> None:
 
 
 def test_committed_ci_fast_subset_has_every_g_ref_group_and_each_g_sim_group() -> None:
-    ids = load_subset(GOLDEN_V1, "ci-fast")
-    all_cases = load_dataset(GOLDEN_V1)
+    ids = load_subset(GOLDEN_LATEST, "ci-fast")
+    all_cases = load_dataset(GOLDEN_LATEST)
     groups = {c.group for c in all_cases}
     assert groups == G_REF_GROUPS | G_SIM_GROUPS
     by_group = {g: {c.id for c in all_cases if c.group == g} for g in groups}

@@ -2,7 +2,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from conftest import GOLDEN_V1, write_case
+from conftest import GOLDEN_LATEST, write_case
 
 from abkit.cli import main
 from abkit.golden.methods import IMPLEMENTATIONS
@@ -16,10 +16,10 @@ def _bad(data, params):
     return {"estimate": 2.0, "p_value": 0.25, "decision": "fail_to_reject"}
 
 
-def test_golden_defaults_to_the_committed_v1_dataset() -> None:
+def test_golden_defaults_to_the_latest_committed_dataset() -> None:
     from abkit.cli import DEFAULT_GOLDEN_ROOT
 
-    assert DEFAULT_GOLDEN_ROOT == GOLDEN_V1
+    assert DEFAULT_GOLDEN_ROOT == GOLDEN_LATEST
 
 
 def test_golden_exits_zero_and_prints_report_when_all_pass(
@@ -53,9 +53,9 @@ def test_golden_exits_two_on_a_malformed_dataset(tmp_path: Path, capsys) -> None
     assert "schema_version" in capsys.readouterr().err
 
 
-def test_python_dash_m_abkit_golden_runs_the_committed_dataset() -> None:
+def test_python_dash_m_abkit_golden_runs_the_latest_dataset() -> None:
     proc = subprocess.run(
-        [sys.executable, "-m", "abkit", "golden", str(GOLDEN_V1)],
+        [sys.executable, "-m", "abkit", "golden", str(GOLDEN_LATEST)],
         capture_output=True,
         text=True,
         timeout=120,

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "power/ttest-mde",
+  "method": "mde_ttest_ind",
+  "description": "Smallest d detectable with 80% power and 5,000 per group.",
+  "data": null,
+  "params": {
+    "nobs1": 5000,
+    "power": 0.8,
+    "ratio": 1.0,
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "effect_size": 0.05603701902337809
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-06
+    }
+  },
+  "source": {
+    "tool": "statsmodels",
+    "version": "0.14.4",
+    "call": "scipy.optimize.brentq(xtol=1e-14) on effect_size of statsmodels.stats.power.TTestIndPower().power(effect_size, nobs1, alpha, ratio, alternative) - power",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13"
+  }
+}

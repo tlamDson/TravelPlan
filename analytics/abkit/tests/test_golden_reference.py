@@ -1,4 +1,4 @@
-"""G-ref: the committed ``analytics/golden/v1`` cases and the freezer that made them.
+"""G-ref: the committed golden cases (latest ``v2``, ``v1`` kept) and the freezer that made them.
 
 The truth was computed by scipy / statsmodels (``abkit.golden.freeze_ref``),
 never by the abkit engine. These tests re-run that computation and pin it to
@@ -10,11 +10,11 @@ import importlib.util
 from pathlib import Path
 
 import pytest
-from conftest import GOLDEN_V1
+from conftest import GOLDEN_LATEST, GOLDEN_V1
 
 from abkit.golden.case import GoldenFormatError, load_case, load_dataset
 from abkit.golden.compare import compare_outputs
-from abkit.golden.freeze_ref import freeze, render_csv
+from abkit.golden.freeze_ref import DEFAULT_ROOT, freeze, render_csv
 from abkit.golden.methods import KNOWN_METHODS
 from abkit.golden.ref_cases import REF_CASES
 from abkit.golden.ref_truth import STATSMODELS_METHODS, compute_reference
@@ -35,8 +35,8 @@ def test_ref_cases_are_about_twenty_and_cover_every_g_ref_group() -> None:
     assert {c.method for c in REF_CASES} <= KNOWN_METHODS
 
 
-def test_committed_v1_g_ref_groups_hold_exactly_the_ref_cases() -> None:
-    cases = [c for c in load_dataset(GOLDEN_V1) if c.group in G_REF_GROUPS]
+def test_latest_g_ref_groups_hold_exactly_the_ref_cases() -> None:
+    cases = [c for c in load_dataset(GOLDEN_LATEST) if c.group in G_REF_GROUPS]
     assert [c.id for c in cases] == sorted(_ids(REF_CASES))
     for case in cases:
         assert case.source["tool"] in {"scipy", "statsmodels", "numpy+scipy"}
@@ -46,7 +46,7 @@ def test_committed_v1_g_ref_groups_hold_exactly_the_ref_cases() -> None:
 
 def test_committed_data_matches_the_seeded_generators() -> None:
     for ref in REF_CASES:
-        data_path = GOLDEN_V1 / ref.group / ref.name / "data.csv"
+        data_path = GOLDEN_LATEST / ref.group / ref.name / "data.csv"
         if ref.make_data is None:
             assert not data_path.exists(), ref.name
             continue
@@ -56,13 +56,50 @@ def test_committed_data_matches_the_seeded_generators() -> None:
 
 @pytest.mark.parametrize("case_id", sorted(_ids(REF_CASES)))
 def test_committed_truth_matches_scipy_and_statsmodels(case_id: str) -> None:
-    case = load_case(GOLDEN_V1 / case_id)
+    case = load_case(GOLDEN_LATEST / case_id)
     if case.method in STATSMODELS_METHODS and not HAS_STATSMODELS:
         pytest.skip(NEEDS_STATSMODELS)
     ref = compute_reference(case.method, case.read_data(), case.params)
     assert ref.decision == case.decision
     assert compare_outputs(case, {**ref.expected, "decision": ref.decision}) == []
     assert set(ref.expected) == set(case.expected)
+
+
+# v2 re-froze these: tight brentq on statsmodels power for the t-test solves (v1 stopped at
+# statsmodels' xtol=1e-5), and the cdflib-vs-boost tolerance for the noncentral t power.
+REFROZEN_IN_V2 = {"power/ttest-power", "power/ttest-sample-size", "power/ttest-mde"}
+
+
+def test_freezer_writes_to_the_latest_version_by_default() -> None:
+    assert DEFAULT_ROOT == GOLDEN_LATEST
+
+
+def _files(root: Path) -> dict[str, bytes]:
+    files = (p for p in root.rglob("*") if p.is_file())
+    # Compare content, not the checkout's line endings (core.autocrlf on Windows).
+    return {p.relative_to(root).as_posix(): p.read_bytes().replace(b"\r\n", b"\n") for p in files}
+
+
+def test_v1_is_kept_and_v2_changes_only_the_refrozen_cases() -> None:
+    v1 = _files(GOLDEN_V1)
+    # v2 also holds G-sim (``sim-*``) and ``subsets.json`` (PR 13a); compare the G-ref part.
+    v2 = {k: v for k, v in _files(GOLDEN_LATEST).items() if k.split("/")[0] in G_REF_GROUPS}
+    assert v1.keys() == v2.keys()
+    changed = {"/".join(k.split("/")[:2]) for k in v1 if v1[k] != v2[k]}
+    assert changed == REFROZEN_IN_V2
+    assert len(load_dataset(GOLDEN_V1)) == len(REF_CASES)
+
+
+@pytest.mark.parametrize("case_id", ["power/ttest-sample-size", "power/ttest-mde"])
+def test_solved_truth_reaches_the_target_power(case_id: str) -> None:
+    if not HAS_STATSMODELS:
+        pytest.skip(NEEDS_STATSMODELS)
+    from statsmodels.stats.power import TTestIndPower
+
+    case = load_case(GOLDEN_LATEST / case_id)
+    kwargs = {k: case.params.get(k) for k in ("effect_size", "nobs1", "ratio", "alternative")}
+    kwargs.update(case.expected, alpha=case.params["alpha"])
+    assert float(TTestIndPower().power(**kwargs)) == pytest.approx(case.params["power"], abs=1e-9)
 
 
 def test_freezer_never_imports_the_abkit_engine() -> None:

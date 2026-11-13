@@ -1,4 +1,4 @@
-"""G-sim: the committed ``analytics/golden/v1/sim-*`` cases, their table and their freezer.
+"""G-sim: the committed ``analytics/golden/v2/sim-*`` cases, their table and their freezer.
 
 Every committed case is re-screened from its ``data.csv`` (scipy only, fast). The ``ci-fast``
 cases are also rebuilt from their seed and must match byte for byte; set
@@ -20,7 +20,7 @@ from simkit.golden_cases import GROUP_SIZES, SIM_CASES, SimCase
 from simkit.golden_reference import screen, verdict
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-GOLDEN_V1 = REPO_ROOT / "analytics/golden/v1"
+GOLDEN_V2 = REPO_ROOT / "analytics/golden/v2"
 FULL = os.environ.get("SIMKIT_GOLDEN_FULL") == "1"
 BY_ID = {c.id: c for c in SIM_CASES}
 DECISION = {"ship": "ship", "harm": "no_ship", "flat": "no_ship", "invalid": "invalid"}
@@ -75,7 +75,7 @@ def test_the_right_decision_comes_from_the_planted_parameters_only() -> None:
 
 def test_committed_sim_groups_hold_exactly_the_table() -> None:
     committed = sorted(
-        f"{g.name}/{d.name}" for g in GOLDEN_V1.glob("sim-*") for d in g.iterdir() if d.is_dir()
+        f"{g.name}/{d.name}" for g in GOLDEN_V2.glob("sim-*") for d in g.iterdir() if d.is_dir()
     )
     assert committed == sorted(BY_ID)
 
@@ -83,7 +83,7 @@ def test_committed_sim_groups_hold_exactly_the_table() -> None:
 @pytest.mark.parametrize("case_id", sorted(BY_ID))
 def test_committed_case_is_screened_and_labelled_from_its_parameters(case_id: str) -> None:
     sim_case = BY_ID[case_id]
-    case = load_case(GOLDEN_V1 / case_id)
+    case = load_case(GOLDEN_V2 / case_id)
     assert case.method == "readout"
     assert case.decision == sim_case.decision
     assert case.params == sim_case.params()
@@ -91,7 +91,7 @@ def test_committed_case_is_screened_and_labelled_from_its_parameters(case_id: st
     assert case.source["simulated"] is True
     assert case.source["screening"]["first_seed"] == sim_case.first_seed
     assert case.source["seed"] == sim_case.first_seed + case.source["screening"]["attempts"] - 1
-    raw = json.loads((GOLDEN_V1 / case_id / "truth.json").read_text(encoding="utf-8"))
+    raw = json.loads((GOLDEN_V2 / case_id / "truth.json").read_text(encoding="utf-8"))
     data = case.read_data()
     assert verdict(sim_case, data).outcome == sim_case.verdict
     assert screen(sim_case, data, raw["expected"], raw["tolerance"]) == []
@@ -99,7 +99,7 @@ def test_committed_case_is_screened_and_labelled_from_its_parameters(case_id: st
 
 @pytest.mark.parametrize("case_id", _rebuilt_ids())
 def test_committed_case_rebuilds_byte_for_byte_from_its_seed(case_id: str) -> None:
-    case_dir = GOLDEN_V1 / case_id
+    case_dir = GOLDEN_V2 / case_id
     committed = json.loads((case_dir / "truth.json").read_text(encoding="utf-8"))
     built = build_case(BY_ID[case_id], committed["source"]["seed"])
     assert built.problems == []
@@ -109,7 +109,7 @@ def test_committed_case_rebuilds_byte_for_byte_from_its_seed(case_id: str) -> No
 
 
 def test_ci_fast_subset_lists_the_flagged_sim_cases() -> None:
-    chosen = {i for i in load_subset(GOLDEN_V1, "ci-fast") if i.startswith("sim-")}
+    chosen = {i for i in load_subset(GOLDEN_V2, "ci-fast") if i.startswith("sim-")}
     assert chosen == {c.id for c in SIM_CASES if c.ci_fast}
 
 

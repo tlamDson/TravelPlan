@@ -2,8 +2,8 @@
 
 Data are drawn from ``numpy.random.default_rng(seed)`` and rounded to 4
 decimals, so ``data.csv`` holds the exact numbers the truth was computed from.
-``abkit.golden.freeze_ref`` turns these into ``analytics/golden/v1``.
-Changing any case here means a new dataset version (v2), not an edit of v1.
+``abkit.golden.freeze_ref`` turns these into ``analytics/golden/v2`` (the latest).
+Changing any case here means a new dataset version (v3), not an edit of v2.
 """
 
 from __future__ import annotations
@@ -21,6 +21,9 @@ Columns = dict[str, list[Any]]
 EXACT = {"default": {"abs": 1e-10, "rel": 1e-9}}
 #: Results statsmodels finds with a root solver: abkit may use another solver.
 SOLVED = {"default": {"abs": 1e-10, "rel": 1e-6}}
+#: statsmodels' noncentral t is cdflib ``nctdtr``, ~1e-8 off scipy's boost ``nct`` and
+#: quadrature (v1 used EXACT here and was stricter than its own reference).
+NCT = {"default": {"abs": 1e-10, "rel": 1e-7}}
 
 
 @dataclass(frozen=True)
@@ -153,7 +156,7 @@ REF_CASES: tuple[RefCase, ...] = (
     # Power and MDE: statsmodels.stats.power
     RefCase("power", "ttest-power", "power_ttest_ind",
             "Power of a two-sided t-test, d = 0.2, 400 per group.",
-            {"effect_size": 0.2, "nobs1": 400, "ratio": 1.0, **TWO_SIDED}),
+            {"effect_size": 0.2, "nobs1": 400, "ratio": 1.0, **TWO_SIDED}, tolerance=NCT),
     RefCase("power", "ttest-sample-size", "sample_size_ttest_ind",
             "Users per group for 80% power at d = 0.1, treatment group twice control.",
             {"effect_size": 0.1, "power": 0.8, "ratio": 2.0, **TWO_SIDED},

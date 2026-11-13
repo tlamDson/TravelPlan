@@ -7,7 +7,7 @@ decision comes from the planted parameters alone, never from a test on the data:
 - else a lasting lift > 0 for some persona → ``ship``; < 0 → ``no_ship`` (harm);
   none (A/A, or a novelty boost that fades) → ``no_ship``.
 
-``simkit.freeze_golden`` turns this table into ``analytics/golden/v1/sim-*``. Changing a case
+``simkit.freeze_golden`` turns this table into ``analytics/golden/v2/sim-*``. Changing a case
 here means a new dataset version (v2), not an edit of v1.
 """
 

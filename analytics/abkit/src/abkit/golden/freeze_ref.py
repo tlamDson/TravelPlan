@@ -23,7 +23,7 @@ from abkit.golden.ref_cases import REF_CASES, Columns, RefCase
 from abkit.golden.ref_truth import compute_reference
 
 GENERATOR = "abkit.golden.freeze_ref"
-DEFAULT_ROOT = Path(__file__).resolve().parents[4] / "golden/v1"
+DEFAULT_ROOT = Path(__file__).resolve().parents[4] / "golden/v2"
 
 
 def render_csv(columns: Columns) -> str:

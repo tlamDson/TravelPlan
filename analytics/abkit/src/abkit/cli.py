@@ -16,7 +16,7 @@ from pathlib import Path
 from abkit.golden.case import GoldenFormatError
 from abkit.golden.runner import run_golden
 
-DEFAULT_GOLDEN_ROOT = Path(__file__).resolve().parents[3] / "golden/v1"
+DEFAULT_GOLDEN_ROOT = Path(__file__).resolve().parents[3] / "golden/v2"
 
 
 def _golden(args: argparse.Namespace) -> int:

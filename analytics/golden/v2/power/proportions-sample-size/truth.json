@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "power/proportions-sample-size",
+  "method": "sample_size_proportions",
+  "description": "Users per group to see save_trip go from 10% to 10.3% with 80% power.",
+  "data": null,
+  "params": {
+    "p_control": 0.1,
+    "p_treatment": 0.103,
+    "power": 0.8,
+    "ratio": 1.0,
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "effect_size": 0.009934369482262895,
+    "nobs1": 159058.17301927085
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-06
+    }
+  },
+  "source": {
+    "tool": "statsmodels",
+    "version": "0.14.4",
+    "call": "h = statsmodels.stats.proportion.proportion_effectsize(p_treatment, p_control) (Cohen's h); statsmodels.stats.power.NormalIndPower().solve_power(h, nobs1=None, alpha, power, ratio, alternative); nobs1 not rounded up",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13"
+  }
+}
