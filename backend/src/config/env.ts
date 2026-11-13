@@ -84,6 +84,11 @@ export const env = cleanEnv(process.env, {
    * refuses to boot with ANALYTICS_ENABLED=true and no valid secret. Keep it
    * stable per environment — rotating it splits every user's history. */
   ANALYTICS_HASH_SECRET: str({ default: "" }),
+  /** When exactly "true", /api/experiments/* is mounted (B2 assignment +
+   * exposure logging). Off everywhere by default. Exposures are stored as
+   * analytics events with hashed userIds, so it also needs
+   * ANALYTICS_HASH_SECRET — the app refuses to boot without one. */
+  EXPERIMENTS_ENABLED: str({ default: "" }),
 });
 
 /** Which environment this process is actually running as — APP_ENV if set

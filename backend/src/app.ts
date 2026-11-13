@@ -31,6 +31,8 @@ import { createBullBoardRouter } from "./features/reliability/bull-board";
 import analyticsRoutes from "./features/analytics/routes";
 import { isAnalyticsEnabled } from "./features/analytics/analytics-flag";
 import { assertAnalyticsHashSecret } from "./features/analytics/services/pseudonymize";
+import experimentRoutes from "./features/experiments/routes";
+import { isExperimentsEnabled } from "./features/experiments/experiments-flag";
 
 const swaggerOptions = {
   definition: {
@@ -139,6 +141,14 @@ export function createApp(): Express {
   if (isAnalyticsEnabled()) {
     assertAnalyticsHashSecret();
     app.use("/api/analytics", analyticsRoutes);
+  }
+  // Experiment assignment + exposure logging (B2) — off unless
+  // EXPERIMENTS_ENABLED=true; signed-in users only (requireUserAuth in
+  // routes.ts). Exposures are stored with hashed userIds, so it needs
+  // ANALYTICS_HASH_SECRET too — crash at boot like analytics does.
+  if (isExperimentsEnabled()) {
+    assertAnalyticsHashSecret();
+    app.use("/api/experiments", experimentRoutes);
   }
 
   //7. Health checks

@@ -31,7 +31,8 @@
     "eval:embed-queries": "tsx scripts/embed-golden-queries.ts",
     "eval:rag": "tsx scripts/eval-rag.ts",
     "eval:rewrite-queries": "tsx scripts/rewrite-golden-queries.ts",
-    "analytics:export": "tsx scripts/export-analytics-events.ts"
+    "analytics:export": "tsx scripts/export-analytics-events.ts",
+    "generate:assignment-vectors": "tsx scripts/generate-assignment-vectors.ts"
   },
   "dependencies": {
     "@bull-board/api": "^8.1.0",
