@@ -46,6 +46,7 @@ File này và `.claude/rules/*` được nạp vào **mọi** phiên, nên chỉ
 | E2E Playwright          | `npm run e2e`                                                | Cần `.env.e2e`; job CI không bắt buộc                                               |
 
 Gate chung: `npm run lint`, `npm run typecheck`, `npm run build` (chạy `build:shared` trước nếu sửa shared).
+Python `analytics/abkit`: job CI `abkit Lint + Test` (`ruff check`, `ruff format --check`, `pytest -q`; chỉ cài core + dev).
 
 **Môi trường:** `develop` → staging (Railway env `staging` + Vercel Preview), `main` → production. 3 check bắt buộc trên PR: `Lint + Unit Tests`, `Typecheck + Build`, `Backend Docker Build`. Chi tiết hạ tầng: `.claude/reference/deploy-ops.md`.
 

@@ -52,4 +52,5 @@ Tên 3 job `Lint + Unit Tests`, `Typecheck + Build`, `Backend Docker Build` **l�
 - Không thêm `paths:` vào `on: pull_request` (check treo ở "Expected", PR không merge được).
 - Không đặt `if:` cấp job cho 3 job này — gate ở cấp step (mẫu `changes` + `env.SHOULD_BUILD`).
 - Thấy `|| echo` bọc lint/test là có người đang vô hiệu hoá gate — hỏi trước khi giữ.
+- Job `abkit Lint + Test` (Python `analytics/abkit`, B2) giữ cùng luật như 3 job trên: không đổi tên, không `if:` cấp job. Plan B2 đưa nó vào required checks — việc đó là của chủ repo (branch protection).
 - Job phụ (`security`, `e2e`, …) được phép đỏ; không tự thêm vào required checks.
