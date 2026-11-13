@@ -59,7 +59,7 @@ const PROPER_NOUNS = new Set([
 ]);
 
 /** Words that start a new "sentence" (capital allowed): string start, after . ! ? : — ( “ or a leading emoji. */
-const SEGMENT_START = /(^|[.!?:—(“]\s*|^[^\p{L}]+)$/u;
+const SEGMENT_START = /(^|[.!?:—(“]\s*|^[^\p{L}]+|^ℹ️?\s*)$/u;
 
 /** Capitalised Vietnamese words that are not at the start of a sentence segment. */
 function findTitleCaseWords(text: string): string[] {
