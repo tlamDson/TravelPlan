@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "id": "cuped/aa-null",
+  "method": "cuped",
+  "description": "A/A: 500 vs 500 users, covariate correlation about 0.8.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "theta": 0.9789302102454771,
+    "variance_reduction": 0.6219071479797273,
+    "estimate": 0.16786691815762822,
+    "statistic": 0.9003172086566787,
+    "df": 986.139040177671,
+    "p_value": 0.36817127083722845,
+    "ci_low": -0.19802348304789674,
+    "ci_high": 0.5337573193631532
+  },
+  "decision": "fail_to_reject",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "numpy+scipy",
+    "version": "numpy 2.1.3, scipy 1.14.1",
+    "call": "CUPED (Deng et al., WSDM 2013): theta = cov(y, x) / var(x) pooled over all users (ddof=1); y_adj = y - theta (x - mean(x)); variance_reduction = 1 - var(y_adj)/var(y); then scipy.stats.ttest_ind(equal_var=False) on y_adj",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13",
+    "seed": 303
+  }
+}

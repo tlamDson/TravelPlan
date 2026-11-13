@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "welch/equal-n-lift",
+  "method": "welch_ttest",
+  "description": "500 vs 500 normal users, sd 2, true lift +0.4.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "estimate": 0.3523630000000004,
+    "statistic": 2.678629544268453,
+    "df": 996.8689337746962,
+    "p_value": 0.007514079383048766,
+    "ci_low": 0.0942241622636123,
+    "ci_high": 0.6105018377363886
+  },
+  "decision": "reject_null",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "scipy",
+    "version": "1.14.1",
+    "call": "scipy.stats.ttest_ind(treatment, control, equal_var=False, alternative=alternative); estimate = mean(treatment) - mean(control); CI = confidence_interval(1 - alpha)",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13",
+    "seed": 101
+  }
+}

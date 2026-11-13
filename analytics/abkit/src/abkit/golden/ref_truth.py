@@ -14,7 +14,7 @@ from typing import Any
 
 import numpy as np
 import scipy
-from scipy import stats
+from scipy import optimize, stats
 
 STATSMODELS_METHODS = frozenset(
     {
@@ -177,12 +177,22 @@ def _power_ttest_ind(data: Data, params: Mapping[str, Any]) -> Reference:
 
 
 def _solve_ttest(params: Mapping[str, Any], unknown: str) -> float:
+    """Root of statsmodels' t-test power in ``unknown``, solved tightly.
+
+    ``TTestIndPower().solve_power`` stops at its ``xtol=1e-5``, which for an effect
+    size near 0.05 is outside a 1e-6 relative tolerance (v1's MDE had power 0.79997).
+    """
     from statsmodels.stats.power import TTestIndPower
 
-    keys = ("effect_size", "nobs1", "alpha", "power", "ratio", "alternative")
-    kwargs = {k: params.get(k) for k in keys}
-    kwargs[unknown] = None
-    return float(np.squeeze(TTestIndPower().solve_power(**kwargs)))
+    keys = ("effect_size", "nobs1", "alpha", "ratio", "alternative")
+
+    def gap(x: float) -> float:
+        kwargs = {k: params[k] for k in keys if k in params}
+        kwargs[unknown] = x
+        return float(np.squeeze(TTestIndPower().power(**kwargs))) - params["power"]
+
+    lo, hi = (2.0, 1e9) if unknown == "nobs1" else (1e-8, 10.0)
+    return float(optimize.brentq(gap, lo, hi, xtol=1e-14, rtol=1e-15, maxiter=500))
 
 
 def _sample_size_ttest_ind(data: Data, params: Mapping[str, Any]) -> Reference:
@@ -190,8 +200,9 @@ def _sample_size_ttest_ind(data: Data, params: Mapping[str, Any]) -> Reference:
         {"nobs1": _solve_ttest(params, "nobs1")},
         None,
         _statsmodels_source(
-            "statsmodels.stats.power.TTestIndPower().solve_power(effect_size, nobs1=None, "
-            "alpha, power, ratio, alternative); nobs1 not rounded up"
+            "scipy.optimize.brentq(xtol=1e-14) on nobs1 of "
+            "statsmodels.stats.power.TTestIndPower().power(effect_size, nobs1, alpha, ratio, "
+            "alternative) - power; nobs1 not rounded up"
         ),
     )
 
@@ -201,8 +212,9 @@ def _mde_ttest_ind(data: Data, params: Mapping[str, Any]) -> Reference:
         {"effect_size": _solve_ttest(params, "effect_size")},
         None,
         _statsmodels_source(
-            "statsmodels.stats.power.TTestIndPower().solve_power(effect_size=None, nobs1, "
-            "alpha, power, ratio, alternative)"
+            "scipy.optimize.brentq(xtol=1e-14) on effect_size of "
+            "statsmodels.stats.power.TTestIndPower().power(effect_size, nobs1, alpha, ratio, "
+            "alternative) - power"
         ),
     )
 

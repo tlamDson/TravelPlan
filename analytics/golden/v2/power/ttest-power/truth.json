@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "power/ttest-power",
+  "method": "power_ttest_ind",
+  "description": "Power of a two-sided t-test, d = 0.2, 400 per group.",
+  "data": null,
+  "params": {
+    "effect_size": 0.2,
+    "nobs1": 400,
+    "ratio": 1.0,
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "power": 0.806497270929044
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-07
+    }
+  },
+  "source": {
+    "tool": "statsmodels",
+    "version": "0.14.4",
+    "call": "statsmodels.stats.power.TTestIndPower().power(effect_size, nobs1, alpha, ratio, alternative)",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13"
+  }
+}
