@@ -1,10 +1,25 @@
 import fs from "fs";
 import path from "path";
 
-// Previous guard logic, moved verbatim: whole-line @imports of CLAUDE.md only.
+/**
+ * What Claude Code auto-loads for this repo: CLAUDE.md + every
+ * `.claude/rules/**.md`, plus everything they @import, followed
+ * recursively. Nested imports resolve relative to the importing file.
+ * Used by `config/claude-docs-parity.test.ts` to enforce the context budget
+ * and keep `.claude/reference/*` out of it.
+ */
+
+// `@path` at line start or after whitespace (so `a@b.com` is not an import).
+const IMPORT_RE = /(?:^|\s)@([^\s`]+)/g;
+
+function stripCode(source: string): string {
+  return source.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
+}
+
 export function claudeImports(source: string): string[] {
-  const matches = source.matchAll(/^@(\S+)\s*$/gm);
-  return [...matches].map((m) => m[1]).filter((p): p is string => !!p);
+  return [...stripCode(source).matchAll(IMPORT_RE)]
+    .map((m) => m[1])
+    .filter((p): p is string => !!p);
 }
 
 function listMarkdown(root: string, relDir: string): string[] {
@@ -17,22 +32,46 @@ function listMarkdown(root: string, relDir: string): string[] {
   });
 }
 
+function toRepoRelative(root: string, abs: string): string | null {
+  const rel = path.relative(root, abs);
+  if (rel.startsWith("..") || path.isAbsolute(rel)) return null;
+  return rel.split(path.sep).join("/");
+}
+
+/** Repo-relative target of `imp` written in `fromRel`, or null if outside. */
+function resolveImport(
+  root: string,
+  fromRel: string,
+  imp: string,
+): string | null {
+  if (imp.startsWith("~") || path.isAbsolute(imp)) return null;
+  const abs = path.resolve(path.join(root, path.dirname(fromRel)), imp);
+  const rel = toRepoRelative(root, abs);
+  return rel !== null && fs.existsSync(abs) ? rel : null;
+}
+
 export function resolveAutoLoaded(root: string): {
   files: string[];
   unresolved: string[];
 } {
-  const imports = claudeImports(
-    fs.readFileSync(path.join(root, "CLAUDE.md"), "utf8"),
-  );
-  const files = [
-    ...new Set([
-      "CLAUDE.md",
-      ...listMarkdown(root, ".claude/rules"),
-      ...imports,
-    ]),
-  ];
-  const unresolved = imports
-    .filter((p) => !fs.existsSync(path.join(root, p)))
-    .map((p) => `CLAUDE.md -> ${p}`);
-  return { files, unresolved };
+  const seeds = ["CLAUDE.md", ...listMarkdown(root, ".claude/rules")];
+  const seen = new Set<string>(seeds);
+  const queue = [...seeds];
+  const unresolved: string[] = [];
+
+  while (queue.length > 0) {
+    const file = queue.shift() as string;
+    const source = fs.readFileSync(path.join(root, file), "utf8");
+    for (const imp of claudeImports(source)) {
+      const target = resolveImport(root, file, imp);
+      if (target === null) {
+        unresolved.push(`${file} -> ${imp}`);
+      } else if (!seen.has(target)) {
+        seen.add(target);
+        queue.push(target);
+      }
+    }
+  }
+
+  return { files: [...seen], unresolved };
 }
