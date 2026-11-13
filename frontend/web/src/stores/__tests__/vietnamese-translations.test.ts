@@ -45,7 +45,9 @@ const PROPER_NOUNS = new Set([
   "Việt",
   "Nam",
   "Hoa",
-  "Kỳ",
+  "A", // "A → Z", "N/A"
+  "N",
+  "Z",
   "Nhật",
   "Bản",
   "Kyoto",
@@ -68,9 +70,10 @@ function findTitleCaseWords(text: string): string[] {
   let m: RegExpExecArray | null;
   while ((m = re.exec(text))) {
     const word = m[0];
-    if (!/^\p{Lu}\p{Ll}/u.test(word)) continue; // acronyms, lowercase, mixed
+    if (!/^\p{Lu}\p{Ll}*$/u.test(word)) continue; // acronyms, lowercase, mixed
     if (PROPER_NOUNS.has(word)) continue;
     const before = text.slice(0, m.index);
+    if (word === "Kỳ" && before.endsWith("Hoa ")) continue; // Hoa Kỳ = USA
     if (SEGMENT_START.test(before)) continue;
     out.push(word);
   }
@@ -119,6 +122,8 @@ describe("Vietnamese dictionary — consistent sentence-case capitalisation", ()
     expect(findTitleCaseWords("Thông tin Cá nhân")).toEqual(["Cá"]);
     expect(findTitleCaseWords("Thông tin cá nhân")).toEqual([]);
     expect(findTitleCaseWords("Tiếng Việt")).toEqual([]);
+    expect(findTitleCaseWords("Loại chỗ Ở")).toEqual(["Ở"]);
+    expect(findTitleCaseWords("Sử dụng trong chu Kỳ")).toEqual(["Kỳ"]);
     expect(findTitleCaseWords("♿ Di chuyển thoải mái")).toEqual([]);
     expect(findTitleCaseWords("Xong. Tiếp theo")).toEqual([]);
   });
