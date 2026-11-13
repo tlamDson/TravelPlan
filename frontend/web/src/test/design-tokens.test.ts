@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
  * class, and every var tailwind.config.js references must exist in both
  * :root and .dark. Without this, orphan tokens (no bg-tag-gray or
  * bg-callout-blue class exists) push devs toward hardcoded Tailwind
- * palette colors instead — see .claude/rules/tech-defaults.md "Nợ kỹ thuật đã xác minh".
+ * palette colors instead — see .claude/reference/tech-debt.md.
  */
 
 const TAILWIND_CONFIG_PATH = path.join(__dirname, "../../tailwind.config.js");

@@ -4,7 +4,9 @@ argument-hint: [pr title]
 allowed-tools: Bash(git status *), Bash(git diff *), Bash(git log *), Bash(git branch *), Bash(git rev-parse *), Bash(git checkout -b *), Bash(git add *), Bash(git commit *), Bash(git push *), Bash(gh pr create *), Bash(gh pr view *), Bash(gh pr checks *), Bash(gh pr merge *), Bash(gh run list *), Bash(gh run view *), Read, Write, Edit
 ---
 
-Bạn đang thực thi quy trình mở PR đầy đủ cho TravelPlan, theo `.claude/rules/workflow.md`. Làm tuần tự, không hỏi lại người dùng trừ khi bị chặn cứng (auth thiếu, conflict không tự giải quyết được).
+Lệnh tuỳ chọn cho **phiên tay** — phiên headless của conductor không dùng lệnh này (dừng ở push, xem `CLAUDE.md` mục "Hai loại phiên").
+
+Bạn đang thực thi quy trình mở PR đầy đủ cho TravelPlan, theo `.claude/rules/git-pr.md`. Làm tuần tự, không hỏi lại người dùng trừ khi bị chặn cứng (auth thiếu, conflict không tự giải quyết được).
 
 ## 1. Preflight
 
@@ -23,7 +25,7 @@ git checkout -b <type>/<kebab-case-description>
 
 ## 3. Commit
 
-Chỉ `git add` đúng những file liên quan tới thay đổi thật (không dùng `git add -A` tuỳ tiện nếu có file lạ không rõ nguồn gốc trong working tree — kiểm `git status` trước). Review bằng `git diff --cached --stat`. Commit theo convention ở `.claude/rules/workflow.md`: imperative mood, một dòng, không prefix `feat:`/`fix:`. Kết thúc message bằng trailer:
+Chỉ `git add` đúng những file liên quan tới thay đổi thật (không dùng `git add -A` tuỳ tiện nếu có file lạ không rõ nguồn gốc trong working tree — kiểm `git status` trước). Review bằng `git diff --cached --stat`. Commit theo convention ở `.claude/rules/git-pr.md`: imperative mood, một dòng, không prefix `feat:`/`fix:`. Kết thúc message bằng trailer:
 
 ```
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
@@ -41,7 +43,7 @@ git push -u origin <branch>
 gh pr create --base develop --title "<type>: <mô tả ngắn>" --body "..."
 ```
 
-Body theo template PR trong `.claude/rules/workflow.md` (Summary + Test plan). Thêm footer `🤖 Generated with [Claude Code](https://claude.com/claude-code)`. Lấy số PR từ URL trả về.
+Body theo template PR trong `.claude/rules/git-pr.md` (Summary + RED + Test plan + Assumptions). Thêm footer `🤖 Generated with [Claude Code](https://claude.com/claude-code)`. Lấy số PR từ URL trả về.
 
 ## 6. Arm guard — bước này BẮT BUỘC làm trước khi chờ
 
@@ -89,7 +91,7 @@ Chẩn đoán, sửa, commit, push, quay lại bước 7 (guard vẫn đang arme
 
 ## 11. Nếu PASSED hoặc hết deadline
 
-Xoá `.claude/.ci-watch.json`. Nếu PASSED và PR target là `develop`: **tự merge ngay** (`gh pr merge <n> --squash`), không cần hỏi lại — xem `.claude/rules/workflow.md` mục Merge policy. Nếu PR target là `main`: **không bao giờ tự merge**, chỉ báo cáo PR đã sẵn sàng để chủ repo tự quyết định. Nếu hết deadline mà chưa PASSED thì không merge — báo cáo trạng thái. Luôn báo cáo: PR URL, bảng check (tên + bucket), kết quả merge (đã merge / để chủ repo tự merge), và nhắc rõ **lint/test hiện đã thật sự chặn CI** (không còn `|| echo`) nên xanh nghĩa là test pass thật.
+Xoá `.claude/.ci-watch.json`. Nếu PASSED và PR target là `develop`: merge (`gh pr merge <n> --squash`) chỉ khi đã có review độc lập PASS (luật quyền trong `CLAUDE.md`); chưa có review thì báo cáo PR sẵn sàng chờ review. Nếu PR target là `main`: **không bao giờ tự merge**, chỉ báo cáo PR đã sẵn sàng để chủ repo tự quyết định. Nếu hết deadline mà chưa PASSED thì không merge — báo cáo trạng thái. Luôn báo cáo: PR URL, bảng check (tên + bucket), kết quả merge (đã merge / để chủ repo tự merge), và nhắc rõ **lint/test hiện đã thật sự chặn CI** (không còn `|| echo`) nên xanh nghĩa là test pass thật.
 
 ## 12. Nếu hết deadline mà vẫn PENDING
 

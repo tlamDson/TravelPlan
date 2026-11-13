@@ -4,7 +4,7 @@
 
 | Agent (`name`) | File | Model | Tools | Dùng khi |
 |---|---|---|---|---|
-| `code-reviewer` | `code-reviewer.md` | sonnet | Read, Grep, Glob, Bash | Review diff trước khi commit/mở PR — TDD compliance, Rule of 200, layer violation, commit convention, security. |
+| `code-reviewer` | `code-reviewer.md` | sonnet | Read, Grep, Glob, Bash | Review diff trước khi commit/mở PR — TDD compliance, kích thước/trách nhiệm file, layer violation, commit convention, security, Python, an toàn dữ liệu. |
 | `researcher` | `researcher.md` | sonnet | Read, Grep, Glob | Khám phá codebase (planner, itinerary builder, destinations RAG, calendar sync...) trước khi lập kế hoạch hoặc sửa code. |
 | `qa-testing` | `qa-testing.md` | sonnet | Read, Grep, Glob, Bash, Edit, Write | Viết/chạy test theo TDD Red-Green-Refactor, backend (Vitest) và frontend (Vitest/RTL, MSW, Playwright). |
 
