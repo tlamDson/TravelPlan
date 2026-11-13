@@ -85,3 +85,19 @@ describe("TripDetailPage (trip_viewed)", () => {
     );
   });
 });
+
+describe("TripDetailPage (empty itinerary)", () => {
+  it("points to the trips wizard instead of the unreleased AI Assistant", async () => {
+    server.use(
+      http.get("*/trips/:tripId", () =>
+        HttpResponse.json({ data: makeTrip({ _id: "trip-1", itinerary: [] }) }),
+      ),
+    );
+
+    renderPage();
+
+    const cta = await screen.findByTestId("trip-empty-itinerary-cta");
+    expect(cta).toHaveAttribute("href", "/trips");
+    expect(screen.queryByText(/AI Assistant/i)).not.toBeInTheDocument();
+  });
+});
