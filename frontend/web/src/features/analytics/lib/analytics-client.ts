@@ -58,6 +58,15 @@ export interface AnalyticsClient {
   pendingCount(): number;
 }
 
+/** Events are JSON on the wire, so plain objects and arrays are all there is. */
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) deepFreeze(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
 export function createAnalyticsClient(
   opts: AnalyticsClientOptions,
 ): AnalyticsClient {
@@ -156,7 +165,9 @@ export function createAnalyticsClient(
 
   return {
     track(name, properties) {
-      queue.push({
+      // Snapshot and freeze: a retry or beacon must resend exactly what the
+      // first send carried under this eventId, whatever the caller does next.
+      const event = deepFreeze({
         eventId: newId(),
         schemaVersion: ANALYTICS_SCHEMA_VERSION,
         occurredAt: now().toISOString(),
@@ -164,8 +175,9 @@ export function createAnalyticsClient(
         userId,
         source: "web",
         name,
-        properties,
+        properties: JSON.parse(JSON.stringify(properties)),
       } as ClientEvent);
+      queue.push(event);
       if (queue.length > maxQueueSize) {
         onDrop(queue.splice(0, queue.length - maxQueueSize), "queue_full");
       }
