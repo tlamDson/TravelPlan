@@ -217,12 +217,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {!isPro && usage && usage.tripLimit > 0 && (
               <div className="mx-2 mt-4 rounded-lg border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-foreground">
-                  {`${usage.tripsUsedThisCycle}/${usage.tripLimit} Free Trips Used`}
+                  {t("sidebar.freeTripsUsed")
+                    .replace("{used}", String(usage.tripsUsedThisCycle))
+                    .replace("{limit}", String(usage.tripLimit))}
                 </p>
                 <Progress className="mt-2 h-2" value={progressPercent} />
                 {resetDays !== null && (
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {`Resets in ${resetDays} day${resetDays === 1 ? "" : "s"}.`}
+                    {t(
+                      resetDays === 1
+                        ? "sidebar.resetsInOne"
+                        : "sidebar.resetsInOther",
+                    ).replace("{count}", String(resetDays))}
                   </p>
                 )}
               </div>
