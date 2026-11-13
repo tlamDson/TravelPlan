@@ -41,6 +41,8 @@ Metric thuần (`recallAtK`, `precisionAtK`, `mrr`, `ndcgAtK`, `hitRate`, test t
 
 G-sim (`v1/sim-*`, 50 case mô phỏng) đóng băng bằng `python -m simkit.freeze_golden` (cài simkit sau abkit): quyết định đúng lấy từ tham số cài sẵn, ước lượng đúng là hiệu ứng thật tính từ cả hai potential outcome của cùng user ảo; seed được sàng bằng readout scipy độc lập và số lần thử ghi ở `source.screening`. `--subset ci-fast` (`v1/subsets.json`) là tập con cho cổng CI; `SIMKIT_GOLDEN_FULL=1` dựng lại cả 50 case (chạy đêm).
 
+Cổng golden (PR 15a, M10): job bắt buộc `abkit Lint + Test` chạy `abkit golden --subset ci-fast --strict`, rồi `abkit gate`. `abkit gate` cài 10 mutant ở `abkit/golden/mutants.py` vào bản copy tạm của package và chạy từng bản trong interpreter mới; mutant nào không làm đỏ ít nhất một case thì exit 1. G-event chạy qua `simkit` `tests/test_catalog.py`. Workflow `abkit-golden-nightly.yml` chạy toàn bộ case cùng `SIMKIT_GOLDEN_FULL=1`; `schedule` chỉ chạy từ `main`. Sửa engine mà đổi đúng dòng một mutant đang vá thì `test_golden_mutants.py` đỏ: dời mutant sang dòng mới, đừng xoá.
+
 ## Script đo (`backend/scripts/`, chỉ đọc trừ khi ghi khác)
 
 | Lệnh                                                                                   | Đo                                                                                                                                                                                                                     |

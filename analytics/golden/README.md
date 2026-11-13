@@ -7,6 +7,7 @@ never vouch for itself (B2 plan, "Golden dataset").
 analytics/.venv/Scripts/python -m abkit golden                       # latest (v2); exit 1 on FAIL/ERROR
 analytics/.venv/Scripts/python -m abkit golden analytics/golden/v2 --strict   # MISSING fails too
 analytics/.venv/Scripts/python -m abkit golden --subset ci-fast             # CI gate subset
+analytics/.venv/Scripts/python -m abkit gate                                # 10 planted mutants must be blocked
 ```
 
 Statuses: `PASS` (every expected key within tolerance, decision equal),
@@ -97,6 +98,34 @@ tolerance is wide (see G-sim).
 group (`welch`) or one case id (`sim-aa/aa-01`), and must match at least one
 case. `ci-fast` is the required CI gate: every G-ref case plus one G-sim case
 per group. The full dataset runs nightly (B2 plan, PR 15a).
+
+## Gate (B2 plan, PR 15a, M10)
+
+The required job `abkit Lint + Test` runs, after pytest:
+
+1. `python -m abkit golden --subset ci-fast --strict`: G-ref plus one G-sim case per group;
+   MISSING fails too.
+2. `python -m abkit gate`: ten bugs planted on purpose in the engine
+   (`abkit/golden/mutants.py`: Welch df and sign, the CI quantile, the two-sided p-value,
+   the delta covariance, the CUPED sign, SRM degrees of freedom, the BH step-up, the
+   power tail, a readout deciding on the novelty window). Each is applied to a temporary
+   copy of the package, never to the installed one, and that copy runs step 1 in a fresh
+   interpreter. A mutant is blocked when some case fails. Exit 1 means a mutant
+   survived. Exit 2 means the clean copy does not pass, or a mutant crashed before any
+   case ran: a crash proves nothing, so it does not count as blocked.
+3. G-event: `simkit` `tests/test_catalog.py` replays `packages/shared/fixtures/golden-events/`.
+
+`.github/workflows/abkit-golden-nightly.yml` runs every case (`abkit golden --strict`),
+the mutants against every case (`abkit gate --full`) and the `SIMKIT_GOLDEN_FULL=1`
+rebuild. It is not a required check, and GitHub fires its `schedule` only from `main`.
+
+M10 in `analytics/runs/runs.csv` (`abkit gate --record --pr 15a`): 10 of 10 mutants
+blocked by the ci-fast gate (none without a gate). On every `v2` case, 28/28 G-ref and
+G-public cases pass, and 50/50 G-sim cases (simulated, virtual users) pass.
+
+A mutant whose `old` text no longer occurs exactly once fails
+`tests/test_golden_mutants.py`. When you change the engine on purpose, move the mutant
+to the new line; do not delete it.
 
 ## G-ref (`v2` latest, 22 cases; `v1` kept)
 
