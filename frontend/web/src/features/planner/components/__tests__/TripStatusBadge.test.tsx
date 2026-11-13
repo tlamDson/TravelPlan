@@ -12,8 +12,8 @@ const ALL_STATUSES: { status: TripStatus; label: string }[] = [
   { status: "PROCESSING_STEP_2", label: "Processing (Verify)" },
   { status: "COMPLETED", label: "Completed" },
   { status: "FAILED", label: "Failed" },
-  { status: "FALLBACK", label: "Dự phòng" },
-  { status: "CANCELLED", label: "Đã hủy" },
+  { status: "FALLBACK", label: "Fallback" },
+  { status: "CANCELLED", label: "Cancelled" },
 ];
 
 describe("TripStatusBadge", () => {

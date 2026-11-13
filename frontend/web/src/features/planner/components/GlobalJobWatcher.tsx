@@ -31,7 +31,7 @@ export function GlobalJobWatcher() {
     jobId: activeJobId,
     onComplete: () => {
       trackFinished();
-      toast.success("Chuyến đi của bạn đã sẵn sàng!");
+      toast.success("Your trip is ready!");
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
       if (tripId) {
         queryClient.invalidateQueries({
@@ -42,7 +42,7 @@ export function GlobalJobWatcher() {
     },
     onError: (err) => {
       trackFinished();
-      toast.error(err || "Tạo lịch trình thất bại");
+      toast.error(err || "Failed to create itinerary");
       clearActiveJob();
     },
   });

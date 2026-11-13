@@ -4,10 +4,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTripWizardStore } from "@/stores/trip-wizard.store";
 
 const EXAMPLES = [
-  "Tôi ăn chay, không ăn hải sản",
-  "Bạn đồng hành dùng xe lăn",
-  "Dị ứng với gluten",
-  "Có em bé 2 tuổi đi cùng",
+  "I am vegetarian and do not eat seafood",
+  "My travel companion uses a wheelchair",
+  "I am allergic to gluten",
+  "I am traveling with a 2-year-old",
 ];
 
 export function StepRequirements() {
@@ -20,18 +20,18 @@ export function StepRequirements() {
     <div className="space-y-4">
       <div className="space-y-2">
         <Label className="text-base font-semibold">
-          ✏️ Yêu cầu đặc biệt (tuỳ chọn)
+          ✏️ Special requirements (optional)
         </Label>
         <p className="text-sm text-muted-foreground">
-          Bạn có yêu cầu gì đặc biệt về sức khoẻ, chế độ ăn, hoặc điều kiện di
-          chuyển không? AI sẽ ưu tiên thoả mãn yêu cầu này trong từng gợi ý.
+          Do you have any special requirements for health, diet, or mobility?
+          The AI will prioritize meeting them in every suggestion.
         </p>
       </div>
 
       <Textarea
         id="special-requirements"
         data-testid="trip-wizard-special-requirements"
-        placeholder={`Ví dụ: "${EXAMPLES[exampleIx]}"`}
+        placeholder={`For example: "${EXAMPLES[exampleIx]}"`}
         value={data.specialRequirements}
         onChange={(e) =>
           setData({ specialRequirements: e.target.value.slice(0, 200) })
@@ -41,14 +41,14 @@ export function StepRequirements() {
       />
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>Bỏ trống nếu không có yêu cầu gì đặc biệt</span>
+        <span>Leave blank if you have no special requirements</span>
         <span>{data.specialRequirements.length}/200</span>
       </div>
 
       {/* Quick-fill examples */}
       <div className="space-y-1">
         <p className="text-xs font-medium text-muted-foreground">
-          Gợi ý nhanh:
+          Quick suggestions:
         </p>
         <div className="flex flex-wrap gap-2">
           {EXAMPLES.map((ex) => (
