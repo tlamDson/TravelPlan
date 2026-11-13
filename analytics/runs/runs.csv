@@ -1,2 +1,8 @@
 run_at,git_sha,pr,metric_id,metric,value,unit,n,seed,simulated,notes
 2026-11-13T07:51:39+00:00,61aab74e8f3dd85d60a4f281cecb1bb9aa02218b,9,bench,assignment_throughput,849841.5,assignments/s,10000,,false,benchmark=assignment repeats=5 median python=3.11.9
+2026-11-13T09:14:08+00:00,16454418e715d8f2801e13790f39de632f3f5ad0,11,M4,hillstrom_visit_cuped_variance_reduction,0.006414375288366674,fraction,42613,11,false,hillstrom mens-vs-none outcome=visit covariate=recency R^2 pooled
+2026-11-13T09:14:08+00:00,16454418e715d8f2801e13790f39de632f3f5ad0,11,M4,hillstrom_visit_cuped_sample_size_multiplier,1.0064557851168874,x,42613,11,false,hillstrom mens-vs-none outcome=visit covariate=recency 1/(1-R^2)
+2026-11-13T09:14:08+00:00,16454418e715d8f2801e13790f39de632f3f5ad0,11,M4,hillstrom_visit_cuped_bootstrap_variance_ratio,0.9978197670428002,ratio,42613,11,false,"hillstrom mens-vs-none outcome=visit covariate=recency n_boot=1000 predicted=0.993586 ci95=[0.988077,1.007369] se_boot=0.00344284 se_analytic=0.00337478"
+2026-11-13T09:14:08+00:00,16454418e715d8f2801e13790f39de632f3f5ad0,11,M4,hillstrom_spend_cuped_variance_reduction,0.0004377529711289483,fraction,42613,11,false,hillstrom mens-vs-none outcome=spend covariate=history R^2 pooled
+2026-11-13T09:14:08+00:00,16454418e715d8f2801e13790f39de632f3f5ad0,11,M4,hillstrom_spend_cuped_sample_size_multiplier,1.000437944682715,x,42613,11,false,hillstrom mens-vs-none outcome=spend covariate=history 1/(1-R^2)
+2026-11-13T09:14:08+00:00,16454418e715d8f2801e13790f39de632f3f5ad0,11,M4,hillstrom_spend_cuped_bootstrap_variance_ratio,0.9963815701622459,ratio,42613,11,false,"hillstrom mens-vs-none outcome=spend covariate=history n_boot=1000 predicted=0.999562 ci95=[0.993535,0.999361] se_boot=0.149845 se_analytic=0.145215"
