@@ -31,6 +31,7 @@ def test_known_methods_cover_the_g_ref_groups() -> None:
         "mde_ttest_ind",
         "sample_size_proportions",
         "bh_fdr",
+        "readout",
     } <= KNOWN_METHODS
     assert set(IMPLEMENTATIONS) <= KNOWN_METHODS
 

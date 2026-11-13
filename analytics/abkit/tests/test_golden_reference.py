@@ -35,8 +35,8 @@ def test_ref_cases_are_about_twenty_and_cover_every_g_ref_group() -> None:
     assert {c.method for c in REF_CASES} <= KNOWN_METHODS
 
 
-def test_committed_v1_holds_exactly_the_ref_cases() -> None:
-    cases = load_dataset(GOLDEN_V1)
+def test_committed_v1_g_ref_groups_hold_exactly_the_ref_cases() -> None:
+    cases = [c for c in load_dataset(GOLDEN_V1) if c.group in G_REF_GROUPS]
     assert [c.id for c in cases] == sorted(_ids(REF_CASES))
     for case in cases:
         assert case.source["tool"] in {"scipy", "statsmodels", "numpy+scipy"}
