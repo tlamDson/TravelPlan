@@ -36,6 +36,9 @@ interface ImportMetaEnv {
    */
   readonly VITE_ENABLE_GOOGLE_CALENDAR_SYNC?: string;
 
+  /** Send analytics events to the API. Must match the server's ANALYTICS_ENABLED; exactly "true" turns it on, default off. */
+  readonly VITE_ANALYTICS_ENABLED?: string;
+
   /** Comma-separated VIP emails for Calendar sync UI (client-visible). */
   readonly VITE_VIP_EMAILS?: string;
 
