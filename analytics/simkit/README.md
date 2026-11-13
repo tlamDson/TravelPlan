@@ -53,9 +53,11 @@ server-side exposure, and faults that map one-to-one onto the G-event ingest out
   documents, exported rows and the fault manifest agree, and that the abkit readout on the
   export equals the readout on the simulated events. It owns its stack: it drops and refills a
   local `travelplan_sim` database (any other host or name is refused) and boots the backend
-  with dummy keys. Rows go to `runs.csv` with `simulated=true`. With 1,000 virtual users replayed
-  by 1,000 Locust users (500 planted duplicates, 40 planted schema faults), all 10 count checks
-  agreed and the readout on the export equalled the readout on the simulated events (absolute
+  with dummy keys. Rows go to `runs.csv` with `simulated=true`. No Locust user sends before all
+  of them have spawned, and the run fails unless every requested user spawned and as many as
+  there is work for were sending at the same moment. With 1,000 virtual users replayed by 1,000
+  Locust users (all 1,000 sending at once; 500 planted duplicates, 40 planted schema faults),
+  all 10 count checks agreed and the readout on the export equalled the readout on the simulated events (absolute
   difference 0); the same held with 50 Locust users. The planted lift is far below what about
   400 enrolled virtual users can detect, so this run checks the pipeline, not the effect.
 
