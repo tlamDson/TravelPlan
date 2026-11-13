@@ -17,6 +17,7 @@ import numpy as np
 
 from abkit import causal, stats
 from abkit.golden.case import KNOWN_METHODS
+from abkit.readout.analysis import run_readout
 from abkit.uplift.evaluate import arm_summary
 
 Data = dict[str, np.ndarray] | None
@@ -108,6 +109,10 @@ def _bh(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
     return {"p_adjusted": list(result.p_adjusted), "rejected": list(result.rejected)}
 
 
+def _readout(data: Data, params: Mapping[str, Any]) -> Mapping[str, Any]:
+    return run_readout(data, params).golden_outputs()
+
+
 def _causal(method: str) -> Implementation:
     """``params``: ``outcome`` column, plus the keywords of ``causal.estimate_effect``."""
 
@@ -130,6 +135,7 @@ IMPLEMENTATIONS: dict[str, Implementation] = {
     "sample_size_proportions": _sample_size_proportions,
     "uplift_arm_summary": _uplift_arm_summary,
     "bh_fdr": _bh,
+    "readout": _readout,
     "naive_diff": _causal("naive_diff"),
     "ipw": _causal("ipw"),
     "aipw": _causal("aipw"),
