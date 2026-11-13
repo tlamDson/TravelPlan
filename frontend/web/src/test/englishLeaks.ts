@@ -6,10 +6,15 @@ import { TRANSLATIONS } from "@/stores/useTranslationStore";
  *
  * A text node leaks when it contains an English dictionary value that the
  * target language translates differently (`{placeholders}` match anything),
- * or when it matches one of the `extraPatterns` (hardcoded English that never
- * went through the dictionary). Proper nouns pass because they are neither.
+ * when it shows an unresolved key (`t()` falls back to the raw key, e.g.
+ * "trip.status.unknown"), or when it matches one of the `extraPatterns`
+ * (hardcoded English that never went through the dictionary). Proper nouns
+ * pass because they are none of these.
  */
 const MIN_VALUE_LENGTH = 4;
+
+/** Shape of a dictionary key: dotted lowercase-led segments ("trip.dayLabel"). */
+const RAW_KEY = /(^|\s)[a-z][a-zA-Z0-9]*(\.[a-zA-Z0-9_]+)+(?=$|\s|[,:;!?)])/;
 
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -37,7 +42,11 @@ export function findEnglishLeaks(
   language: "French" | "Vietnamese",
   extraPatterns: RegExp[] = [],
 ): string[] {
-  const patterns = [...englishSourcePatterns(language), ...extraPatterns];
+  const patterns = [
+    RAW_KEY,
+    ...englishSourcePatterns(language),
+    ...extraPatterns,
+  ];
   const walker = root.ownerDocument.createTreeWalker(
     root,
     NodeFilter.SHOW_TEXT,

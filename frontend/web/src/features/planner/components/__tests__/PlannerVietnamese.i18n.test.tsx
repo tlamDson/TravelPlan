@@ -75,10 +75,17 @@ const DAY: ItineraryDay = {
   date: "2026-06-01T00:00:00.000Z",
   activities: [
     makeActivity({
+      _id: "a0",
+      name: "Cà phê Vợt",
+      notes: "Breakfast",
+      time: "07:00",
+      order: 0,
+    }),
+    makeActivity({
       _id: "a1",
       name: "Chợ Bến Thành",
       time: "09:00",
-      order: 0,
+      order: 1,
       status: "confirmed",
       nearbySuggestions: [{ placeId: "p1", name: "Phở Lệ", distanceKm: 0.4 }],
     } as never),
@@ -87,21 +94,21 @@ const DAY: ItineraryDay = {
       name: "Bánh Mì Huỳnh Hoa",
       notes: "Lunch",
       time: "12:00",
-      order: 1,
+      order: 2,
     }),
     makeActivity({
       _id: "a3",
       name: "Quán Ốc Oanh",
       notes: "Dinner",
       time: "19:00",
-      order: 2,
+      order: 3,
     }),
     makeActivity({
       _id: "a4",
       name: "Khách sạn Rex",
       type: "accommodation",
       time: "21:00",
-      order: 3,
+      order: 4,
     }),
   ],
 } as ItineraryDay;
@@ -127,6 +134,10 @@ describe("trip planner in Vietnamese shows no English source strings", () => {
     // Scan the card only: the DndContext live region is the page's, not the card's.
     expect(leaks(screen.getByTestId("itinerary-day-0"))).toEqual([]);
     expect(screen.getByText("Chợ Bến Thành")).toBeInTheDocument();
+    // Meal slot codes from the itinerary builder render as Vietnamese labels.
+    expect(screen.getByText("Bữa sáng")).toBeInTheDocument();
+    expect(screen.getByText("Bữa trưa")).toBeInTheDocument();
+    expect(screen.getByText("Bữa tối")).toBeInTheDocument();
   });
 
   it("day strip tabs", () => {
@@ -192,5 +203,19 @@ describe("trip planner in Vietnamese shows no English source strings", () => {
   it("settings modal auto-load toggle", () => {
     renderWithProviders(<SettingsModal isOpen onClose={() => {}} />);
     expect(leaks(document.body)).toEqual([]);
+  });
+
+  it("the guard flags an unresolved translation key (t() returns the raw key)", () => {
+    const { container } = renderWithProviders(
+      <div>
+        <p>{useTranslationStore.getState().t("trip.status.unknown")}</p>
+        <p>{` · ${useTranslationStore.getState().t("trips.missingKey")}`}</p>
+        <p>Phở Lệ 0.4km</p>
+      </div>,
+    );
+    expect(leaks(container)).toEqual([
+      "trip.status.unknown",
+      "· trips.missingKey",
+    ]);
   });
 });
