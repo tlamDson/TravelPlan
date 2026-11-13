@@ -64,6 +64,18 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   since adoption and `treated`; `repos.csv` lists every sampled repo (also the missing ones)
   and `meta.json` the seed, queries and counts. Search ranks by stars inside the band, so
   the frame leans to the upper end of it.
+- `abkit.did` (PR 19, M7): staggered DiD on that panel. `sun_abraham` is the Sun &
+  Abraham (2021) interaction-weighted event study (one dummy per adoption cohort and event
+  time, reference -1, never-adopters and repos adopting after 2022 as controls, cohorts
+  averaged by their share of treated rows, repo-clustered CR1 errors) with a joint Wald
+  pre-trend test; `twfe_event_study` and `twfe_static` are the TWFE baselines that staggered
+  timing biases. `python -m abkit.did.m7 --pr 19` runs 8 specs fixed in advance and appends
+  them to `runs.csv`. Main spec (quarters, 4 either side, outcome mean `log1p` hours to
+  merge): ATT -0.194 (95% CI -0.685 to 0.298, p = 0.44), about -17.6%, with pre-trend
+  p = 0.43 and a placebo adoption 4 quarters early at p = 0.26: no detectable change in
+  merge time. Weighting rows by merged PRs gives -0.337 (CI -0.648 to -0.026, p = 0.034).
+  The monthly specs fail the pre-trend test (p = 9.8e-07 for the mean, 0.00099 for the
+  median), so monthly event times are not read as causal.
 - `abkit.runs`: the `analytics/runs/runs.csv` ledger. Every number quoted in a
   README must come from a row in that file.
 - `abkit.bench`: runs a named benchmark and appends its result to `runs.csv`.
