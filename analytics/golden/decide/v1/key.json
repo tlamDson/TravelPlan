@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "golden": "v2",
+  "seed": 1115,
+  "labels": [
+    "ship",
+    "no_ship",
+    "investigate"
+  ],
+  "memo": "abkit readout decision; invalid (SRM) -> investigate",
+  "baseline": "ship when p < alpha and the estimate > 0, ignoring SRM; else no_ship",
+  "readouts": {
+    "R01": {
+      "case": "hillstrom/mens-spend",
+      "simulated": false,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R02": {
+      "case": "sim-long-tail/lift-80",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R03": {
+      "case": "sim-srm/loss-20-aa",
+      "simulated": true,
+      "memo": "investigate",
+      "baseline": "no_ship"
+    },
+    "R04": {
+      "case": "sim-srm/loss-25-lift",
+      "simulated": true,
+      "memo": "investigate",
+      "baseline": "ship"
+    },
+    "R05": {
+      "case": "sim-effect/uniform-50",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R06": {
+      "case": "sim-peeking/peek-trap-04",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R07": {
+      "case": "sim-srm/loss-15-aa",
+      "simulated": true,
+      "memo": "investigate",
+      "baseline": "no_ship"
+    },
+    "R08": {
+      "case": "sim-ratio/lift-25",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R09": {
+      "case": "hillstrom/mens-visit",
+      "simulated": false,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R10": {
+      "case": "sim-aa/aa-06",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R11": {
+      "case": "sim-ratio/aa-02",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R12": {
+      "case": "sim-long-tail/lift-120",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R13": {
+      "case": "sim-novelty/novelty-200-fades",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R14": {
+      "case": "sim-peeking/peek-trap-01",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R15": {
+      "case": "sim-long-tail/aa-01",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R16": {
+      "case": "sim-novelty/novelty-250-fades",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R17": {
+      "case": "sim-effect/uniform-60",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R18": {
+      "case": "sim-aa/aa-01",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R19": {
+      "case": "sim-ratio/lift-15",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R20": {
+      "case": "sim-aa/aa-03",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R21": {
+      "case": "sim-effect/uniform-100",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R22": {
+      "case": "sim-effect/harm-30",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R23": {
+      "case": "sim-aa/aa-02",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R24": {
+      "case": "sim-effect/uniform-80-long",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R25": {
+      "case": "sim-novelty/novelty-150-lasting",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R26": {
+      "case": "sim-effect/uniform-60-long",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R27": {
+      "case": "sim-peeking/peek-trap-05",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R28": {
+      "case": "sim-effect/planner-power-60",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    },
+    "R29": {
+      "case": "sim-aa/aa-04",
+      "simulated": true,
+      "memo": "no_ship",
+      "baseline": "no_ship"
+    },
+    "R30": {
+      "case": "sim-effect/uniform-40",
+      "simulated": true,
+      "memo": "ship",
+      "baseline": "ship"
+    }
+  }
+}

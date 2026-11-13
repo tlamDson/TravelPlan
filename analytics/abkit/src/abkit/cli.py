@@ -2,6 +2,7 @@
 
     abkit golden [ROOT] [--strict] [--subset NAME]
     abkit readout PATH [--params JSON] [--simulated | --real] [--out FILE]
+    abkit decide export|label|kappa  (G-decide, see abkit/labeling)
 
 ``golden`` exit codes: 0 every case passes (MISSING allowed unless ``--strict``),
 1 a case fails, errors, or is MISSING under ``--strict``, 2 malformed dataset.
@@ -18,6 +19,7 @@ from pathlib import Path
 
 from abkit.golden.case import GoldenFormatError
 from abkit.golden.runner import run_golden
+from abkit.labeling.cli import add_decide
 from abkit.readout.inputs import load_readout_input
 
 DEFAULT_GOLDEN_ROOT = Path(__file__).resolve().parents[3] / "golden/v2"
@@ -70,5 +72,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     golden.set_defaults(handler=_golden)
     _add_readout(commands)
+    add_decide(commands)
     args = parser.parse_args(argv)
     return args.handler(args)

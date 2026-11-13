@@ -44,6 +44,14 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   always carries the "virtual users" banner. `abkit readout PATH` prints the memo of a
   golden case directory, or of a CSV with `--params params.json` and `--simulated` /
   `--real`; the Streamlit app (`[app]` extra) shows the same memo.
+- `abkit.labeling` (PR 15b, G-decide): `abkit decide export` writes 30 blinded
+  readouts (28 G-sim cases drawn per group with a fixed seed, plus 2 real Hillstrom
+  readouts) to `analytics/golden/decide/v1/`, with abkit's decision and the case name
+  hidden and every effect shown, also when SRM fails. `abkit decide label` shows them one
+  at a time and saves Lam's ship / no ship / investigate to `labels.csv`, resuming where
+  it stopped. `abkit decide kappa` reports Cohen's kappa of those labels against the memo
+  (SRM-blocked = investigate) and against a "p < 0.05 only" baseline; `--record` appends
+  the two M11 rows. M11 waits for gate G-B2-3 (Lam's labels).
 - `abkit.runs`: the `analytics/runs/runs.csv` ledger. Every number quoted in a
   README must come from a row in that file.
 - `abkit.bench`: runs a named benchmark and appends its result to `runs.csv`.
@@ -77,6 +85,8 @@ analytics/.venv/Scripts/python -m abkit.bench assignment --pr 9
 analytics/.venv/Scripts/python -m abkit.peeking --pr 12   # 10,000 A/A x 14 days; --dry-run to print only
 analytics/.venv/Scripts/python -m abkit golden   # latest golden version; --strict: MISSING fails too; --subset ci-fast
 analytics/.venv/Scripts/python -m abkit readout analytics/golden/v2/sim-srm/loss-15-aa   # memo; --out memo.md
+analytics/.venv/Scripts/python -m abkit decide label            # G-B2-3: label the 30 blinded readouts
+analytics/.venv/Scripts/python -m abkit decide kappa --record   # M11 after every readout has a label
 analytics/.venv/Scripts/python -m pip install -e "analytics/abkit[app]"   # Streamlit; CI skips the app tests
 analytics/.venv/Scripts/python -m streamlit run analytics/abkit/src/abkit/readout/app.py
 analytics/.venv/Scripts/python -m abkit.cuped_check D:/data/b2/hillstrom.csv --pr 11   # M4
