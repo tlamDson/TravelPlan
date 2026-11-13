@@ -75,6 +75,10 @@ export const env = cleanEnv(process.env, {
    * "can see internal reliability data" are different roles.
    */
   SRE_ADMIN_EMAILS: str({ default: "" }),
+  /** When exactly "true", POST /api/analytics/events is mounted (B2 event
+   * ingest). Off everywhere by default, including local dev — stored events
+   * use Atlas free-tier storage, so each environment opts in deliberately. */
+  ANALYTICS_ENABLED: str({ default: "" }),
 });
 
 /** Which environment this process is actually running as — APP_ENV if set
