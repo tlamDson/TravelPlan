@@ -13,6 +13,9 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   It also has the mSPRT (normal mixture, Johari et al.): always-valid p-values
   and confidence sequences that may be read after every look, and
   Benjamini-Hochberg FDR adjustment across metrics.
+- `abkit.stats.cate_by_group`: CATE by a discrete covariate such as persona: a
+  Welch test inside each group, the inverse-variance pooled effect, and Cochran's
+  Q (chi-square, K-1 df) for "do the groups share one effect?".
 - `abkit.peeking`: simulated A/A experiments (virtual users) read every day for
   14 days, for the daily-peek false positive rate of the t-test against the
   mSPRT (M1), and the coverage of 95% intervals under an injected effect (M3).
