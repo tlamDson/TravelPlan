@@ -69,21 +69,24 @@ def _utc_day(occurred_at: str) -> date:
 def daily_users(
     events: Iterable[dict], name: str, counted: frozenset[str] | None = None
 ) -> DailySeries:
-    """Distinct users per UTC day, over the days spanned by all identified events.
+    """Distinct users per UTC day, over the days spanned by all events (anonymous ones too).
 
     ``counted`` limits which event names make a user count that day (None: any event).
+    A day with only anonymous events is in the series with 0, also at either end.
     """
     days: list[date] = []
     users: dict[date, set[str]] = {}
+    identified = False
     for event in events:
+        day = _utc_day(event["occurredAt"])
+        days.append(day)
         user = event.get("userId")
         if user is None:
             continue
-        day = _utc_day(event["occurredAt"])
-        days.append(day)
+        identified = True
         if counted is None or event.get("name") in counted:
             users.setdefault(day, set()).add(user)
-    if not days:
+    if not identified:
         raise ValueError("no event with a userId: cannot build a daily series")
     start, end = min(days), max(days)
     values = np.zeros((end - start).days + 1)

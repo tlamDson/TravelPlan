@@ -82,3 +82,16 @@ def test_read_events_accepts_a_directory_of_daily_exports(tmp_path: Path) -> Non
     (tmp_path / "notes.txt").write_text("ignored", encoding="utf-8")
     # Files are read in name order, so the result does not depend on the file system.
     assert read_events(tmp_path) == [EVENTS[0], EVENTS[2]]
+
+
+def test_anonymous_events_on_boundary_days_still_extend_the_series() -> None:
+    events = [
+        _event(None, "2025-12-31T12:00:00Z", "wizard_started"),
+        *EVENTS,
+        _event(None, "2026-01-05T12:00:00Z", "wizard_started"),
+    ]
+    for series in (daily_active_users(events), daily_contributors(events)):
+        assert series.start == date(2025, 12, 31)
+        assert series.dates[-1] == date(2026, 1, 5)
+    np.testing.assert_array_equal(daily_active_users(events).values, [0, 2, 0, 1, 1, 0])
+    np.testing.assert_array_equal(daily_contributors(events).values, [0, 1, 0, 1, 1, 0])
