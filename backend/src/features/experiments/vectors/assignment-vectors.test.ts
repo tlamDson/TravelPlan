@@ -81,7 +81,9 @@ describe("packages/shared/fixtures/assignment-vectors.json", () => {
 
   it("includes edge-case userIds: non-ASCII, the ':' separator, 128 chars", () => {
     const ids = file.vectors.map((v) => v.userId);
-    expect(ids.some((id) => /[^\x00-\x7f]/.test(id))).toBe(true);
+    const nonAscii = (id: string) =>
+      [...id].some((ch) => ch.codePointAt(0)! > 0x7f);
+    expect(ids.some(nonAscii)).toBe(true);
     expect(ids.some((id) => id.includes(":"))).toBe(true);
     expect(ids.some((id) => id.length === 128)).toBe(true);
     expect(new Set(ids).size).toBe(ids.length);

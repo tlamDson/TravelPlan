@@ -94,6 +94,11 @@ describe("variantForBucket", () => {
     expect(variantForBucket(ab, 5000)).toBe("treatment");
   });
 
+  it("throws when an unvalidated definition's weights leave the bucket uncovered", () => {
+    const short = { ...ab, variants: [{ key: "control", weight: 10 }] };
+    expect(() => variantForBucket(short, 10)).toThrow(/do not cover/);
+  });
+
   it("throws on a bucket outside 0..9999", () => {
     expect(() => variantForBucket(ab, -1)).toThrow(RangeError);
     expect(() => variantForBucket(ab, ANALYTICS_BUCKET_COUNT)).toThrow(

@@ -22,7 +22,8 @@ import {
   postExperimentExposure,
 } from "./experiments.controller";
 
-function makeReq(body: unknown, userId = "user_1"): Request {
+function makeReq(body: unknown, userId: string | null = "user_1"): Request {
+  if (userId === null) return { body } as Request;
   return { body, auth: () => ({ userId }) } as unknown as Request;
 }
 
@@ -103,5 +104,23 @@ describe("postExperimentExposure", () => {
     await postExperimentExposure(makeReq(body), res);
     expect(res.status).toHaveBeenCalledWith(500);
     expect(mockError).toHaveBeenCalled();
+  });
+});
+
+describe("no session user", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("401s both endpoints and never calls the service", async () => {
+    const a = makeRes();
+    await getExperimentAssignments(makeReq(undefined, null), a);
+    expect(a.status).toHaveBeenCalledWith(401);
+    const b = makeRes();
+    await postExperimentExposure(
+      makeReq({ experimentKey: "vector-ab", sessionId: "s" }, null),
+      b,
+    );
+    expect(b.status).toHaveBeenCalledWith(401);
+    expect(mockGetAssignments).not.toHaveBeenCalled();
+    expect(mockRecordExposure).not.toHaveBeenCalled();
   });
 });
