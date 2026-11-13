@@ -64,4 +64,33 @@ describe("getCountryImage", () => {
       /^\/images\/countries\/france_/,
     );
   });
+
+  it("an explicit country without images never falls back to another country's city alias", () => {
+    // Each city name collides with an alias of a country that has images.
+    for (const destination of [
+      "Hue, Japan",
+      "Portland, Australia",
+      "Paris, Canada",
+      "Washington, United Kingdom",
+      "Nice, Italy",
+      "Chicago, Japan",
+      "Trip to Da Nang, South Korea",
+    ]) {
+      expect(getCountryImage(destination, "t-5")).toBeNull();
+    }
+  });
+
+  it("treats Monaco as its own country, not France", () => {
+    expect(getCountryImage("Monaco", "t-6")).toBeNull();
+    expect(getCountryImage("Monte Carlo, Monaco", "t-6")).toBeNull();
+  });
+
+  it("still uses a city alias when no country is given", () => {
+    expect(getCountryImage("Trip to Hanoi", "t-7")).toMatch(
+      /^\/images\/countries\/vietnam_/,
+    );
+    expect(getCountryImage("Ba Dinh, Hanoi", "t-8")).toMatch(
+      /^\/images\/countries\/vietnam_/,
+    );
+  });
 });

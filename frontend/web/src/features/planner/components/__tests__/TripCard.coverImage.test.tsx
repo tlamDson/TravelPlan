@@ -29,4 +29,15 @@ describe("TripCard cover image", () => {
       expect.stringMatching(/\/images\/countries\/france_/),
     );
   });
+
+  it("never shows a Vietnam image for a Japanese city that shares a Vietnamese alias", () => {
+    const trip = makeTrip({
+      title: "Trip to Hue, Japan",
+      destination: "Hue, Japan",
+      coverImage: undefined,
+    });
+    renderWithProviders(<TripCard trip={trip} />);
+
+    expect(screen.queryByRole("img")).toBeNull();
+  });
 });
