@@ -14,9 +14,10 @@ from conftest import GOLDEN_V1
 
 from abkit.golden.case import GoldenFormatError, load_case, load_dataset
 from abkit.golden.compare import compare_outputs
-from abkit.golden.freeze_ref import STATSMODELS_METHODS, compute_reference, freeze, render_csv
+from abkit.golden.freeze_ref import freeze, render_csv
 from abkit.golden.methods import KNOWN_METHODS
 from abkit.golden.ref_cases import REF_CASES
+from abkit.golden.ref_truth import STATSMODELS_METHODS, compute_reference
 
 G_REF_GROUPS = {"welch", "delta", "cuped", "srm", "power", "bh"}
 HAS_STATSMODELS = importlib.util.find_spec("statsmodels") is not None
@@ -65,9 +66,9 @@ def test_committed_truth_matches_scipy_and_statsmodels(case_id: str) -> None:
 
 
 def test_freezer_never_imports_the_abkit_engine() -> None:
-    allowed = {"abkit.golden.case", "abkit.golden.ref_cases"}
+    allowed = {"abkit.golden.case", "abkit.golden.ref_cases", "abkit.golden.ref_truth"}
     package = Path(__file__).resolve().parents[1] / "src/abkit/golden"
-    for name in ("freeze_ref.py", "ref_cases.py"):
+    for name in ("freeze_ref.py", "ref_cases.py", "ref_truth.py"):
         tree = ast.parse((package / name).read_text(encoding="utf-8"))
         imported = set()
         for node in ast.walk(tree):

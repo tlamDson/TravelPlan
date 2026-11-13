@@ -1,0 +1,78 @@
+# Golden datasets for `abkit`
+
+Every case has a known answer that **abkit did not compute**, so the engine can
+never vouch for itself (B2 plan, "Golden dataset").
+
+```bash
+analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1            # report, exit 1 on FAIL/ERROR
+analytics/.venv/Scripts/python -m abkit golden analytics/golden/v1 --strict   # MISSING fails too
+```
+
+Statuses: `PASS` (every expected key within tolerance, decision equal),
+`FAIL` (a value or the decision is off; the report prints both numbers),
+`MISSING` (no abkit implementation registered for the method yet, see
+`abkit/golden/methods.py`), `ERROR` (the implementation raised). Exit code 2
+means the dataset itself is malformed.
+
+## Layout and versioning
+
+`v<N>/<group>/<case>/` holds `truth.json` and, unless the case is purely
+parametric, `data.csv`. Group and case names are kebab-case. A frozen case is
+never edited: a changed case goes into a new version (`v2/`) and `v1/` stays
+for comparison.
+
+## `truth.json`
+
+| Key              | Meaning                                                                     |
+| ---------------- | --------------------------------------------------------------------------- |
+| `schema_version` | `1`                                                                         |
+| `id`             | `<group>/<case>`, equal to the directory path                               |
+| `method`         | One of the methods below                                                    |
+| `description`    | What the case holds, in one sentence                                        |
+| `data`           | `"data.csv"` or `null`                                                      |
+| `params`         | Inputs passed to the method besides the data                                |
+| `expected`       | Output key → finite number, bool, or non-empty list of one kind             |
+| `decision`       | Expected decision string, or `null` when the method makes none              |
+| `tolerance`      | `default` plus optional per-key `{abs, rel}`; passes when `                 | actual − expected | ≤ abs + rel· | expected | `   |
+| `source`         | `tool`, `version`, `call` (required), plus `generator`, `frozen_at`, `seed` |
+
+Unknown keys are rejected. An implementation may return extra output keys;
+they are ignored.
+
+## Methods (the contract abkit implements)
+
+An implementation is `fn(data, params) -> dict`, where `data` maps each CSV
+column to a NumPy array (float64 when every cell is numeric, else str) or is
+`None`. `variant` is `control` / `treatment`; estimates are treatment minus
+control. Decisions: `reject_null` when `p_value < alpha`, else `fail_to_reject`.
+
+| Method                    | Data columns                                             | Params                                                               | Outputs                                                                                           | Decision         |
+| ------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------- |
+| `welch_ttest`             | `variant`, `value`                                       | `alpha`, `alternative`                                               | `estimate`, `statistic`, `df`, `p_value`, `ci_low`, `ci_high` (CI two-sided only)                 | yes              |
+| `delta_ratio`             | `variant`, `numerator`, `denominator` (one row per user) | `alpha`                                                              | `ratio_control`, `ratio_treatment`, `estimate`, `se`, `statistic`, `p_value`, `ci_low`, `ci_high` | yes              |
+| `cuped`                   | `variant`, `value`, `covariate`                          | `alpha`, `alternative`                                               | `theta`, `variance_reduction`, then the Welch outputs on the adjusted values                      | yes              |
+| `srm_chisquare`           | `variant`, `count`, `expected_share`                     | `threshold`                                                          | `statistic`, `p_value`, `dof`                                                                     | `srm` / `no_srm` |
+| `power_ttest_ind`         | —                                                        | `effect_size`, `nobs1`, `ratio`, `alpha`, `alternative`              | `power`                                                                                           | —                |
+| `sample_size_ttest_ind`   | —                                                        | `effect_size`, `power`, `ratio`, `alpha`, `alternative`              | `nobs1` (not rounded up)                                                                          | —                |
+| `mde_ttest_ind`           | —                                                        | `nobs1`, `power`, `ratio`, `alpha`, `alternative`                    | `effect_size` (Cohen's d)                                                                         | —                |
+| `sample_size_proportions` | —                                                        | `p_control`, `p_treatment`, `power`, `ratio`, `alpha`, `alternative` | `effect_size` (Cohen's h), `nobs1`                                                                | —                |
+| `bh_fdr`                  | `hypothesis`, `p_value`                                  | `alpha`                                                              | `p_adjusted`, `rejected` (input row order)                                                        | —                |
+
+The exact formula behind each case is in its `source.call`.
+
+## G-ref (`v1`, 22 cases)
+
+Frozen by `abkit.golden.freeze_ref` from the seeded table in
+`abkit/golden/ref_cases.py`; the numbers come from `abkit/golden/ref_truth.py`,
+which uses only NumPy, scipy and statsmodels and imports nothing from abkit.
+Closed-form cases have tolerance `abs 1e-10, rel 1e-9`; root-solved power
+cases `rel 1e-6`. R cross-checks these again in PR 23.
+
+```bash
+analytics/.venv/Scripts/python -m pip install -e "analytics/abkit[dev,golden]"   # adds statsmodels
+analytics/.venv/Scripts/python -m abkit.golden.freeze_ref analytics/golden/v2    # refuses to overwrite without --force
+```
+
+`tests/test_golden_reference.py` regenerates the data and recomputes the truth
+of every committed case; the statsmodels cases skip where the `[golden]` extra
+is not installed (CI installs core + dev only).
