@@ -6,12 +6,17 @@
 
 type CountryKey = "vietnam" | "america" | "france";
 
-const COUNTRY_KEYWORDS: Record<CountryKey, string[]> = {
+// Explicit country names. When one is present it decides the country, even if
+// another country's city alias also appears ("Hue, United States").
+const COUNTRY_NAME_KEYWORDS: Record<CountryKey, string[]> = {
+  vietnam: ["vietnam", "vnam", "việt nam", "viet nam"],
+  america: ["united states", "usa", "u.s.a", "america", "mỹ", "hoa kỳ"],
+  france: ["france", "pháp"],
+};
+
+// City/region aliases. Weaker evidence than an explicit country name.
+const CITY_KEYWORDS: Record<CountryKey, string[]> = {
   vietnam: [
-    "vietnam",
-    "vnam",
-    "việt nam",
-    "viet nam",
     "hanoi",
     "ha noi",
     "hà nội",
@@ -43,10 +48,6 @@ const COUNTRY_KEYWORDS: Record<CountryKey, string[]> = {
     "vũng tàu",
   ],
   america: [
-    "united states",
-    "usa",
-    "u.s.a",
-    "america",
     "new york",
     "los angeles",
     "san francisco",
@@ -68,11 +69,8 @@ const COUNTRY_KEYWORDS: Record<CountryKey, string[]> = {
     "orlando",
     "nashville",
     "hawaii",
-    "mỹ",
-    "hoa kỳ",
   ],
   france: [
-    "france",
     "paris",
     "lyon",
     "marseille",
@@ -90,7 +88,6 @@ const COUNTRY_KEYWORDS: Record<CountryKey, string[]> = {
     "cannes",
     "monaco",
     "avignon",
-    "pháp",
   ],
 };
 
@@ -160,6 +157,18 @@ function containsKeyword(text: string, keyword: string): boolean {
   ).test(text);
 }
 
+function findCountry(
+  lower: string,
+  table: Record<CountryKey, string[]>,
+): CountryKey | null {
+  for (const [country, keywords] of Object.entries(table)) {
+    if (keywords.some((kw) => containsKeyword(lower, kw))) {
+      return country as CountryKey;
+    }
+  }
+  return null;
+}
+
 /**
  * Detects the country from a destination/trip title string and returns an
  * image path for that country, or null when the country is unknown or has no
@@ -173,11 +182,12 @@ export function getCountryImage(
   if (!tripTitle) return null;
   const lower = tripTitle.toLowerCase();
 
-  for (const [country, keywords] of Object.entries(COUNTRY_KEYWORDS)) {
-    if (keywords.some((kw) => containsKeyword(lower, kw))) {
-      const images = COUNTRY_IMAGES[country as CountryKey];
-      return images[hashIndex(seedString, tripTitle, images.length)];
-    }
+  const country =
+    findCountry(lower, COUNTRY_NAME_KEYWORDS) ??
+    findCountry(lower, CITY_KEYWORDS);
+  if (country) {
+    const images = COUNTRY_IMAGES[country];
+    return images[hashIndex(seedString, tripTitle, images.length)];
   }
 
   return null;
