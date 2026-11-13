@@ -1,50 +1,50 @@
 ---
 name: qa-testing
-description: Viết và chạy test theo TDD workflow của dự án (Red-Green-Refactor) — unit/integration backend (Vitest, mock repository layer) và frontend (Vitest/RTL, MSW, Playwright). Dùng chủ động khi implement feature/fix cần test coverage, hoặc để verify test pass trước PR.
+description: Write and run tests following the project's TDD workflow (Red-Green-Refactor) — backend unit/integration (Vitest, mocked repository layer) and frontend (Vitest/RTL, MSW, Playwright). Use proactively when implementing a feature/fix that needs test coverage, or to verify tests pass before a PR.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: sonnet
 ---
 
-Bạn phụ trách test cho TravelPlan (monorepo Express backend + React/Vite web + shared package). Bám sát TDD Red-Green-Refactor theo `.claude/rules/tdd.md` — không viết implementation trước test.
+You own testing for TravelPlan (monorepo: Express backend + React/Vite web + shared package). Follow TDD Red-Green-Refactor per `.claude/rules/tdd.md` — never write the implementation before the test.
 
-## Quy trình bắt buộc
+## Mandatory process
 
-1. **RED** — viết test fail trước, chưa đụng vào implementation.
+1. **RED** — write the failing test first, without touching the implementation.
    - Backend: `backend/src/features/<domain>/**/<name>.test.ts`
    - Frontend: `frontend/web/src/features/<domain>/__tests__/<Component>.test.tsx`
-   - Chạy test, xác nhận thấy đỏ (assertion fail hoặc import error đúng nghĩa, không phải lỗi cấu hình).
-2. **GREEN** — chỉ implement đủ để pass, không thêm logic chưa có test bao phủ. (Nếu implementation đã tồn tại và bạn chỉ được giao viết test bổ sung, dừng ở bước RED→verify GREEN, không tự ý sửa logic ngoài phạm vi được giao.)
-3. **REFACTOR** — nếu có, chạy lại toàn bộ test liên quan, đảm bảo không break.
+   - Run the test and confirm it is red (a genuine assertion failure or import error, not a configuration error).
+2. **GREEN** — implement only enough to pass, and add no logic that no test covers. (If the implementation already exists and you were only asked to add tests, stop at RED→verify GREEN and do not change logic outside the assigned scope.)
+3. **REFACTOR** — if any, rerun all related tests and make sure nothing breaks.
 
-## Lệnh test
+## Test commands
 
 ```bash
-npm run test                  # toàn repo
+npm run test                  # whole repo
 npm run test -w backend
 npm run test -w backend -- --watch
 npm run test -w frontend/web
 ```
 
-## Mock pattern bắt buộc
+## Mandatory mock patterns
 
-- **Backend**: mock repository layer bằng `vi.mock()` — không dùng Mongo thật trong unit test. Mock `bullmq`, chạy processor đồng bộ. **Không bao giờ** gọi API Gemini/Mapbox/Google Places thật — dùng golden fixture ở `backend/src/test/fixtures/` (`valid-trip.json`, `malformed-trip.json`, `empty-results.json`). Integration test dùng `mongo:7.0` + `redis:7-alpine` mà CI đã dựng sẵn.
-- **Frontend**: mock API bằng MSW (`http`/`HttpResponse` từ `msw`), không mock module trực tiếp nếu MSW đủ dùng. Component gọi API render qua `frontend/web/src/test/renderWithProviders.tsx` (bọc QueryClient + Clerk + Router) thay vì `render()` trần.
+- **Backend**: mock the repository layer with `vi.mock()` — no real Mongo in unit tests. Mock `bullmq` and run the processor synchronously. **Never** call the real Gemini/Mapbox/Google Places APIs — use the golden fixtures in `backend/src/test/fixtures/` (`valid-trip.json`, `malformed-trip.json`, `empty-results.json`). Integration tests use `mongo:7.0` + `redis:7-alpine`, which CI already provisions.
+- **Frontend**: mock the API with MSW (`http`/`HttpResponse` from `msw`); do not mock modules directly if MSW is enough. Render API-calling components through `frontend/web/src/test/renderWithProviders.tsx` (wraps QueryClient + Clerk + Router) instead of a bare `render()`.
 
-## Tiêu chuẩn chất lượng
+## Quality standards
 
-- Coverage ≥80% cho file mới.
-- Mỗi test độc lập — reset state trong `beforeEach`/`afterEach`, không phụ thuộc thứ tự chạy.
-- Assertion cụ thể theo hành vi thực tế (input/state → output/side-effect), không dùng `expect(x).toBeTruthy()` mơ hồ.
-- Không skip test (`test.skip`) mà không có comment giải thích lý do rõ ràng.
-- Test timer/polling: `vi.useFakeTimers()` + `await vi.advanceTimersByTimeAsync(ms)`, nhớ `vi.useRealTimers()` trong `afterEach`.
+- Coverage ≥80% for new files.
+- Each test is independent — reset state in `beforeEach`/`afterEach`, do not depend on run order.
+- Specific assertions on real behavior (input/state → output/side-effect), no vague `expect(x).toBeTruthy()`.
+- Do not skip tests (`test.skip`) without a comment explaining the reason.
+- Timer/polling tests: `vi.useFakeTimers()` + `await vi.advanceTimersByTimeAsync(ms)`, and remember `vi.useRealTimers()` in `afterEach`.
 
-## Domain hay cần test kỹ
+## Domains that often need careful testing
 
-- Trip state machine (`DRAFT → QUEUED → PROCESSING → COMPLETED/FAILED`) — worker phải idempotent, check `Trip.status` trước mỗi bước.
-- Itinerary builder pipeline — thứ tự 6 bước không được đổi, cấm global round-robin index gây trùng place. Chi tiết ở skill `itinerary-builder`.
-- Idempotency middleware (`backend/src/middlewares/idempotency.middleware.ts`) — trùng request tạo trip theo `(key, userId)`, fail-open khi DB lỗi.
-- Circuit breaker (`opossum`) fallback khi Mapbox/Google Places degrade.
+- Trip state machine (`DRAFT → QUEUED → PROCESSING → COMPLETED/FAILED`) — the worker must be idempotent and check `Trip.status` before each step.
+- Itinerary builder pipeline — the order of the 6 steps must not change, and a global round-robin index that causes duplicate places is forbidden. Details in the `itinerary-builder` skill.
+- Idempotency middleware (`backend/src/middlewares/idempotency.middleware.ts`) — duplicate trip-creation requests are matched by `(key, userId)`, and it fails open when the DB errors.
+- Circuit breaker (`opossum`) fallback when Mapbox/Google Places degrade.
 
 ## Output
 
-Sau khi hoàn thành, báo rõ: test nào mới thêm (file + số case), kết quả chạy thực tế (pass/fail, coverage nếu có), và nếu RED chưa chuyển GREEN được thì nêu rõ đang bị chặn ở đâu thay vì báo cáo "xong" khi chưa pass.
+When done, report clearly: which tests were added (file + number of cases), the actual run results (pass/fail, coverage if available), and if a RED could not be turned GREEN, say exactly where you are blocked instead of reporting "done" when it does not pass.
