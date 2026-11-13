@@ -68,11 +68,14 @@ afterEach(async () => {
 // address). Without clearing its keys between tests, unrelated test files
 // would start intermittently 429-ing each other depending on run order —
 // worse, the 15-minute window means a red run could stay red on immediate
-// retry. Scoped to the `rl:general:` prefix only, so it never touches
-// BullMQ/other app keys sharing the same Redis instance.
+// retry. Scoped to the `rl:general:` and `rl:analytics:` prefixes only, so
+// it never touches BullMQ/other app keys sharing the same Redis instance.
 afterEach(async () => {
   const { redisConnection } = await import("../lib/queue");
-  const keys = await redisConnection.keys("rl:general:*");
+  const keys = [
+    ...(await redisConnection.keys("rl:general:*")),
+    ...(await redisConnection.keys("rl:analytics:*")),
+  ];
   if (keys.length > 0) await redisConnection.del(...keys);
 });
 
