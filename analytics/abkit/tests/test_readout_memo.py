@@ -73,3 +73,8 @@ def test_memo_fits_on_one_page(lift) -> None:
     params = _params(by_persona=True, early_metric={"kind": "mean", "column": "saves_early"})
     _, memo = _memo(_data(lift=lift), params, description="x" * 200)
     assert len(memo.splitlines()) <= 60
+
+
+def test_memo_states_the_srm_threshold_it_used() -> None:
+    _, memo = _memo(_data(), _params())
+    assert "blocked below p = 0.0005" in memo

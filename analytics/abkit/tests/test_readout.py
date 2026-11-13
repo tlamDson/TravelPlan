@@ -184,3 +184,27 @@ def test_spec_parses_params() -> None:
         _params(metric={"kind": "ratio", "numerator": "saves", "denominator": "views"})
     )
     assert ratio.metric.label == "saves / views (ratio of sums)"
+
+
+def test_srm_blocks_at_srm_threshold_not_at_alpha() -> None:
+    data = _data(n_control=2080, n_treatment=1925)  # chi-square ≈ 6.0, p ≈ 0.014
+    default = run_readout(data, _params())
+    assert 0.0005 < default.srm.p_value < 0.05
+    assert not default.blocked and default.decision != "invalid"
+    strict = run_readout(data, _params(srm_threshold=0.05))
+    assert strict.blocked and strict.decision == "invalid"
+
+
+def test_novelty_never_flags_a_readout_that_ships() -> None:
+    params = _params(early_metric={"kind": "mean", "column": "saves_early"})
+    r = run_readout(_data(lift=0.5), params)
+    assert r.decision == "ship" and r.early.p_value < 0.05
+    assert not r.novelty_faded
+
+
+def test_a_persona_missing_from_one_arm_raises_value_error() -> None:
+    data = _data()
+    data["persona"] = data["persona"].copy()
+    data["persona"][:3] = "solo"  # three control users, no treatment users
+    with pytest.raises(ValueError, match="solo"):
+        run_readout(data, _params(by_persona=True))

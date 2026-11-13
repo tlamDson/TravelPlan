@@ -120,6 +120,11 @@ def _effect(
     variant = np.asarray(data["variant"])
     ctrl, treat = mask & (variant == "control"), mask & (variant == "treatment")
     n_c, n_t = int(ctrl.sum()), int(treat.sum())
+    if n_c < 2 or n_t < 2:
+        who = "the experiment" if group is None else f"persona {group!r}"
+        raise ValueError(
+            f"{who} needs at least 2 users per arm, got {n_c} control and {n_t} treatment"
+        )
     if metric.kind == "mean":
         y = _column(data, metric.column).astype(np.float64)
         r = stats.welch_ttest(y[ctrl], y[treat], alpha=alpha)
