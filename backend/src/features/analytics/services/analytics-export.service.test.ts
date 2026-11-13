@@ -106,6 +106,39 @@ describe("exportAnalyticsDay", () => {
     expect(first.equals(second)).toBe(true);
   });
 
+  it("propagates a mid-stream failure, removes the temp file and keeps the previous export", async () => {
+    stream.mockReturnValueOnce(
+      yieldAll([event("id-old", "2026-11-02T08:00:00Z", null)]),
+    );
+    const { file } = await exportAnalyticsDay("2026-11-02", dir);
+    const previous = readFileSync(file);
+
+    async function* failing() {
+      yield event("id-1", "2026-11-02T10:00:00Z", null);
+      throw new Error("cursor lost");
+    }
+    stream.mockReturnValueOnce(failing());
+    await expect(exportAnalyticsDay("2026-11-02", dir)).rejects.toThrow(
+      "cursor lost",
+    );
+
+    expect(readdirSync(dir)).toEqual(["events-2026-11-02.jsonl.gz"]);
+    expect(readFileSync(file).equals(previous)).toBe(true);
+  });
+
+  it("writes no file when the first read fails", async () => {
+    const failing: AsyncIterable<IAnalyticsEvent> = {
+      [Symbol.asyncIterator]: () => ({
+        next: () => Promise.reject(new Error("connection refused")),
+      }),
+    };
+    stream.mockReturnValueOnce(failing);
+    await expect(exportAnalyticsDay("2026-11-02", dir)).rejects.toThrow(
+      "connection refused",
+    );
+    expect(readdirSync(dir)).toEqual([]);
+  });
+
   it("rejects an invalid day before touching the database", async () => {
     await expect(exportAnalyticsDay("2026-13-01", dir)).rejects.toThrow(
       /YYYY-MM-DD/,
