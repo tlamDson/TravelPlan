@@ -283,13 +283,13 @@ export default function SignUpPage() {
           {/* Terms */}
           <p className="mt-4 text-center text-xs text-muted-foreground">
             By signing up, you agree to our{" "}
-            <a href="#" className="text-primary hover:underline">
+            <Link to="/terms" className="text-primary hover:underline">
               Terms
-            </a>{" "}
+            </Link>{" "}
             and{" "}
-            <a href="#" className="text-primary hover:underline">
+            <Link to="/privacy" className="text-primary hover:underline">
               Privacy Policy
-            </a>
+            </Link>
           </p>
 
           {/* Sign In Link */}
