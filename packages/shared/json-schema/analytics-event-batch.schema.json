@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "events": {
+      "minItems": 1,
+      "maxItems": 50,
+      "type": "array",
+      "items": {}
+    }
+  },
+  "required": [
+    "events"
+  ]
+}
