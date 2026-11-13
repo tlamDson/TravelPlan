@@ -37,6 +37,16 @@ Experimentation toolkit for TravelPlan (B2 plan). This first version has:
   (additive error; trend none/additive/damped; season none/additive) and ARIMA
   (`d` by KPSS, `p+q <= 2`, seasonal AR `P <= 1`) choose a candidate by AICc.
   ETS and ARIMA need the `[forecast]` extra (`statsmodels`); `[dev]` includes it.
+- `r/` (optional): an R `testthat` suite that recomputes every G-ref Welch,
+  CUPED and delta case with base R (`t.test`, `cov`, `pnorm`) and requires
+  `|R - golden| <= 1e-8` on every expected key. Needs R with `testthat` and
+  `jsonlite`; run `Rscript analytics/abkit/r/run.R`. `tests/test_r_crosscheck.py`
+  runs it when `Rscript` is found (`ABKIT_RSCRIPT`, `PATH`, or
+  `C:/Program Files/R`) and skips otherwise, so CI (no R) skips it; it also
+  skips when `testthat` or `jsonlite` is missing. `test-mutations.R` proves the
+  suite goes red on broken R code (pooled t-test, swapped groups, CUPED with
+  `theta` from control only or `theta = 0`, delta without the covariance term
+  or with a fixed alpha) and on golden answers shifted by 1e-7.
 
 ```bash
 python -m venv analytics/.venv
