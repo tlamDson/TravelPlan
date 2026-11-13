@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { queryKeys } from "@/lib/query-client";
 import { apiClient } from "@/lib/axios";
 import type { Trip } from "../api/trips.api";
+import { track } from "@/features/analytics";
 
 interface ReorderParams {
   tripId: string;
@@ -79,7 +80,8 @@ export function useReorderActivities() {
       toast.error("Failed to save new order. Changes reverted.");
     },
 
-    onSuccess: (newItinerary, { tripId }) => {
+    onSuccess: (newItinerary, { tripId, dayIndex }) => {
+      track("itinerary_edited", { tripId, editType: "reorder", dayIndex });
       // Sync server truth into the cache
       queryClient.setQueryData<Trip>(queryKeys.trips.detail(tripId), (old) => {
         if (!old) return old;

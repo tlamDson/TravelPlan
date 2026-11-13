@@ -25,7 +25,10 @@ beforeEach(() => {
 async function openDialog() {
   const user = userEvent.setup();
   renderWithProviders(
-    <CreateTripDialog trigger={<button>Open wizard</button>} />,
+    <CreateTripDialog
+      entryPoint="dashboard"
+      trigger={<button>Open wizard</button>}
+    />,
   );
   await user.click(screen.getByRole("button", { name: "Open wizard" }));
   return user;

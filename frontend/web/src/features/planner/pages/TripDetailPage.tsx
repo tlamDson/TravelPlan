@@ -13,6 +13,7 @@ import {
   useRegenActivity,
 } from "@/features/planner/hooks";
 import { useLoadNextChunk } from "@/features/planner/hooks/useLoadNextChunk";
+import { useTrackTripViewed } from "@/features/planner/hooks/useTrackTripViewed";
 import {
   DndContext,
   PointerSensor,
@@ -56,6 +57,7 @@ export default function TripDetailPage() {
   const { tripId } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   const { data: trip, isLoading, error } = useTrip(tripId);
+  useTrackTripViewed(trip?._id);
   const { language, t, currency: preferredCurrency } = useTranslationStore();
   const queryClient = useQueryClient();
   const { mutate: updateLifecycle, isPending: isUpdatingLifecycle } =

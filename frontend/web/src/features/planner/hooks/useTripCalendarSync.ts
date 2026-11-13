@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { isVipUser } from "@/lib/vip-check";
+import { track } from "@/features/analytics";
 import { syncTripToCalendar } from "../api/calendar.api";
 
 const SESSION_KEY = "travelplan_pending_calendar_sync_trip";
@@ -33,6 +34,8 @@ export function useTripCalendarSync(tripId: string | undefined) {
   const { mutate: syncCalendar, isPending: isSyncing } = useMutation({
     mutationFn: () => syncTripToCalendar(tripId!),
     onSuccess: (data) => {
+      // The server queues the sync; this marks the request as accepted.
+      track("calendar_synced", { tripId: tripId!, provider: "google" });
       toast.success(
         data.message ??
           "Đang đồng bộ lên Google Calendar... Sự kiện sẽ xuất hiện trong ít phút!",

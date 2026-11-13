@@ -20,6 +20,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useEffect, type ReactNode } from "react";
 import { registerAuthTokenGetter } from "@/lib/axios";
 import { UpgradeModal } from "@/components/pro/UpgradeModal";
+import { AnalyticsIdentity } from "@/features/analytics";
 
 // Get Clerk publishable key from environment
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -47,6 +48,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         signUpFallbackRedirectUrl="/onboarding"
       >
         <ClerkTokenBridge />
+        <AnalyticsIdentity />
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <TooltipProvider>

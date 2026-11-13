@@ -98,6 +98,7 @@ export default function TripsPage() {
             <p className="text-muted-foreground">{t("trips.pageSubtitle")}</p>
           </div>
           <CreateTripDialog
+            entryPoint="trip_list"
             trigger={
               <Button data-testid="trips-new-trip-button">
                 <Plus className="h-4 w-4 mr-2" />
@@ -211,6 +212,7 @@ export default function TripsPage() {
               </p>
               {!search && statusFilter === "all" && (
                 <CreateTripDialog
+                  entryPoint="trip_list"
                   trigger={
                     <Button data-testid="trips-empty-create-button">
                       <Plus className="h-4 w-4 mr-2" />
