@@ -138,7 +138,9 @@ backend/test-db.js
 # measure-pipeline.ts --harvest output — may contain harvested production job data
 backend/.pipeline-snapshot.json
 # analytics:export output (hashed, but event logs stay out of git)
-analytics/data/
+analytics/data/*
+# ...except the compact GitHub Actions panel (public repo data, B2 plan PR 18)
+!analytics/data/actions_panel/
 # Python (analytics/, services/): per-worktree venvs and tool caches
 analytics/.venv/
 services/**/.venv/

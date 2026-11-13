@@ -61,7 +61,7 @@ def add_actions_panel(commands) -> None:
     panel.add_argument("--end", default="2022-12", help="last panel month")
     panel.add_argument("--min-stars", type=int, default=100)
     panel.add_argument("--max-stars", type=int, default=2000)
-    panel.add_argument("--frame-pages", type=int, default=1, help="search pages per month")
+    panel.add_argument("--frame-pages", type=int, default=3, help="search pages per month")
     panel.add_argument("--max-pr-pages", type=int, default=30, help="PR pages per repo")
     panel.add_argument("--record", action="store_true", help="append the summary to runs.csv")
     panel.add_argument("--pr", default="")

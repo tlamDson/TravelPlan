@@ -33,7 +33,7 @@ class BuildConfig:
     out_dir: Path
     min_stars: int = 100
     max_stars: int = 2000
-    frame_pages: int = 1
+    frame_pages: int = 3
     max_pr_pages: int = 30
 
     def __post_init__(self) -> None:
