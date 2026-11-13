@@ -538,6 +538,24 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.workerAlive": "Worker alive",
     "reliability.signals.workerDown": "Worker down",
     "reliability.signals.stalledCount": "Stalled jobs",
+
+    // Landing page
+    "landing.hero.tagline":
+      "AI drafts your itinerary. You stay in control.",
+    "landing.highlights.title":
+      "Built to take the stress out of trip planning",
+    "landing.highlights.research.title":
+      "Less research",
+    "landing.highlights.research.body":
+      "Tell the AI where you are going and what you like. It drafts a day-by-day itinerary that you can edit.",
+    "landing.highlights.places.title":
+      "Places that exist",
+    "landing.highlights.places.body":
+      "Suggested places are checked against Google Places and Mapbox before they reach your plan.",
+    "landing.highlights.budget.title":
+      "Budget in view",
+    "landing.highlights.budget.body":
+      "Track expenses and set limits right next to your itinerary.",
     ...LANDING_INFO_TRANSLATIONS.en,
   },
   French: {
@@ -1074,6 +1092,24 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.workerAlive": "Worker actif",
     "reliability.signals.workerDown": "Worker arrêté",
     "reliability.signals.stalledCount": "Tâches bloquées",
+
+    // Landing page
+    "landing.hero.tagline":
+      "L'IA rédige votre itinéraire. Vous gardez le contrôle.",
+    "landing.highlights.title":
+      "Conçu pour rendre la planification de voyage plus sereine",
+    "landing.highlights.research.title":
+      "Moins de recherches",
+    "landing.highlights.research.body":
+      "Dites à l'IA où vous allez et ce que vous aimez. Elle rédige un itinéraire jour par jour que vous pouvez modifier.",
+    "landing.highlights.places.title":
+      "Des lieux qui existent",
+    "landing.highlights.places.body":
+      "Les lieux suggérés sont vérifiés auprès de Google Places et Mapbox avant d'arriver dans votre plan.",
+    "landing.highlights.budget.title":
+      "Budget sous contrôle",
+    "landing.highlights.budget.body":
+      "Suivez vos dépenses et fixez des limites directement à côté de votre itinéraire.",
     ...LANDING_INFO_TRANSLATIONS.fr,
   },
   Vietnamese: {
@@ -1597,6 +1633,24 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "reliability.signals.workerAlive": "Worker đang sống",
     "reliability.signals.workerDown": "Worker đã chết",
     "reliability.signals.stalledCount": "Job bị kẹt",
+
+    // Landing page
+    "landing.hero.tagline":
+      "AI soạn lịch trình cho bạn. Bạn vẫn là người quyết định.",
+    "landing.highlights.title":
+      "Giúp việc lên kế hoạch du lịch bớt căng thẳng",
+    "landing.highlights.research.title":
+      "Đỡ mất công tìm hiểu",
+    "landing.highlights.research.body":
+      "Cho AI biết bạn đi đâu và thích gì. AI soạn lịch trình từng ngày để bạn chỉnh sửa.",
+    "landing.highlights.places.title":
+      "Địa điểm có thật",
+    "landing.highlights.places.body":
+      "Các địa điểm được gợi ý sẽ được kiểm tra với Google Places và Mapbox trước khi vào kế hoạch của bạn.",
+    "landing.highlights.budget.title":
+      "Ngân sách trong tầm mắt",
+    "landing.highlights.budget.body":
+      "Theo dõi chi tiêu và đặt hạn mức ngay cạnh lịch trình của bạn.",
     ...LANDING_INFO_TRANSLATIONS.vi,
   },
 };
