@@ -14,6 +14,7 @@ import { apiClient } from "@/lib/axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-client";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import type { Trip } from "../api/trips.api";
 import type { ItineraryDay } from "@/utils/schemas";
 
@@ -70,10 +71,10 @@ export function useLoadNextChunk(
         setNextChunkIndex((prev) => prev + 1);
       } else {
         // Chunk not ready yet — backend is still generating
-        toast.info("Loading more days... please try again in a few seconds.");
+        toast.info(toastT("toast.trip.loadingMore"));
       }
     } catch {
-      toast.error("Could not load more days. Please try again.");
+      toast.error(toastT("toast.trip.loadMoreFailed"));
     } finally {
       setIsLoadingChunk(false);
     }

@@ -6,6 +6,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { queryKeys } from "@/lib/query-client";
 import { createTripFromWizard } from "../api/trip-wizard.api";
 import type { TripPreferences } from "@travelplan/shared";
@@ -57,11 +58,11 @@ export function useTripWizard(options: UseTripWizardOptions = {}) {
               : null,
         });
       }
-      toast.success("Trip queued! Your agent is getting started.");
+      toast.success(toastT("toast.trip.wizardQueued"));
       options.onSuccess?.(response.tripId, response.jobId);
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to start trip generation");
+      toast.error(error.message || toastT("toast.trip.wizardFailed"));
     },
   });
 }

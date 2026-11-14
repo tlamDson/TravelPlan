@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { toastT } from "@/lib/toast-i18n";
 import { useParams, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +44,7 @@ export default function AIAssistantPage() {
       sessionId: sessionId || "",
       onError: (error) => {
         toast({
-          title: "Error",
+          title: toastT("toast.assistant.errorTitle"),
           description: error.message,
           variant: "destructive",
         });
@@ -65,8 +66,8 @@ export default function AIAssistantPage() {
       }`;
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to create chat session",
+        title: toastT("toast.assistant.errorTitle"),
+        description: toastT("toast.assistant.createSessionFailed"),
         variant: "destructive",
       });
     }
@@ -81,8 +82,8 @@ export default function AIAssistantPage() {
       window.location.href = "/assistant";
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to delete chat session",
+        title: toastT("toast.assistant.errorTitle"),
+        description: toastT("toast.assistant.deleteSessionFailed"),
         variant: "destructive",
       });
     }

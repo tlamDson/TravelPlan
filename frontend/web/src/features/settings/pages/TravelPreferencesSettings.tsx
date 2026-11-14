@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 import {
   getUserPreferences,
@@ -53,7 +54,8 @@ export function TravelPreferencesSettings() {
 
   const [focus, setFocus] = useState<FocusKey[]>([]);
   const [groupType, setGroupType] = useState<GroupTypeKey | null>(null);
-  const [transportMode, setTransportMode] = useState<TransportModeKey>("walking");
+  const [transportMode, setTransportMode] =
+    useState<TransportModeKey>("walking");
   const [pace, setPace] = useState<"relaxed" | "balanced" | "packed">(
     "balanced",
   );
@@ -145,9 +147,9 @@ export function TravelPreferencesSettings() {
         loyaltyMarriott,
         loyaltyHertz,
       });
-      toast.success("Travel preferences saved");
+      toast.success(toastT("toast.settings.preferencesSaved"));
     } catch {
-      toast.error("Failed to save preferences");
+      toast.error(toastT("toast.settings.preferencesFailed"));
     }
   };
 
@@ -156,14 +158,18 @@ export function TravelPreferencesSettings() {
   };
 
   const handleResetToOnboarding = () => {
-    const redirect = encodeURIComponent("/dashboard?openSettings=true&settingsTab=preferences");
+    const redirect = encodeURIComponent(
+      "/dashboard?openSettings=true&settingsTab=preferences",
+    );
     navigate(`/onboarding?mode=reset&redirect=${redirect}`);
   };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h3 className="text-2xl font-bold tracking-tight">{t("pref.pageTitle")}</h3>
+        <h3 className="text-2xl font-bold tracking-tight">
+          {t("pref.pageTitle")}
+        </h3>
         <p className="text-muted-foreground mt-1">{t("pref.pageSubtitle")}</p>
       </div>
 
@@ -171,7 +177,9 @@ export function TravelPreferencesSettings() {
 
       <form className="space-y-10">
         <section className="space-y-4">
-          <h4 className="text-sm font-semibold text-foreground">AI Trip Defaults</h4>
+          <h4 className="text-sm font-semibold text-foreground">
+            AI Trip Defaults
+          </h4>
 
           <div className="space-y-2">
             <Label>Focus (max 3)</Label>
@@ -276,7 +284,10 @@ export function TravelPreferencesSettings() {
               <Switch
                 checked={constraints.foodAsMainActivities}
                 onCheckedChange={(v) =>
-                  setConstraints((prev) => ({ ...prev, foodAsMainActivities: v }))
+                  setConstraints((prev) => ({
+                    ...prev,
+                    foodAsMainActivities: v,
+                  }))
                 }
               />
             </div>
@@ -286,7 +297,9 @@ export function TravelPreferencesSettings() {
             <Label>Special Requirements</Label>
             <Textarea
               value={specialRequirements}
-              onChange={(e) => setSpecialRequirements(e.target.value.slice(0, 400))}
+              onChange={(e) =>
+                setSpecialRequirements(e.target.value.slice(0, 400))
+              }
               placeholder="Dietary, accessibility, health, kid-friendly needs..."
               rows={4}
             />
@@ -358,12 +371,30 @@ export function TravelPreferencesSettings() {
         </section>
 
         <section className="space-y-4">
-          <h4 className="text-sm font-semibold text-foreground">Loyalty Programs</h4>
+          <h4 className="text-sm font-semibold text-foreground">
+            Loyalty Programs
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input placeholder="Delta SkyMiles" value={loyaltyDelta} onChange={(e) => setLoyaltyDelta(e.target.value)} />
-            <Input placeholder="United MileagePlus" value={loyaltyUnited} onChange={(e) => setLoyaltyUnited(e.target.value)} />
-            <Input placeholder="Marriott Bonvoy" value={loyaltyMarriott} onChange={(e) => setLoyaltyMarriott(e.target.value)} />
-            <Input placeholder="Hertz Gold Plus" value={loyaltyHertz} onChange={(e) => setLoyaltyHertz(e.target.value)} />
+            <Input
+              placeholder="Delta SkyMiles"
+              value={loyaltyDelta}
+              onChange={(e) => setLoyaltyDelta(e.target.value)}
+            />
+            <Input
+              placeholder="United MileagePlus"
+              value={loyaltyUnited}
+              onChange={(e) => setLoyaltyUnited(e.target.value)}
+            />
+            <Input
+              placeholder="Marriott Bonvoy"
+              value={loyaltyMarriott}
+              onChange={(e) => setLoyaltyMarriott(e.target.value)}
+            />
+            <Input
+              placeholder="Hertz Gold Plus"
+              value={loyaltyHertz}
+              onChange={(e) => setLoyaltyHertz(e.target.value)}
+            />
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -373,7 +404,10 @@ export function TravelPreferencesSettings() {
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
               <Label>{t("pref.avoidTraffic")}</Label>
-              <Switch checked={avoidTraffic} onCheckedChange={setAvoidTraffic} />
+              <Switch
+                checked={avoidTraffic}
+                onCheckedChange={setAvoidTraffic}
+              />
             </div>
           </div>
         </section>

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -55,7 +56,7 @@ export function SecuritySettings() {
         Array.isArray((error as { errors: { message?: string }[] }).errors)
           ? (error as { errors: { message?: string }[] }).errors[0]?.message
           : undefined;
-      toast.error(clerkMsg || "Failed to update password");
+      toast.error(clerkMsg || toastT("toast.settings.passwordFailed"));
     } finally {
       setIsUpdatingPassword(false);
     }

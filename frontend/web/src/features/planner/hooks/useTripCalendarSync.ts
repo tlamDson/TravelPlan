@@ -6,6 +6,7 @@ import { useUser } from "@clerk/clerk-react";
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { isVipUser } from "@/lib/vip-check";
 import { track } from "@/features/analytics";
 import { syncTripToCalendar } from "../api/calendar.api";
@@ -36,11 +37,9 @@ export function useTripCalendarSync(tripId: string | undefined) {
     onSuccess: (data) => {
       // The server queues the sync; this marks the request as accepted.
       track("calendar_synced", { tripId: tripId!, provider: "google" });
-      toast.success(
-        data.message ??
-          "Syncing to Google Calendar... Events will appear in a few minutes!",
-        { duration: 6000 },
-      );
+      toast.success(data.message ?? toastT("toast.calendar.syncing"), {
+        duration: 6000,
+      });
     },
     onError: (err: unknown) => {
       const e = err as {
@@ -51,16 +50,14 @@ export function useTripCalendarSync(tripId: string | undefined) {
       };
       const code = e?.response?.data?.code;
       if (code === "GOOGLE_NOT_CONNECTED") {
-        toast.error(
-          "Please sign in with a Google account to use calendar sync.",
-          { duration: 8000 },
-        );
+        toast.error(toastT("toast.calendar.needGoogleSignIn"), {
+          duration: 8000,
+        });
         return;
       }
       if (code === "CALENDAR_VIP_ONLY" || code === "CALENDAR_VIP_REQUIRED") {
         toast.error(
-          e?.response?.data?.message ??
-            "Calendar sync is not enabled for this account.",
+          e?.response?.data?.message ?? toastT("toast.calendar.notEnabled"),
           { duration: 6000 },
         );
         return;
@@ -69,7 +66,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
         return;
       }
       toast.error(
-        e?.response?.data?.message ?? "Could not sync to Google Calendar.",
+        e?.response?.data?.message ?? toastT("toast.calendar.syncFailed"),
       );
     },
   });
@@ -88,7 +85,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
   const handleSync = useCallback(async () => {
     if (!tripId) return;
     if (!user) {
-      toast.error("Please sign in.");
+      toast.error(toastT("toast.calendar.signIn"));
       return;
     }
     const email = user.primaryEmailAddress?.emailAddress;
@@ -105,18 +102,14 @@ export function useTripCalendarSync(tripId: string | undefined) {
     ) as ExternalAccountWithReauthorize | undefined;
 
     if (!google) {
-      toast.error(
-        "Please link a Google account (sign in with Google) to sync your calendar.",
-        { duration: 8000 },
-      );
+      toast.error(toastT("toast.calendar.linkGoogle"), { duration: 8000 });
       return;
     }
 
     if (typeof google.reauthorize !== "function") {
-      toast.error(
-        "Could not request additional Calendar permissions from this browser. Update @clerk/clerk-react or check your Clerk configuration.",
-        { duration: 8000 },
-      );
+      toast.error(toastT("toast.calendar.permissionUnavailable"), {
+        duration: 8000,
+      });
       return;
     }
 
@@ -140,7 +133,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
       const msg =
         clerkErr?.errors?.[0]?.message ??
         clerkErr?.message ??
-        "Could not grant Google Calendar access.";
+        toastT("toast.calendar.accessFailed");
       toast.error(msg, { duration: 8000 });
     }
   }, [tripId, user, syncCalendar]);

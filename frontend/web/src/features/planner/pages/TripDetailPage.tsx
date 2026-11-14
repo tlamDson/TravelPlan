@@ -43,6 +43,7 @@ import { DataError } from "@/components/DataError";
 import { PageLoader } from "@/components/PageLoader";
 import { retryJob, cancelJob } from "../api/jobs.api";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { CalendarDays, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -169,12 +170,12 @@ export default function TripDetailPage() {
       const result = await retryJob(activeJobId);
       setActiveJobId(result.jobId);
       setJobError(null);
-      toast.success("Retry queued. The agent is working again.");
+      toast.success(toastT("toast.trip.retryQueued"));
     } catch (retryError: unknown) {
       const message =
         retryError instanceof Error
           ? retryError.message
-          : "Failed to retry trip generation";
+          : toastT("toast.trip.retryFailed");
       setJobError(message);
       toast.error(message);
     } finally {
@@ -185,7 +186,7 @@ export default function TripDetailPage() {
   const { mutate: cancelTripJob, isPending: isCancelling } = useMutation({
     mutationFn: (id: string) => cancelJob(id),
     onSuccess: () => {
-      toast.success("Trip generation cancelled.");
+      toast.success(toastT("toast.trip.cancelled"));
       setActiveJobId(null);
       clearActiveJob();
       if (tripId) {
@@ -203,7 +204,7 @@ export default function TripDetailPage() {
         typeof (data as { message: unknown }).message === "string"
           ? (data as { message: string }).message
           : "";
-      toast.error(msg || "Failed to cancel trip generation.");
+      toast.error(msg || toastT("toast.trip.cancelFailed"));
     },
   });
 
@@ -244,9 +245,10 @@ export default function TripDetailPage() {
         queryKey: queryKeys.trips.detail(tripId),
       });
       toast.success(
-        t("trip.reGeocodeSuccess")
-          .replace("{updated}", String(res.data.updated))
-          .replace("{failed}", String(res.data.failed)),
+        toastT("trip.reGeocodeSuccess", {
+          updated: res.data.updated,
+          failed: res.data.failed,
+        }),
         { id: toastId },
       );
     } catch {

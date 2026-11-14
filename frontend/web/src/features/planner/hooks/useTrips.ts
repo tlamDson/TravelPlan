@@ -6,6 +6,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { queryKeys } from "@/lib/query-client";
 import { track } from "@/features/analytics";
 import * as tripsApi from "../api/trips.api";
@@ -57,10 +58,10 @@ export function useCreateTrip() {
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
       // Pre-populate the detail cache
       queryClient.setQueryData(queryKeys.trips.detail(newTrip._id), newTrip);
-      toast.success("Trip created successfully!");
+      toast.success(toastT("toast.trip.created"));
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to create trip");
+      toast.error(error.message || toastT("toast.trip.createFailed"));
     },
   });
 }
@@ -87,10 +88,10 @@ export function useUpdateTrip() {
         updatedTrip,
       );
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
-      toast.success("Trip updated!");
+      toast.success(toastT("toast.trip.updated"));
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to update trip");
+      toast.error(error.message || toastT("toast.trip.updateFailed"));
     },
   });
 }
@@ -107,10 +108,10 @@ export function useDeleteTrip() {
       // Remove from cache
       queryClient.removeQueries({ queryKey: queryKeys.trips.detail(tripId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
-      toast.success("Trip deleted");
+      toast.success(toastT("toast.trip.deleted"));
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to delete trip");
+      toast.error(error.message || toastT("toast.trip.deleteFailed"));
     },
   });
 }
@@ -173,7 +174,7 @@ export function useUpdateBudget() {
           context.previousTrip,
         );
       }
-      toast.error("Failed to update budget");
+      toast.error(toastT("toast.trip.budgetFailed"));
     },
     onSettled: (_, __, { tripId }) => {
       // Refetch to ensure sync
@@ -207,12 +208,16 @@ export function useUpdateTripLifecycle() {
       );
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
       toast.success(
-        `Trip marked as ${updatedTrip.lifecycle.replace("_", " ").toLowerCase()}`,
+        toastT("toast.trip.lifecycleChanged", {
+          status: toastT(
+            `trip.lifecycle_${updatedTrip.lifecycle.toLowerCase()}`,
+          ),
+        }),
       );
     },
     onError: (error: Error) => {
       console.error("[lifecycle] ❌ Error:", error.message);
-      toast.error(error.message || "Failed to update trip status");
+      toast.error(error.message || toastT("toast.trip.lifecycleFailed"));
     },
   });
 }

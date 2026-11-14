@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 
 // Google Icon SVG with brand colors
 const GoogleIcon = () => (
@@ -85,7 +86,7 @@ export default function SignInPage() {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        toast.success("Welcome back!");
+        toast.success(toastT("toast.auth.welcomeBack"));
         navigate("/dashboard");
       }
     } catch (error: unknown) {
@@ -94,7 +95,8 @@ export default function SignInPage() {
       };
 
       toast.error(
-        clerkError.errors?.[0]?.message || "Invalid email or password",
+        clerkError.errors?.[0]?.message ||
+          toastT("toast.auth.invalidCredentials"),
       );
     } finally {
       setIsSubmitting(false);
@@ -114,7 +116,7 @@ export default function SignInPage() {
         redirectUrlComplete: "/dashboard",
       });
     } catch {
-      toast.error("Failed to sign in with Google. Please try again.");
+      toast.error(toastT("toast.auth.googleSignInFailed"));
     }
   };
 
@@ -185,7 +187,7 @@ export default function SignInPage() {
                   type="button"
                   className="text-sm text-primary hover:underline"
                   onClick={() =>
-                    toast.info("Password reset feature coming soon!")
+                    toast.info(toastT("toast.auth.resetComingSoon"))
                   }
                 >
                   Forgot password?

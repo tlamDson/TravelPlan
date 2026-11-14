@@ -12,6 +12,7 @@ import { Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 
 // Feature-specific imports
 import {
@@ -75,7 +76,7 @@ export default function SignUpPage() {
     // Password rules enforced in Zod (signUpFormSchema); keep breach guard before API
     const strength = checkPasswordStrength(data.password);
     if (!strength.checks.notCommon || strength.score < 3) {
-      toast.error("Please fix password strength before continuing.");
+      toast.error(toastT("toast.auth.passwordStrength"));
       return;
     }
 
@@ -111,13 +112,15 @@ export default function SignUpPage() {
         setUserEmail(data.email);
         setResendCooldown(RESEND_COOLDOWN);
         setPendingVerification(true);
-        toast.info("Check your email for a verification code");
+        toast.info(toastT("toast.auth.checkEmail"));
         return;
       }
 
       // Any unhandled status — surface to user instead of staying stuck
       toast.error(
-        `Unexpected sign-up status: ${result.status}. Please try again.`,
+        toastT("toast.auth.unexpectedStatus", {
+          status: result.status ?? "unknown",
+        }),
       );
     } catch (error: unknown) {
       const clerkError = error as ClerkError;
@@ -131,7 +134,7 @@ export default function SignUpPage() {
         setSignUpError({ field: errorField, message: friendlyMessage });
         toast.error(friendlyMessage);
       } else {
-        toast.error("Failed to create account. Please try again.");
+        toast.error(toastT("toast.auth.signUpFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -153,7 +156,7 @@ export default function SignUpPage() {
       });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        toast.success("Account created! Welcome to TravelPlan.");
+        toast.success(toastT("toast.auth.accountCreated"));
         navigate("/onboarding");
       }
     } catch (error: unknown) {
@@ -174,10 +177,12 @@ export default function SignUpPage() {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setResendCooldown(RESEND_COOLDOWN);
       setVerificationError("");
-      toast.success("Verification code sent!");
+      toast.success(toastT("toast.auth.codeSent"));
     } catch (error: unknown) {
       const clerkError = error as ClerkError;
-      toast.error(clerkError.errors?.[0]?.message || "Failed to resend code");
+      toast.error(
+        clerkError.errors?.[0]?.message || toastT("toast.auth.resendFailed"),
+      );
     }
   };
 
@@ -200,7 +205,7 @@ export default function SignUpPage() {
         redirectUrlComplete: "/onboarding",
       });
     } catch {
-      toast.error("Failed to sign up with Google. Please try again.");
+      toast.error(toastT("toast.auth.googleSignUpFailed"));
     }
   };
 
