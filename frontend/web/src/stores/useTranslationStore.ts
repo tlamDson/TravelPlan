@@ -182,6 +182,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.currentPassword": "Current Password",
     "security.newPassword": "New Password",
     "security.btnCancel": "Cancel",
+    "security.revokeConfirmTitle": "Sign out this device?",
+    "security.revokeConfirmDesc":
+      '"{device}" will be signed out of your account. You will need to sign in again on it.',
     "security.btnSavePassword": "Save Password",
     "security.externalProvider":
       "Your account is managed by an external provider (e.g., Google).",
@@ -752,6 +755,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.currentPassword": "Mot de passe actuel",
     "security.newPassword": "Nouveau mot de passe",
     "security.btnCancel": "Annuler",
+    "security.revokeConfirmTitle": "Déconnecter cet appareil ?",
+    "security.revokeConfirmDesc":
+      '"{device}" sera déconnecté de votre compte. Vous devrez vous reconnecter sur cet appareil.',
     "security.btnSavePassword": "Enregistrer le mot de passe",
     "security.externalProvider":
       "Votre compte est géré par un fournisseur externe (ex: Google).",
@@ -1335,6 +1341,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.currentPassword": "Mật khẩu hiện tại",
     "security.newPassword": "Mật khẩu mới",
     "security.btnCancel": "Hủy bỏ",
+    "security.revokeConfirmTitle": "Đăng xuất thiết bị này?",
+    "security.revokeConfirmDesc":
+      '"{device}" sẽ bị đăng xuất khỏi tài khoản của bạn. Bạn cần đăng nhập lại trên thiết bị đó.',
     "security.btnSavePassword": "Lưu mật khẩu",
     "security.externalProvider":
       "Tài khoản của bạn được quản lý bởi nhà cung cấp bên ngoài (ví dụ: Google).",

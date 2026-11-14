@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { useTranslationStore } from "@/stores/useTranslationStore";
@@ -77,15 +77,35 @@ describe("DeviceSessions", () => {
     expect(findEnglishLeaks(container, "Vietnamese")).toEqual([]);
   });
 
-  it("offers revoke only for other sessions and calls Clerk", async () => {
+  it("offers revoke only for other sessions", async () => {
     renderWithProviders(<DeviceSessions />);
     await screen.findByText(/Safari/);
-    const buttons = screen.getAllByRole("button", { name: "Thu hồi" });
-    expect(buttons).toHaveLength(1);
-    await userEvent
-      .setup({ advanceTimers: vi.advanceTimersByTime })
-      .click(buttons[0]);
+    expect(screen.getAllByRole("button", { name: "Thu hồi" })).toHaveLength(1);
+  });
+
+  it("asks for confirmation and revokes only after confirming", async () => {
+    renderWithProviders(<DeviceSessions />);
+    await screen.findByText(/Safari/);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    await user.click(screen.getByRole("button", { name: "Thu hồi" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText(/Safari/)).toBeInTheDocument();
+    expect(revokeOther).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole("button", { name: "Thu hồi" }));
     await waitFor(() => expect(revokeOther).toHaveBeenCalledTimes(1));
+  });
+
+  it("does not revoke when the confirmation is cancelled", async () => {
+    renderWithProviders(<DeviceSessions />);
+    await screen.findByText(/Safari/);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    await user.click(screen.getByRole("button", { name: "Thu hồi" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "Hủy bỏ" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(revokeOther).not.toHaveBeenCalled();
   });
 
   it("shows a localized error when sessions cannot be loaded", async () => {
