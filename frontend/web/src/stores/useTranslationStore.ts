@@ -513,6 +513,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Map View
     "map.viewOnMap": "View on Map",
+    "hours.open24h": "Open 24 hours",
+    "hours.closed": "Closed",
     "map.day": "Day",
     "map.activities": "activities",
     "map.noCoords": "No location data for this trip",
@@ -1086,6 +1088,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Map View
     "map.viewOnMap": "Voir sur la carte",
+    "hours.open24h": "Ouvert 24h/24",
+    "hours.closed": "Fermé",
     "map.day": "Jour",
     "map.activities": "activités",
     "map.noCoords": "Aucune donnée de localisation pour ce voyage",
@@ -1655,6 +1659,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Map View
     "map.viewOnMap": "Xem trên bản đồ",
+    "hours.open24h": "Mở cửa 24 giờ",
+    "hours.closed": "Đóng cửa",
     "map.day": "Ngày",
     "map.activities": "hoạt động",
     "map.noCoords": "Không có dữ liệu vị trí cho chuyến đi này",

@@ -31,6 +31,9 @@ const GOOGLE_PLACE = {
   categories: ["tourist_attraction"],
   photoUrl: "https://cdn.example.com/old-quarter.jpg",
   openingHoursArray: ["Monday: 9:00 AM – 5:00 PM"],
+  openingPeriods: [
+    { open: { day: 1, hour: 9, minute: 0 }, close: { day: 1, hour: 17, minute: 0 } },
+  ],
 };
 
 beforeEach(() => {
@@ -76,6 +79,7 @@ describe("validationService.validateIntent — cache hit restores all rendered f
       confidence: 0.95,
       photoUrl: "https://cdn.example.com/old-quarter.jpg",
       openingHoursArray: ["Monday: 9:00 AM – 5:00 PM"],
+      openingPeriods: GOOGLE_PLACE.openingPeriods,
       rating: 4.5,
     });
 
@@ -87,6 +91,7 @@ describe("validationService.validateIntent — cache hit restores all rendered f
     expect(result?.source).toBe("cache");
     expect(result?.photoUrl).toBe("https://cdn.example.com/old-quarter.jpg");
     expect(result?.openingHoursArray).toEqual(["Monday: 9:00 AM – 5:00 PM"]);
+    expect(result?.openingPeriods).toEqual(GOOGLE_PLACE.openingPeriods);
   });
 });
 
@@ -98,6 +103,15 @@ describe("validationService.validateIntent — writes photoUrl/openingHoursArray
     const cacheData = upsert.mock.calls[0]?.[1];
     expect(cacheData.photoUrl).toBe("https://cdn.example.com/old-quarter.jpg");
     expect(cacheData.openingHoursArray).toEqual(["Monday: 9:00 AM – 5:00 PM"]);
+    expect(cacheData.openingPeriods).toEqual(GOOGLE_PLACE.openingPeriods);
+  });
+
+  it("returns openingPeriods on the result of a fresh Google match", async () => {
+    const result = await validationService.validateIntent(
+      "Old Quarter",
+      "Hanoi, Vietnam",
+    );
+    expect(result?.openingPeriods).toEqual(GOOGLE_PLACE.openingPeriods);
   });
 });
 

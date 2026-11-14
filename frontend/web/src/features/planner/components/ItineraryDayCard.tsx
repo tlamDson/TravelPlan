@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { ItineraryDay, Activity } from "@/utils/schemas";
 import { getGoogleMapsUrl } from "../utils/maps";
+import { formatOpeningHours } from "../utils/opening-hours";
 import {
   formatDate,
   convertCurrency,
@@ -215,6 +216,7 @@ function ActivityRow({
   const Icon = meta.icon;
   const timeLabel = formatTimeRange(activity.time, derivedEndTime);
   const mealKey = mealLabelKey(activity.notes);
+  const openingHoursText = formatOpeningHours(activity, t);
 
   // Format distance based on user preference
   const formatDistance = (km: number) => {
@@ -361,10 +363,10 @@ function ActivityRow({
           )}
 
           {/* Opening hours */}
-          {activity.openingHours && (
+          {openingHoursText && (
             <div className="flex items-center gap-1 mt-1.5 text-xs text-muted-foreground">
               <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
-              <span className="truncate">{activity.openingHours}</span>
+              <span className="truncate">{openingHoursText}</span>
             </div>
           )}
 
