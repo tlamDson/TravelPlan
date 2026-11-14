@@ -6,6 +6,7 @@ import { queryKeys } from "@/lib/query-client";
 import { trackOnce } from "@/features/analytics";
 import type { Job } from "@/utils/schemas";
 import { toGenerationCompleted } from "../utils/generation-outcome";
+import { getTrip } from "../api/trips.api";
 
 export function GlobalJobWatcher() {
   const { activeJobId, tripId, clearActiveJob } = useActiveJobStore();
@@ -27,17 +28,30 @@ export function GlobalJobWatcher() {
     );
   };
 
+  /**
+   * A finished job does not mean the page has the plan yet: re-fetch the trip
+   * and only announce it once the itinerary is actually there.
+   */
+  const announceWhenLoaded = async (finishedTripId: string) => {
+    try {
+      const trip = await queryClient.fetchQuery({
+        queryKey: queryKeys.trips.detail(finishedTripId),
+        queryFn: () => getTrip(finishedTripId),
+        staleTime: 0,
+      });
+      if (trip.itinerary.length > 0) toast.success("Your trip is ready!");
+    } catch {
+      // The trip page shows its own load error; do not claim success.
+    }
+  };
+
   useJobPoller({
     jobId: activeJobId,
     onComplete: () => {
       trackFinished();
-      toast.success("Your trip is ready!");
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
-      if (tripId) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.trips.detail(tripId),
-        });
-      }
+      if (tripId) void announceWhenLoaded(tripId);
+      else toast.success("Your trip is ready!");
       clearActiveJob();
     },
     onError: (err) => {

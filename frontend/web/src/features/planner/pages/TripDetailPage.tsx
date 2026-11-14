@@ -43,7 +43,7 @@ import { DataError } from "@/components/DataError";
 import { PageLoader } from "@/components/PageLoader";
 import { retryJob, cancelJob } from "../api/jobs.api";
 import { toast } from "sonner";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-client";
@@ -446,6 +446,11 @@ export default function TripDetailPage() {
 
   const totalDays = getTripDuration(trip.startDate, trip.endDate);
   const isFallback = trip?.status === "FALLBACK";
+  // QUEUED has no agent lock yet, so isAgentProcessing alone misses it.
+  const isGenerating =
+    trip.isAgentProcessing ||
+    trip.status === "QUEUED" ||
+    trip.status.startsWith("PROCESSING");
 
   const itineraryDayIndex =
     activeDay != null
@@ -540,7 +545,20 @@ export default function TripDetailPage() {
                 </div>
               )}
 
-              {trip.itinerary.length === 0 ? (
+              {trip.itinerary.length === 0 && isGenerating ? (
+                <div
+                  data-testid="trip-generating-state"
+                  role="status"
+                  aria-live="polite"
+                  className="rounded-xl border border-border bg-muted/30 p-8 text-center"
+                >
+                  <Loader2 className="h-8 w-8 mx-auto mb-3 animate-spin text-muted-foreground" />
+                  <p className="font-medium mb-1">{t("trip.generating")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("trip.generatingDesc")}
+                  </p>
+                </div>
+              ) : trip.itinerary.length === 0 ? (
                 <div className="rounded-xl border border-border bg-muted/30 p-8 text-center transition-shadow duration-200">
                   <CalendarDays className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
                   <p className="font-medium mb-1">{t("trip.noItinerary")}</p>

@@ -414,6 +414,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.noItineraryDesc":
       "Create a new trip from My Trips and we'll generate the plan for you.",
     "trip.noItineraryCta": "Go to My Trips",
+    "trip.generating": "Generating your itinerary…",
+    "trip.generatingDesc":
+      "This can take a minute. The plan will appear here as soon as it is ready.",
     "trip.delete": "Delete trip",
     "trip.deleteConfirmTitle": 'Delete "{name}"?',
     "trip.deleteConfirmDesc":
@@ -982,6 +985,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.noItineraryDesc":
       "Créez un nouveau voyage depuis Mes voyages et nous générerons le plan pour vous.",
     "trip.noItineraryCta": "Aller à Mes voyages",
+    "trip.generating": "Génération de votre itinéraire…",
+    "trip.generatingDesc":
+      "Cela peut prendre une minute. Le plan apparaîtra ici dès qu'il sera prêt.",
     "trip.delete": "Supprimer",
     "trip.deleteConfirmTitle": 'Supprimer "{name}" ?',
     "trip.deleteConfirmDesc":
@@ -1549,6 +1555,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "trip.noItineraryDesc":
       "Tạo chuyến đi mới từ “Chuyến đi của tôi” và chúng tôi sẽ lập kế hoạch cho bạn.",
     "trip.noItineraryCta": "Đến chuyến đi của tôi",
+    "trip.generating": "Đang tạo lịch trình của bạn…",
+    "trip.generatingDesc":
+      "Việc này có thể mất khoảng một phút. Lịch trình sẽ hiện ở đây ngay khi sẵn sàng.",
     "trip.delete": "Xóa chuyến đi",
     "trip.deleteConfirmTitle": 'Xóa "{name}"?',
     "trip.deleteConfirmDesc":
