@@ -1,0 +1,52 @@
+{
+  "_comment": "Places API (New) searchText place for an always-open venue, shaped per the documented OpeningHours encoding: regularOpeningHours is one open-only period; currentOpeningHours covers the next 7 days with a single truncated period. Proto3 JSON omits zero-valued fields, so day/hour/minute of 0 may be absent.",
+  "places": [
+    {
+      "id": "ChIJ24h",
+      "displayName": { "text": "Ben Thanh Night Market Convenience" },
+      "location": { "latitude": 10.772, "longitude": 106.698 },
+      "types": ["convenience_store"],
+      "regularOpeningHours": {
+        "openNow": true,
+        "periods": [{ "open": { "day": 0, "hour": 0, "minute": 0 } }],
+        "weekdayDescriptions": [
+          "Monday: Open 24 hours",
+          "Tuesday: Open 24 hours",
+          "Wednesday: Open 24 hours",
+          "Thursday: Open 24 hours",
+          "Friday: Open 24 hours",
+          "Saturday: Open 24 hours",
+          "Sunday: Open 24 hours"
+        ]
+      },
+      "currentOpeningHours": {
+        "openNow": true,
+        "periods": [
+          {
+            "open": {
+              "day": 5,
+              "truncated": true,
+              "date": { "year": 2026, "month": 11, "day": 13 }
+            },
+            "close": {
+              "day": 4,
+              "hour": 23,
+              "minute": 59,
+              "truncated": true,
+              "date": { "year": 2026, "month": 11, "day": 19 }
+            }
+          }
+        ],
+        "weekdayDescriptions": [
+          "Monday: Open 24 hours",
+          "Tuesday: Open 24 hours",
+          "Wednesday: Open 24 hours",
+          "Thursday: Open 24 hours",
+          "Friday: Open 24 hours",
+          "Saturday: Open 24 hours",
+          "Sunday: Open 24 hours"
+        ]
+      }
+    }
+  ]
+}
