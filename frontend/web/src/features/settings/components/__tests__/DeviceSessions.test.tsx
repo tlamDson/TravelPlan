@@ -82,9 +82,9 @@ describe("DeviceSessions", () => {
     await screen.findByText(/Safari/);
     const buttons = screen.getAllByRole("button", { name: "Thu hồi" });
     expect(buttons).toHaveLength(1);
-    await userEvent.setup({ advanceTimers: vi.advanceTimersByTime }).click(
-      buttons[0],
-    );
+    await userEvent
+      .setup({ advanceTimers: vi.advanceTimersByTime })
+      .click(buttons[0]);
     await waitFor(() => expect(revokeOther).toHaveBeenCalledTimes(1));
   });
 

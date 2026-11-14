@@ -31,8 +31,8 @@ describe("formatLastActive", () => {
   });
 
   it("accepts epoch milliseconds (Clerk lastActiveAt)", () => {
-    expect(
-      formatLastActive(ago(2 * HOUR).getTime(), NOW, "Vietnamese"),
-    ).toBe("2 giờ trước");
+    expect(formatLastActive(ago(2 * HOUR).getTime(), NOW, "Vietnamese")).toBe(
+      "2 giờ trước",
+    );
   });
 });
