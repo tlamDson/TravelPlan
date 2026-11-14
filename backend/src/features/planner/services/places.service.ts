@@ -2,7 +2,7 @@ import axios from "axios";
 import { env } from "../../../config/env";
 import { logger } from "../../../lib/logger";
 import { resolveBestPhotoUrl } from "./place-photo.service";
-import type { OpeningPeriod } from "./opening-hours";
+import { parseOpeningPeriods, type OpeningPeriod } from "./opening-hours";
 
 export interface PlaceDetails {
   placeId: string;
@@ -28,6 +28,7 @@ const TEXT_SEARCH_FIELD_MASK = [
   "places.userRatingCount",
   "places.priceLevel",
   "places.currentOpeningHours",
+  "places.regularOpeningHours",
   "places.photos",
   "places.types",
 ].join(",");
@@ -160,10 +161,15 @@ export class PlacesService {
           details.openingHoursArray =
             place.currentOpeningHours.weekdayDescriptions;
         }
-        if (Array.isArray(place.currentOpeningHours.periods)) {
-          details.openingPeriods = place.currentOpeningHours.periods;
-        }
       }
+
+      // Weekly periods come from regularOpeningHours: currentOpeningHours only
+      // spans the next 7 days and truncates its periods at the window edges.
+      const openingPeriods = parseOpeningPeriods(
+        place.regularOpeningHours?.periods ??
+          place.currentOpeningHours?.periods,
+      );
+      if (openingPeriods?.length) details.openingPeriods = openingPeriods;
 
       if (place.photos && place.photos.length > 0) {
         const cdnUrl = await resolveBestPhotoUrl(place.photos);
