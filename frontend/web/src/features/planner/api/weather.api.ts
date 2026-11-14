@@ -142,25 +142,16 @@ export async function getTripDayWeatherForecast({
 
     dayEntries = nearestDay ? groupedByDay.get(nearestDay) ?? [] : [];
 
-    weatherLogger.warn(
-      {
-        destination,
-        requestedDay: targetDayKey,
-        fallbackDay: nearestDay ?? null,
-        availableDays: [...groupedByDay.keys()],
-      },
-      "Requested day missing in forecast; using nearest available forecast day",
+    // Debug only, as one readable string: the browser logger would otherwise
+    // hand console.warn a raw object ("[object Object]" in devtools).
+    weatherLogger.debug(
+      `weather: Requested day missing in forecast; using nearest available forecast day (${targetDayKey} -> ${nearestDay ?? "none"} in ${destination})`,
     );
   }
 
   if (dayEntries.length === 0) {
-    weatherLogger.warn(
-      {
-        destination,
-        dayDateIso,
-        requestedDay: targetDayKey,
-      },
-      "No forecast entries available for requested/nearest day",
+    weatherLogger.debug(
+      `weather: No forecast entries available for requested/nearest day (${targetDayKey} in ${destination})`,
     );
     return null;
   }
