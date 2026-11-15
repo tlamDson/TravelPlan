@@ -73,6 +73,7 @@ export function DatePicker({
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const language = useTranslationStore((state) => state.language);
+  const t = useTranslationStore((state) => state.t);
   const locale = getDateFnsLocale(language);
 
   const selected = toDate(value);
@@ -120,6 +121,20 @@ export function DatePicker({
           defaultMonth={selected ?? today}
           showOutsideDays
           locale={locale}
+          labels={{
+            labelDayButton: (date, modifiers) => {
+              let text = format(date, "PPPP", { locale });
+              if (modifiers.today) {
+                text = `${t("wizard.calendarToday")}, ${text}`;
+              }
+              if (modifiers.selected) {
+                text = `${text}, ${t("wizard.calendarSelected")}`;
+              }
+              return text;
+            },
+            labelNext: () => t("wizard.calendarNextMonth"),
+            labelPrevious: () => t("wizard.calendarPrevMonth"),
+          }}
           className="rdp-root"
         />
         {/* Clear button */}
@@ -134,7 +149,7 @@ export function DatePicker({
                 setOpen(false);
               }}
             >
-              Clear
+              {t("wizard.clearDate")}
             </Button>
           </div>
         )}

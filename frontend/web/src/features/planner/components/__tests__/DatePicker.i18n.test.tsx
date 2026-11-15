@@ -66,7 +66,19 @@ describe("DatePicker follows the UI language", () => {
         expect(label).not.toBe("");
         expect(label).not.toMatch(ENGLISH_DATE_WORDS);
       }
-      expect(labels.some((l) => /Tháng Mười Một/.test(l))).toBe(true);
+      expect(labels.some((l) => /tháng 11 năm 2026/.test(l))).toBe(true);
+    });
+
+    it("the month navigation buttons are Vietnamese", async () => {
+      renderPicker();
+      await userEvent.click(screen.getByTestId("picker"));
+      expect(
+        await screen.findByRole("button", { name: "Đến tháng sau" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Về tháng trước" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Go to/ })).toBeNull();
     });
 
     it("the Clear button is Vietnamese", async () => {

@@ -64,7 +64,7 @@ export function StepBasics() {
             value={data.startDate}
             onChange={(date) => setData({ startDate: date })}
             placeholder={t("wizard.pickStartDate")}
-            ariaLabel="Start date"
+            ariaLabel={t("wizard.startDate")}
             testId="trip-wizard-start-date"
           />
         </div>
@@ -74,7 +74,7 @@ export function StepBasics() {
             value={data.endDate}
             onChange={(date) => setData({ endDate: date })}
             placeholder={t("wizard.pickEndDate")}
-            ariaLabel="End date"
+            ariaLabel={t("wizard.endDate")}
             testId="trip-wizard-end-date"
             minDate={
               data.startDate
