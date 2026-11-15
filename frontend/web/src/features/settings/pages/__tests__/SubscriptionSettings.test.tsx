@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { SubscriptionSettings } from "../SubscriptionSettings";
 import { useSubscriptionStore } from "@/stores/useSubscriptionStore";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 
 /**
  * [Guard] The "Pro" checkmarks and the over-quota usage bar previously
@@ -42,5 +43,36 @@ describe("SubscriptionSettings status colors", () => {
     const progressbar = screen.getByRole("progressbar");
     expect(progressbar.className).toContain("bg-tag-red");
     expect(progressbar.className).not.toMatch(/\bbg-red-100\b/);
+  });
+});
+
+describe("SubscriptionSettings quota reset date locale", () => {
+  const RESET_AT = "2026-11-30T12:00:00.000Z";
+
+  beforeEach(() => {
+    useSubscriptionStore.setState({
+      ...INITIAL_SUBSCRIPTION_STATE,
+      isPro: false,
+      quotaResetsAt: RESET_AT,
+    });
+  });
+
+  afterEach(() => {
+    useTranslationStore.setState({ language: "English (US)" });
+  });
+
+  it("formats the reset date in Vietnamese when the UI language is Vietnamese", () => {
+    useTranslationStore.setState({ language: "Vietnamese" });
+    render(<SubscriptionSettings />);
+
+    expect(screen.getByText("30 thg 11, 2026")).toBeInTheDocument();
+    expect(screen.queryByText("Nov 30, 2026")).not.toBeInTheDocument();
+  });
+
+  it("keeps the English format when the UI language is English", () => {
+    useTranslationStore.setState({ language: "English (US)" });
+    render(<SubscriptionSettings />);
+
+    expect(screen.getByText("Nov 30, 2026")).toBeInTheDocument();
   });
 });
