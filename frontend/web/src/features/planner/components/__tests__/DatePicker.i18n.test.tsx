@@ -26,7 +26,7 @@ describe("DatePicker follows the UI language", () => {
     it("formats the chosen date in Vietnamese", () => {
       renderPicker();
       const trigger = screen.getByTestId("picker");
-      expect(trigger).toHaveTextContent("20 thg 11, 2026");
+      expect(trigger).toHaveTextContent("20 thg 11 năm 2026");
       expect(trigger).not.toHaveTextContent("Nov");
     });
 
@@ -35,7 +35,7 @@ describe("DatePicker follows the UI language", () => {
       await userEvent.click(screen.getByTestId("picker"));
 
       const grid = await screen.findByRole("grid");
-      expect(grid).toHaveAccessibleName(/tháng 11/i);
+      expect(grid).toHaveAccessibleName(/Tháng Mười Một 2026/);
       expect(document.body.textContent).not.toContain("November");
       expect(document.body.textContent).not.toMatch(/\bSu\b|\bMo\b|\bTu\b/);
       expect(screen.queryByLabelText(/Saturday|November/)).toBeNull();
