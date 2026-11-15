@@ -23,6 +23,7 @@ import { useSubscriptionStore } from "@/stores/useSubscriptionStore";
 import { getUserMe, type UserProfile } from "@/features/user/api/user.api";
 import { apiClient } from "@/lib/axios";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import {
   BRAND_GRADIENT_BADGE,
   BRAND_GRADIENT_BUTTON,
@@ -43,7 +44,7 @@ export default function DashboardPage() {
     if (!success && !canceled) return;
 
     if (canceled) {
-      toast.info("Upgrade canceled. You are still on the Free plan.");
+      toast.info(toastT("toast.dashboard.upgradeCanceled"));
       searchParams.delete("canceled");
       setSearchParams(searchParams, { replace: true });
       return;
@@ -61,12 +62,10 @@ export default function DashboardPage() {
         });
         closeUpgradeModal();
         setShowConfetti(true);
-        toast.success(
-          "Welcome to TravelPlan Pro! Your limits have been removed.",
-        );
+        toast.success(toastT("toast.dashboard.proWelcome"));
         window.setTimeout(() => setShowConfetti(false), 3000);
       } catch {
-        toast.info("Upgrade processed. Refreshing your subscription status...");
+        toast.info(toastT("toast.dashboard.upgradeProcessed"));
       } finally {
         searchParams.delete("success");
         setSearchParams(searchParams, { replace: true });
@@ -136,10 +135,10 @@ export default function DashboardPage() {
               onClick={async () => {
                 try {
                   await apiClient.post("/dev/toggle-pro");
-                  toast.success("Toggled Pro mode! Reloading page...");
+                  toast.success(toastT("toast.dashboard.proToggled"));
                   window.location.reload();
                 } catch {
-                  toast.error("Failed to toggle pro status");
+                  toast.error(toastT("toast.dashboard.proToggleFailed"));
                 }
               }}
             >

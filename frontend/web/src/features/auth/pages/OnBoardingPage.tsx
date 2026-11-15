@@ -11,6 +11,7 @@ import { useUser } from "@clerk/clerk-react";
 import { Check, ChevronLeft, ChevronRight, Loader2, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import {
   DEFAULT_USER_PREFERENCES,
   getUserPreferences,
@@ -18,8 +19,15 @@ import {
   mapGroupToTravelStyle,
 } from "@/features/settings/types/user-preferences.types";
 
-import { ProfileStep, PreferencesStep, FirstTripStep } from "../components/onboarding";
-import { mapInterestsToFocus, TRAVEL_STYLE_TO_GROUP } from "../constants/onboarding";
+import {
+  ProfileStep,
+  PreferencesStep,
+  FirstTripStep,
+} from "../components/onboarding";
+import {
+  mapInterestsToFocus,
+  TRAVEL_STYLE_TO_GROUP,
+} from "../constants/onboarding";
 
 const TOTAL_STEPS = 3;
 
@@ -71,7 +79,7 @@ export default function OnBoardingPage() {
 
   const toggleInterest = (id: string) => {
     setSelectedInterests((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
@@ -88,8 +96,9 @@ export default function OnBoardingPage() {
 
     const current = getUserPreferences();
     const onboardingFocus = mapInterestsToFocus(selectedInterests);
-    const onboardingGroupType =
-      travelStyle ? TRAVEL_STYLE_TO_GROUP[travelStyle] ?? null : null;
+    const onboardingGroupType = travelStyle
+      ? (TRAVEL_STYLE_TO_GROUP[travelStyle] ?? null)
+      : null;
 
     const preferences = {
       ...DEFAULT_USER_PREFERENCES,
@@ -118,8 +127,8 @@ export default function OnBoardingPage() {
 
     toast.success(
       isResetMode
-        ? "Onboarding preferences updated successfully"
-        : "Welcome to TravelPlan!",
+        ? toastT("toast.onboarding.updated")
+        : toastT("toast.onboarding.welcome"),
     );
     navigate(redirectTo);
     setIsLoading(false);

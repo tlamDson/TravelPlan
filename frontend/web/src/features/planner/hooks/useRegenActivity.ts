@@ -10,8 +10,8 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { queryKeys } from "@/lib/query-client";
 import { apiClient } from "@/lib/axios";
 import type { Trip } from "../api/trips.api";
@@ -85,31 +85,18 @@ export function useRegenActivity() {
       if (!isPro && (usage === 4 || usage === 5)) {
         const left = 5 - usage;
         toast.info(
-          left > 0
-            ? `You have ${left} free regeneration left for this trip.`
-            : "You have 1 free regeneration left for this trip.",
+          toastT("toast.regen.freeLeft", { count: Math.max(left, 1) }),
         );
       }
-      toast.success("Activity replaced with a new suggestion!");
+      toast.success(toastT("toast.regen.replaced"));
     },
 
     onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : String(err ?? "");
+      const message = err instanceof Error ? err.message : String(err ?? "");
       if (message === "FREE_REGEN_LIMIT_REACHED") {
         return;
       }
-      const data = isAxiosError(err) ? err.response?.data : undefined;
-      const axiosMsg =
-        data &&
-        typeof data === "object" &&
-        "message" in data &&
-        typeof (data as { message: unknown }).message === "string"
-          ? (data as { message: string }).message
-          : undefined;
-      toast.error(
-        axiosMsg || "Could not find a unique replacement. Try again.",
-      );
+      toast.error(toastT("toast.regen.notUnique"));
     },
   });
 }

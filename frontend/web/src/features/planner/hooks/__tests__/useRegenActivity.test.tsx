@@ -108,7 +108,7 @@ describe("useRegenActivity", () => {
     expect(toast.info).toHaveBeenCalled();
   });
 
-  it("shows a generic error toast when the server returns NO_ALTERNATIVE_FOUND (422)", async () => {
+  it("shows the translated fallback, not the server text, on NO_ALTERNATIVE_FOUND (422)", async () => {
     server.use(
       http.post("*/trips/:tripId/regen-activity", () =>
         HttpResponse.json(
@@ -129,7 +129,7 @@ describe("useRegenActivity", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith(
-      expect.stringContaining("No unique alternative found"),
+      "Could not find a unique replacement. Try again.",
     );
   });
 });

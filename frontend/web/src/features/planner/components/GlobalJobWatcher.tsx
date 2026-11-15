@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { useActiveJobStore } from "@/stores/useActiveJobStore";
 import { useJobPoller } from "@/features/planner/hooks";
 import { queryKeys } from "@/lib/query-client";
@@ -39,7 +40,7 @@ export function GlobalJobWatcher() {
         queryFn: () => getTrip(finishedTripId),
         staleTime: 0,
       });
-      if (trip.itinerary.length > 0) toast.success("Your trip is ready!");
+      if (trip.itinerary.length > 0) toast.success(toastT("toast.trip.ready"));
     } catch {
       // The trip page shows its own load error; do not claim success.
     }
@@ -51,12 +52,12 @@ export function GlobalJobWatcher() {
       trackFinished();
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
       if (tripId) void announceWhenLoaded(tripId);
-      else toast.success("Your trip is ready!");
+      else toast.success(toastT("toast.trip.ready"));
       clearActiveJob();
     },
-    onError: (err) => {
+    onError: () => {
       trackFinished();
-      toast.error(err || "Failed to create itinerary");
+      toast.error(toastT("toast.trip.itineraryFailed"));
       clearActiveJob();
     },
   });

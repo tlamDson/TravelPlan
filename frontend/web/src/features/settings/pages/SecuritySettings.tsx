@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { MonitorPlay, KeyRound, Users, Loader2 } from "lucide-react";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -42,15 +43,8 @@ export function SecuritySettings() {
       setCurrentPassword("");
       setNewPassword("");
       setIsPasswordDialogOpen(false);
-    } catch (error: unknown) {
-      const clerkMsg =
-        error &&
-        typeof error === "object" &&
-        "errors" in error &&
-        Array.isArray((error as { errors: { message?: string }[] }).errors)
-          ? (error as { errors: { message?: string }[] }).errors[0]?.message
-          : undefined;
-      toast.error(clerkMsg || "Failed to update password");
+    } catch {
+      toast.error(toastT("toast.settings.passwordFailed"));
     } finally {
       setIsUpdatingPassword(false);
     }
