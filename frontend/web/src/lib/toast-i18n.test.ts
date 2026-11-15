@@ -33,3 +33,20 @@ describe("toastTOr", () => {
     );
   });
 });
+
+describe("assistant chat error toast", () => {
+  it("has a description in every language instead of the raw error", () => {
+    useTranslationStore.setState({ language: "Vietnamese" });
+    expect(toastT("toast.assistant.chatFailed")).toBe(
+      "Trợ lý không thể trả lời. Vui lòng thử lại.",
+    );
+    useTranslationStore.setState({ language: "French" });
+    expect(toastT("toast.assistant.chatFailed")).toBe(
+      "L'assistant n'a pas pu répondre. Veuillez réessayer.",
+    );
+    useTranslationStore.setState({ language: "English (US)" });
+    expect(toastT("toast.assistant.chatFailed")).toBe(
+      "The assistant couldn't reply. Please try again.",
+    );
+  });
+});

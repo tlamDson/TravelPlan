@@ -30,18 +30,76 @@ function argsAt(text: string, openIndex: number): string {
   return text.slice(openIndex + 1);
 }
 
-/** Drops nested calls (t(...), toastT(...)) and `{ ... }` option objects. */
+const TRANSLATED_CALL = /\b(?:toastT|toastTOr|t)\(/g;
+
+/** Options whose values are not user-visible text. */
+const NON_TEXT_OPTION =
+  /\b(?:variant|id|duration|className|position|important)\s*:\s*(?:"[^"]*"|'[^']*'|[\w.]+)/g;
+
+/**
+ * Argument source with translated text (t(...), toastT(...)), non-text
+ * options and property names removed. Object-style calls
+ * (`toast({ title, description })`) keep their property values, so a
+ * literal or raw value there is still caught.
+ */
 function withoutTranslatedParts(args: string): string {
   let out = args;
-  let prev = "";
-  while (out !== prev) {
-    prev = out;
-    out = out
-      .replace(/\b(?:toastT|toastTOr|t)\([^()]*\)/g, "")
-      .replace(/\{[^{}]*\}/g, "");
+  for (let m = TRANSLATED_CALL.exec(out); m; m = TRANSLATED_CALL.exec(out)) {
+    const open = m.index + m[0].length - 1;
+    const end = open + argsAt(out, open).length + 2;
+    out = out.slice(0, m.index) + out.slice(end);
+    TRANSLATED_CALL.lastIndex = 0;
   }
-  return out;
+  return out
+    .replace(NON_TEXT_OPTION, "")
+    .replace(/\b\w+\s*:/g, "")
+    .replace(/[{,]\s*(?:title|description)(?=\s*[,}])/g, "");
 }
+
+const LITERAL = /["'`]/;
+const RAW =
+  /(^|[^A-Za-z.])(message|msg|err|error|errors|friendlyMessage|data)([^A-Za-z]|$)/;
+
+/** `file:line` of every toast call whose remaining args match `bad`. */
+function offendersIn(files: Record<string, string>, bad: RegExp): string[] {
+  const offenders: string[] = [];
+  for (const [file, text] of Object.entries(files)) {
+    for (const m of text.matchAll(TOAST_CALL)) {
+      const args = argsAt(text, m.index! + m[0].length - 1);
+      if (bad.test(withoutTranslatedParts(args))) {
+        const line = text.slice(0, m.index).split("\n").length;
+        offenders.push(`${file}:${line}`);
+      }
+    }
+  }
+  return offenders;
+}
+
+describe("toast coverage scanner", () => {
+  it.each([
+    ['toast({ title: "Error", variant: "destructive" })', LITERAL],
+    ['toast({ title: t("x"), description: "Failed" })', LITERAL],
+    ['toast.error("Failed to save")', LITERAL],
+    ['toast.success(t("a"), { description: "Done" })', LITERAL],
+    ['toast({ title: t("x"), description: error.message })', RAW],
+    ["toast.error(err.message)", RAW],
+    ['toast({ title: t("x"), description: data.reason })', RAW],
+  ] as const)("flags %s", (src, bad) => {
+    expect(offendersIn({ "f.ts": src }, bad)).toEqual(["f.ts:1"]);
+  });
+
+  it.each([
+    'toast({ title: toastT("a"), description: toastT("b"), variant: "destructive" })',
+    'toast.success(toastT("a", { status }))',
+    'toast.error(toastTOr(`toast.code.${code}`, "toast.x"))',
+    "toast({ title, description, duration: 3000 })",
+    'toast.info(toastT("a", { count: Math.max(left, 1) }))',
+    'toast.success(toastT("a", { s: toastT(`b_${x.toLowerCase()}`) }))',
+  ])("accepts %s", (src) => {
+    expect(offendersIn({ "f.ts": src }, LITERAL)).toEqual([]);
+    expect(offendersIn({ "f.ts": src }, RAW)).toEqual([]);
+  });
+});
 
 describe("toast text comes from i18n", () => {
   it("scans the app source", () => {
@@ -49,32 +107,10 @@ describe("toast text comes from i18n", () => {
   });
 
   it("has no toast call carrying a literal English string", () => {
-    const offenders: string[] = [];
-    for (const [file, text] of Object.entries(sources)) {
-      for (const m of text.matchAll(TOAST_CALL)) {
-        const args = argsAt(text, m.index! + m[0].length - 1);
-        if (/["'`]/.test(withoutTranslatedParts(args))) {
-          const line = text.slice(0, m.index).split("\n").length;
-          offenders.push(`${file}:${line}`);
-        }
-      }
-    }
-    expect(offenders).toEqual([]);
+    expect(offendersIn(sources, LITERAL)).toEqual([]);
   });
 
   it("never shows raw server, Clerk or exception text in a toast", () => {
-    const RAW =
-      /(^|[^A-Za-z.])(message|msg|err|error|errors|friendlyMessage|data)([^A-Za-z]|$)/;
-    const offenders: string[] = [];
-    for (const [file, text] of Object.entries(sources)) {
-      for (const m of text.matchAll(TOAST_CALL)) {
-        const args = argsAt(text, m.index! + m[0].length - 1);
-        if (RAW.test(withoutTranslatedParts(args))) {
-          const line = text.slice(0, m.index).split("\n").length;
-          offenders.push(`${file}:${line}`);
-        }
-      }
-    }
-    expect(offenders).toEqual([]);
+    expect(offendersIn(sources, RAW)).toEqual([]);
   });
 });
