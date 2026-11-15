@@ -213,6 +213,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.currentPassword": "Current Password",
     "security.newPassword": "New Password",
     "security.btnCancel": "Cancel",
+    "security.revokeConfirmTitle": "Sign out this device?",
+    "security.revokeConfirmDesc":
+      '"{device}" will be signed out of your account. You will need to sign in again on it.',
     "security.btnSavePassword": "Save Password",
     "security.externalProvider":
       "Your account is managed by an external provider (e.g., Google).",
@@ -229,8 +232,13 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.toastSavePassword": "Password updated successfully",
     "security.toastFillFields": "Please fill in both password fields.",
     "security.toastAccessUpdate": "Access settings updated",
-    "security.toastRevokeDemo":
-      "Revoking devices is currently disabled in demo mode",
+    "security.activeNow": "Active now",
+    "security.thisDevice": "This device",
+    "security.unknownDevice": "Unknown device",
+    "security.noSessions": "No active sessions found.",
+    "security.loadSessionsFailed": "Could not load your devices.",
+    "security.toastRevoked": "Device signed out",
+    "security.toastRevokeFailed": "Could not sign out this device",
 
     // Create Trip Wizard
     "wizard.step": "Step",
@@ -809,6 +817,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.currentPassword": "Mot de passe actuel",
     "security.newPassword": "Nouveau mot de passe",
     "security.btnCancel": "Annuler",
+    "security.revokeConfirmTitle": "Déconnecter cet appareil ?",
+    "security.revokeConfirmDesc":
+      '"{device}" sera déconnecté de votre compte. Vous devrez vous reconnecter sur cet appareil.',
     "security.btnSavePassword": "Enregistrer le mot de passe",
     "security.externalProvider":
       "Votre compte est géré par un fournisseur externe (ex: Google).",
@@ -827,8 +838,13 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.toastFillFields":
       "Veuillez remplir les deux champs de mot de passe.",
     "security.toastAccessUpdate": "Paramètres d'accès mis à jour",
-    "security.toastRevokeDemo":
-      "La révocation des appareils est actuellement désactivée en mode démo",
+    "security.activeNow": "Actif maintenant",
+    "security.thisDevice": "Cet appareil",
+    "security.unknownDevice": "Appareil inconnu",
+    "security.noSessions": "Aucune session active trouvée.",
+    "security.loadSessionsFailed": "Impossible de charger vos appareils.",
+    "security.toastRevoked": "Appareil déconnecté",
+    "security.toastRevokeFailed": "Impossible de déconnecter cet appareil",
 
     // Create Trip Wizard
     "wizard.step": "Étape",
@@ -1418,6 +1434,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.currentPassword": "Mật khẩu hiện tại",
     "security.newPassword": "Mật khẩu mới",
     "security.btnCancel": "Hủy bỏ",
+    "security.revokeConfirmTitle": "Đăng xuất thiết bị này?",
+    "security.revokeConfirmDesc":
+      '"{device}" sẽ bị đăng xuất khỏi tài khoản của bạn. Bạn cần đăng nhập lại trên thiết bị đó.',
     "security.btnSavePassword": "Lưu mật khẩu",
     "security.externalProvider":
       "Tài khoản của bạn được quản lý bởi nhà cung cấp bên ngoài (ví dụ: Google).",
@@ -1435,8 +1454,13 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.toastSavePassword": "Đã cập nhật mật khẩu thành công",
     "security.toastFillFields": "Vui lòng điền vào cả hai trường mật khẩu.",
     "security.toastAccessUpdate": "Đã cập nhật cài đặt truy cập",
-    "security.toastRevokeDemo":
-      "Tính năng thu hồi thiết bị hiện đã bị vô hiệu hóa trong chế độ dùng thử",
+    "security.activeNow": "Đang hoạt động",
+    "security.thisDevice": "Thiết bị này",
+    "security.unknownDevice": "Thiết bị không xác định",
+    "security.noSessions": "Không tìm thấy phiên đang hoạt động.",
+    "security.loadSessionsFailed": "Không thể tải danh sách thiết bị.",
+    "security.toastRevoked": "Đã đăng xuất thiết bị",
+    "security.toastRevokeFailed": "Không thể đăng xuất thiết bị này",
 
     // Create Trip Wizard
     "wizard.step": "Bước",
