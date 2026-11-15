@@ -9,7 +9,7 @@ export function parseDestinationToCountryCity(savedDestination: string): {
 
   const normalized = savedDestination.toLowerCase().trim();
 
-  // 1. Tìm xem có thuộc MVP City không
+  // 1. Check whether it matches an MVP city
   for (const [countryId, cities] of Object.entries(CITIES_BY_COUNTRY)) {
     const matchedCity = cities.find(
       (c) =>
@@ -23,7 +23,7 @@ export function parseDestinationToCountryCity(savedDestination: string): {
     }
   }
 
-  // 2. Nếu không phải MVP City, tìm xem có chứa tên quốc gia nào không
+  // 2. Not an MVP city: check whether it contains a known country name
   const matchedCountry = COUNTRIES.find(
     (c) =>
       normalized.includes(c.name.toLowerCase()) ||
@@ -31,7 +31,7 @@ export function parseDestinationToCountryCity(savedDestination: string): {
   );
 
   if (matchedCountry) {
-    // Tách lấy phần tên thành phố trước dấu phẩy (xử lý "Tokyo ,Japan", "Tokyo,Japan")
+    // Take the city name before the comma (handles "Tokyo ,Japan", "Tokyo,Japan")
     const parts = savedDestination.split(/,\s*/);
     const freeText = parts[0]?.trim() ?? "";
     const isCityDifferent =
@@ -44,6 +44,6 @@ export function parseDestinationToCountryCity(savedDestination: string): {
     };
   }
 
-  // 3. Fallback: không map được → "Other" + toàn bộ làm freeText
+  // 3. Fallback: no match → "Other" with the whole string as freeText
   return { countryId: "other", freeTextCity: savedDestination };
 }

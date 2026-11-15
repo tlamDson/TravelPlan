@@ -11,9 +11,11 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { queryKeys } from "@/lib/query-client";
 import { apiClient } from "@/lib/axios";
 import type { Trip } from "../api/trips.api";
+import { track } from "@/features/analytics";
 
 interface ReorderParams {
   tripId: string;
@@ -41,7 +43,9 @@ export function useReorderActivities() {
 
     onMutate: async ({ tripId, dayIndex, orderedActivityIds }) => {
       // Cancel any in-flight refetches to avoid overwriting the optimistic state
-      await queryClient.cancelQueries({ queryKey: queryKeys.trips.detail(tripId) });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.trips.detail(tripId),
+      });
 
       const previousTrip = queryClient.getQueryData<Trip>(
         queryKeys.trips.detail(tripId),
@@ -74,12 +78,16 @@ export function useReorderActivities() {
     onError: (_err, { tripId }, context) => {
       // Rollback to the snapshot taken before the optimistic update
       if (context?.previousTrip) {
-        queryClient.setQueryData(queryKeys.trips.detail(tripId), context.previousTrip);
+        queryClient.setQueryData(
+          queryKeys.trips.detail(tripId),
+          context.previousTrip,
+        );
       }
-      toast.error("Failed to save new order. Changes reverted.");
+      toast.error(toastT("toast.trip.reorderFailed"));
     },
 
-    onSuccess: (newItinerary, { tripId }) => {
+    onSuccess: (newItinerary, { tripId, dayIndex }) => {
+      track("itinerary_edited", { tripId, editType: "reorder", dayIndex });
       // Sync server truth into the cache
       queryClient.setQueryData<Trip>(queryKeys.trips.detail(tripId), (old) => {
         if (!old) return old;

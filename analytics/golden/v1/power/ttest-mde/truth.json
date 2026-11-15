@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "power/ttest-mde",
+  "method": "mde_ttest_ind",
+  "description": "Smallest d detectable with 80% power and 5,000 per group.",
+  "data": null,
+  "params": {
+    "nobs1": 5000,
+    "power": 0.8,
+    "ratio": 1.0,
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "effect_size": 0.05603520765770706
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-06
+    }
+  },
+  "source": {
+    "tool": "statsmodels",
+    "version": "0.14.4",
+    "call": "statsmodels.stats.power.TTestIndPower().solve_power(effect_size=None, nobs1, alpha, power, ratio, alternative)",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13"
+  }
+}

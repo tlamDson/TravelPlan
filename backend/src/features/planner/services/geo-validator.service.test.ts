@@ -49,7 +49,9 @@ describe("geoValidatorService.validateDistance", () => {
         mode,
       );
       expect(result.requiresTransport).toBe(true);
-      expect(result.warningMessage).toBeTruthy();
+      expect(result.warningMessage).toMatch(
+        /^The next stop is \d+\.\d km away — quite far to .+, consider a taxi\.$/,
+      );
     },
   );
 

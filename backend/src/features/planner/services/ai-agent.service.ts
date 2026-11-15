@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../../../config/env";
+import { GEMINI_MODEL } from "../../../config/gemini-models";
 import { logger } from "../../../lib/logger";
 import type { TripPreferences } from "@travelplan/shared";
 import {
@@ -8,21 +9,24 @@ import {
 } from "../prompts/trip-generation.prompt";
 import { intentParserService, type TripIntents } from "./intent-parser.service";
 
-/**
- * Pinned, not "-latest" — verified 2026-08-15 by calling the real API with
- * this key (gemini-2.0-flash AND gemini-2.5-flash both returned a live 404
- * "no longer available"; gemini-3.6-flash was the newest non-preview flash
- * model this key could actually reach). Deliberately not `gemini-flash-latest`:
- * intent-parser.service's JSON extraction is fragile regex, not a real
- * parser (see `.claude/rules/tech-defaults.md`'s known `extractJson()` bug
- * with bare arrays) — an unannounced silent model swap changing output
- * formatting is a worse failure mode than a pinned model eventually
- * deprecating loudly. Re-verify with `npm run check:services` (note: that
- * only proves the API key is valid via the models-list endpoint, not that
- * this exact model string still resolves — a generateContent call, like
- * the one used to verify this pin, is the real test).
- */
-const GEMINI_MODEL = "gemini-3.6-flash";
+/** Token/latency usage for a single generateContent call — captured so
+ * trip.processor.ts can persist it on Trip.generationMeta instead of it
+ * only ever existing in a log line. */
+export interface AIUsage {
+  promptTokens: number | null;
+  totalTokens: number | null;
+  latencyMs: number;
+}
+
+export interface GenerateIntentsResult extends AIUsage {
+  intents: TripIntents;
+}
+
+export interface GenerateIntentsRetryResult extends AIUsage {
+  intents: TripIntents;
+  /** Which attempt (1-indexed) actually succeeded. */
+  attempts: number;
+}
 
 export class AIAgentService {
   private model: any;
@@ -69,7 +73,7 @@ export class AIAgentService {
     language?: string,
     cityCost?: any,
     localInsight?: string | null,
-  ): Promise<TripIntents> {
+  ): Promise<GenerateIntentsResult> {
     if (!this.model) {
       logger.error(
         { hasApiKey: !!env.GEMINI_API_KEY },
@@ -106,7 +110,9 @@ export class AIAgentService {
     );
 
     try {
+      const startedAt = Date.now();
       const result = await this.model.generateContent(prompt);
+      const latencyMs = Date.now() - startedAt;
       const text = result.response.text();
 
       // 📌 LOG POINT A — full raw text from Gemini (before any parsing)
@@ -126,7 +132,15 @@ export class AIAgentService {
         "✅ [GEMINI PARSED] Structured intents (search queries per day/slot)",
       );
 
-      return intents;
+      // usageMetadata is absent on some SDK/mock responses — never let a
+      // missing field crash generation, just report it as unknown.
+      const usage = result.response.usageMetadata;
+      return {
+        intents,
+        promptTokens: usage?.promptTokenCount ?? null,
+        totalTokens: usage?.totalTokenCount ?? null,
+        latencyMs,
+      };
     } catch (error: any) {
       logger.error(
         { error: error.message, stack: error.stack },
@@ -262,7 +276,7 @@ export class AIAgentService {
     cityCost?: any,
     maxRetries = 4,
     localInsight?: string | null,
-  ): Promise<TripIntents> {
+  ): Promise<GenerateIntentsRetryResult> {
     for (let i = 0; i < maxRetries; i++) {
       try {
         // Wait before retrying (skip delay on first attempt)
@@ -272,19 +286,19 @@ export class AIAgentService {
           await this.delay(waitMs);
         }
 
-        const intents = await this.generateIntents(
+        const generated = await this.generateIntents(
           preferences,
           language,
           cityCost,
           localInsight,
         );
 
-        if (intentParserService.isValidIntentFormat(intents)) {
+        if (intentParserService.isValidIntentFormat(generated.intents)) {
           logger.info(
             { destination: preferences.destination, attempt: i + 1 },
             "Successfully generated valid intents",
           );
-          return intents;
+          return { ...generated, attempts: i + 1 };
         }
 
         logger.warn({ attempt: i + 1 }, "Invalid intent format, retrying...");

@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "id": "sim-srm/loss-15-aa",
+  "method": "readout",
+  "description": "A/A, but 15% of treatment exposures are never logged.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "srm_threshold": 0.0005,
+    "expected_shares": {
+      "control": 0.5,
+      "treatment": 0.5
+    },
+    "metric": {
+      "kind": "mean",
+      "column": "saves"
+    }
+  },
+  "expected": {
+    "srm": true
+  },
+  "decision": "invalid",
+  "tolerance": {
+    "default": {
+      "abs": 0.0,
+      "rel": 0.0
+    }
+  },
+  "source": {
+    "tool": "simkit",
+    "version": "0.1.0",
+    "call": "simkit.golden_truth.observe: the same simulated users run in both arms; estimate = mean over enrolled users of Y(treatment) - Y(control) (ratio: sum Y_num / sum Y_den per arm); tolerance = 4 x the standard error of the observed difference",
+    "generator": "simkit.freeze_golden",
+    "seed": 26000,
+    "simulated": true,
+    "injected": {
+      "experiment": {
+        "definition": {
+          "key": "golden-sim-srm-loss-15-aa",
+          "salt": "golden",
+          "holdoutBuckets": 0,
+          "variants": [
+            {
+              "key": "control",
+              "weight": 5000
+            },
+            {
+              "key": "treatment",
+              "weight": 5000
+            }
+          ]
+        },
+        "target": "trip_saved",
+        "relativeLift": {},
+        "noveltyLift": {},
+        "noveltyHalfLifeDays": 2.0,
+        "exposureStates": [
+          "trip_generation_completed",
+          "trip_viewed"
+        ],
+        "exposureLoss": {
+          "treatment": 0.15
+        }
+      },
+      "users": 6000,
+      "days": 14,
+      "window_days": 7,
+      "start": "2026-11-01",
+      "enrolled": 2066
+    },
+    "screening": {
+      "first_seed": 26000,
+      "attempts": 1,
+      "reference": "scipy 1.14.1: chi-square SRM, then Welch or delta-method z",
+      "verdict": "invalid",
+      "srm_p_value": 7.491e-05
+    },
+    "frozen_at": "2026-11-13"
+  }
+}

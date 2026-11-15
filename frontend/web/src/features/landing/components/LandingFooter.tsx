@@ -2,9 +2,12 @@
  * Landing Page Footer Component
  */
 
+import { Link } from "react-router-dom";
 import { Plane } from "lucide-react";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 
 export function LandingFooter() {
+  const { t } = useTranslationStore();
   return (
     <footer className="py-12 border-t border-border">
       <div className="container mx-auto px-4">
@@ -14,18 +17,24 @@ export function LandingFooter() {
             <span className="font-semibold">TravelPlan</span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">
-              About
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
-              Privacy
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
-              Terms
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
-              Contact
-            </a>
+            <Link
+              to="/about"
+              className="hover:text-foreground transition-colors"
+            >
+              {t("landing.footer.about")}
+            </Link>
+            <Link
+              to="/privacy"
+              className="hover:text-foreground transition-colors"
+            >
+              {t("landing.footer.privacy")}
+            </Link>
+            <Link
+              to="/terms"
+              className="hover:text-foreground transition-colors"
+            >
+              {t("landing.footer.terms")}
+            </Link>
           </div>
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} TravelPlan. All rights reserved.

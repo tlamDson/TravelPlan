@@ -8,6 +8,7 @@
 import axios from "axios";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../../../config/env";
+import { GEMINI_INSIGHT_MODEL } from "../../../config/gemini-models";
 import { logger } from "../../../lib/logger";
 
 const SERPER_URL = "https://google.serper.dev/search";
@@ -30,21 +31,36 @@ export interface ExtractedEntity {
 }
 
 const THEMATIC_QUERIES = [
-  { key: "food", query: (city: string, country: string) => `best local food street food in ${city} ${country}` },
-  { key: "history", query: (city: string, country: string) => `top historical sites museums in ${city} ${country}` },
-  { key: "nightlife", query: (city: string, country: string) => `best nightlife hidden bars in ${city} ${country}` },
+  {
+    key: "food",
+    query: (city: string, country: string) =>
+      `best local food street food in ${city} ${country}`,
+  },
+  {
+    key: "history",
+    query: (city: string, country: string) =>
+      `top historical sites museums in ${city} ${country}`,
+  },
+  {
+    key: "nightlife",
+    query: (city: string, country: string) =>
+      `best nightlife hidden bars in ${city} ${country}`,
+  },
 ];
 
 export async function extractCityEntities(
   cityNameEn: string,
   countryNameEn: string,
 ): Promise<ExtractedEntity[]> {
-  logger.info({ city: cityNameEn, country: countryNameEn }, "Fetching multi-query Serper results");
+  logger.info(
+    { city: cityNameEn, country: countryNameEn },
+    "Fetching multi-query Serper results",
+  );
 
   const allEntities: ExtractedEntity[] = [];
 
   const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: GEMINI_INSIGHT_MODEL });
 
   for (const theme of THEMATIC_QUERIES) {
     const query = theme.query(cityNameEn, countryNameEn);
@@ -81,11 +97,15 @@ ${snippets.join("\n\n")}`;
 
       const generateRes = await model.generateContent(EXTRACT_PROMPT);
       let text = generateRes.response.text()?.trim();
-      
+
       // Clean up markdown markers if Gemini ignores the prompt
       if (text) {
-        text = text.replace(/^```json/i, "").replace(/^```/i, "").replace(/```$/i, "").trim();
-        
+        text = text
+          .replace(/^```json/i, "")
+          .replace(/^```/i, "")
+          .replace(/```$/i, "")
+          .trim();
+
         try {
           const parsed = JSON.parse(text);
           if (Array.isArray(parsed)) {
@@ -93,7 +113,16 @@ ${snippets.join("\n\n")}`;
               if (item.name && item.description) {
                 allEntities.push({
                   name: item.name,
-                  category: ["food", "history", "nightlife", "nature", "shopping", "other"].includes(item.category) ? item.category : "other",
+                  category: [
+                    "food",
+                    "history",
+                    "nightlife",
+                    "nature",
+                    "shopping",
+                    "other",
+                  ].includes(item.category)
+                    ? item.category
+                    : "other",
                   description: item.description,
                   tags: Array.isArray(item.tags) ? item.tags : [],
                   sourceQuery: theme.key,
@@ -102,15 +131,25 @@ ${snippets.join("\n\n")}`;
             }
           }
         } catch (_err) {
-          logger.warn({ city: cityNameEn, theme: theme.key, textSnippet: text.substring(0, 50) }, "Failed to parse Gemini JSON output");
+          logger.warn(
+            {
+              city: cityNameEn,
+              theme: theme.key,
+              textSnippet: text.substring(0, 50),
+            },
+            "Failed to parse Gemini JSON output",
+          );
         }
       }
     } catch (err) {
-       logger.error({ city: cityNameEn, theme: theme.key, err }, "Error fetching/generating for theme");
+      logger.error(
+        { city: cityNameEn, theme: theme.key, err },
+        "Error fetching/generating for theme",
+      );
     }
-    
+
     // Slight pause to respect rate limits if any on Serper/Gemini
-    await new Promise(res => setTimeout(res, 500));
+    await new Promise((res) => setTimeout(res, 500));
   }
 
   return allEntities;

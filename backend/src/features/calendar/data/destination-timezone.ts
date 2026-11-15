@@ -164,20 +164,20 @@ export function getTimezoneForDestination(destination?: string): string {
   const city = parts[0]?.replace(/[^a-z\s]/g, "").replace(/\s+/g, " ") ?? "";
   const country = parts[1]?.replace(/[^a-z\s]/g, "").replace(/\s+/g, " ") ?? "";
 
-  // 1. City match (ưu tiên)
+  // 1. City match (preferred)
   if (city && DESTINATION_TIMEZONE[city]) return DESTINATION_TIMEZONE[city]!;
   const cityKey = Object.keys(DESTINATION_TIMEZONE).find(
     (k) => k !== "default" && (city.includes(k) || k.includes(city)),
   );
   if (cityKey) return DESTINATION_TIMEZONE[cityKey]!;
 
-  // 2. Country match (fallback cho Non-MVP)
+  // 2. Country match (fallback for non-MVP destinations)
   if (country && COUNTRY_TIMEZONE[country]) return COUNTRY_TIMEZONE[country]!;
   const countryKey = Object.keys(COUNTRY_TIMEZONE).find(
     (k) => country.includes(k) || k.includes(country),
   );
   if (countryKey) return COUNTRY_TIMEZONE[countryKey]!;
 
-  // 3. Chỉ dùng UTC khi hoàn toàn không map được
+  // 3. Use UTC only when nothing can be mapped
   return DESTINATION_TIMEZONE["default"] ?? "UTC";
 }

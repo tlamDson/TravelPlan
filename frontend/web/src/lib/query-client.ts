@@ -103,4 +103,10 @@ export const queryKeys = {
     sessions: () => [...queryKeys.ai.all, "sessions"] as const,
     session: (id: string) => [...queryKeys.ai.sessions(), id] as const,
   },
+
+  // Reliability (SRE dashboard)
+  reliability: {
+    all: ["reliability"] as const,
+    sloReport: () => [...queryKeys.reliability.all, "slo"] as const,
+  },
 } as const;

@@ -10,6 +10,7 @@ import { useAuth, useUser, useClerk } from "@clerk/clerk-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 
 // ============================================
 // CLERK AUTH HOOKS
@@ -63,7 +64,7 @@ export function useSignOut() {
       // Clear all cached data
       queryClient.clear();
       await signOut();
-      toast.success("Signed out successfully");
+      toast.success(toastT("toast.auth.signedOut"));
       navigate("/");
     } catch (error) {
       console.error("Sign out error:", error);

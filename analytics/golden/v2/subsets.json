@@ -1,0 +1,20 @@
+{
+  "ci-fast": {
+    "description": "Required CI gate: every G-ref case plus one G-sim case per group.",
+    "entries": [
+      "bh",
+      "cuped",
+      "delta",
+      "power",
+      "srm",
+      "welch",
+      "sim-aa/aa-01",
+      "sim-effect/uniform-60",
+      "sim-long-tail/lift-100",
+      "sim-novelty/novelty-150-fades",
+      "sim-peeking/peek-trap-01",
+      "sim-ratio/lift-15",
+      "sim-srm/loss-15-aa"
+    ]
+  }
+}

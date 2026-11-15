@@ -25,6 +25,14 @@ import destinationRoutes from "./features/destinations/routes";
 import weatherRoutes from "./features/weather/routes";
 import { isDevRoutesEnabled } from "./features/dev/dev-routes-flag";
 import { isApiDocsEnabled } from "./lib/api-docs-flag";
+import reliabilityRoutes from "./features/reliability/routes";
+import { isReliabilityApiEnabled } from "./features/reliability/reliability-flag";
+import { createBullBoardRouter } from "./features/reliability/bull-board";
+import analyticsRoutes from "./features/analytics/routes";
+import { isAnalyticsEnabled } from "./features/analytics/analytics-flag";
+import { assertAnalyticsHashSecret } from "./features/analytics/services/pseudonymize";
+import experimentRoutes from "./features/experiments/routes";
+import { isExperimentsEnabled } from "./features/experiments/experiments-flag";
 
 const swaggerOptions = {
   definition: {
@@ -106,6 +114,13 @@ export function createApp(): Express {
   // controller also keeps its own env.NODE_ENV guard as defense-in-depth.
   if (isDevRoutesEnabled()) {
     app.use("/api/dev", devRoutes);
+    // Bull Board — drill-down queue inspector, dev-only for the same
+    // reason /api/dev is: this app's origin (Railway) differs from the
+    // frontend's (Vercel), so the Clerk session cookie never reaches a
+    // request typed directly into this URL — requireAuth() would 401
+    // every time, and there's no precedent in this repo for a basic-auth
+    // fallback. See reliability plan Phase 7 for the full reasoning.
+    app.use("/admin/queues", createBullBoardRouter());
   }
   app.use("/api", plannerRoutes);
   app.use("/api", weatherRoutes);
@@ -113,6 +128,28 @@ export function createApp(): Express {
     app.use("/api", calendarRoutes);
   }
   app.use("/api/destinations", destinationRoutes);
+  // Reliability/SLO dashboard read API — off everywhere by default,
+  // including local dev (see reliability-flag.ts). 3-layer security:
+  // this mount flag → requireUserAuth (routes.ts) → allowlist (controller).
+  if (isReliabilityApiEnabled()) {
+    app.use("/api/reliability", reliabilityRoutes);
+  }
+  // Analytics event ingest (B2) — off unless ANALYTICS_ENABLED=true; public
+  // (anonymous visitors log too), metered by its own limiter in routes.ts.
+  // Needs ANALYTICS_HASH_SECRET (userIds are stored as HMAC) — crash at
+  // boot rather than 500 on every event.
+  if (isAnalyticsEnabled()) {
+    assertAnalyticsHashSecret();
+    app.use("/api/analytics", analyticsRoutes);
+  }
+  // Experiment assignment + exposure logging (B2) — off unless
+  // EXPERIMENTS_ENABLED=true; signed-in users only (requireUserAuth in
+  // routes.ts). Exposures are stored with hashed userIds, so it needs
+  // ANALYTICS_HASH_SECRET too — crash at boot like analytics does.
+  if (isExperimentsEnabled()) {
+    assertAnalyticsHashSecret();
+    app.use("/api/experiments", experimentRoutes);
+  }
 
   //7. Health checks
   app.get("/health", (req: Request, res: Response) => {

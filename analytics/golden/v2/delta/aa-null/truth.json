@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "delta/aa-null",
+  "method": "delta_ratio",
+  "description": "A/A: 800 vs 800 users, CTR 10% in both.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05
+  },
+  "expected": {
+    "ratio_control": 0.1087281795511222,
+    "ratio_treatment": 0.09637964774951076,
+    "estimate": -0.01234853180161144,
+    "se": 0.006675066318044357,
+    "statistic": -1.8499489313282629,
+    "p_value": 0.06432091045375747,
+    "ci_low": -0.025431421379394765,
+    "ci_high": 0.0007343577761718852
+  },
+  "decision": "fail_to_reject",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "numpy+scipy",
+    "version": "numpy 2.1.3, scipy 1.14.1",
+    "call": "delta method for a ratio of means (Deng, Knoblich & Lu, KDD 2018): per group R = mean(y)/mean(x), Var(R) = (var_y - 2 R cov_xy + R^2 var_x) / (n mean_x^2) with ddof=1; two-sided z-test on R_t - R_c via scipy.stats.norm",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13",
+    "seed": 202
+  }
+}

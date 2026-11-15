@@ -2,7 +2,11 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
 import { useTripWizardStore } from "@/stores/trip-wizard.store";
-import { useTranslationStore } from "@/stores/useTranslationStore";
+import {
+  useTranslationStore,
+  type Language,
+} from "@/stores/useTranslationStore";
+import { localizeCountryName } from "@/utils/country-name";
 import {
   fetchDestinations,
   type DestinationCity,
@@ -15,7 +19,10 @@ import {
 
 const MIN_DESTINATION = 2;
 
-function lc(c: DestinationCountry, vi: boolean) {
+/** Country name in the UI language; the API `name` is often English-only. */
+function lc(c: DestinationCountry, language: Language, vi: boolean) {
+  const localized = localizeCountryName(c.nameEn, language);
+  if (localized !== c.nameEn) return localized;
   return vi ? c.name : c.nameEn;
 }
 
@@ -63,8 +70,8 @@ export function WizardDestinationPickers() {
   }, [countries]);
 
   const sortedC = useMemo(
-    () => sortDisp(countries, (c) => lc(c, vi)),
-    [countries, vi],
+    () => sortDisp(countries, (c) => lc(c, language, vi)),
+    [countries, language, vi],
   );
   const rawCities = useMemo(
     () => countries.find((c) => c.idKey === countryId)?.cities ?? [],
@@ -83,16 +90,16 @@ export function WizardDestinationPickers() {
     () =>
       sortedC.map((c) => ({
         value: c.idKey,
-        filterText: `${c.nameEn} ${c.name}`,
+        filterText: `${c.nameEn} ${c.name} ${lc(c, language, vi)}`,
         highlight: c.isSupported,
         label: (
           <>
             {c.flagEmoji ? `${c.flagEmoji} ` : null}
-            {lc(c, vi)}
+            {lc(c, language, vi)}
           </>
         ),
       })),
-    [sortedC, vi],
+    [sortedC, language, vi],
   );
 
   const cityItems: SearchPickerItem[] = useMemo(
@@ -229,7 +236,9 @@ export function WizardDestinationPickers() {
             cityIdKey: undefined,
           });
         }}
-        triggerLabel={coLabel ? lc(coLabel, vi) : t("wizard.selectCountry")}
+        triggerLabel={
+          coLabel ? lc(coLabel, language, vi) : t("wizard.selectCountry")
+        }
         searchPlaceholder={t("wizard.searchCountry")}
         emptyLabel={t("wizard.noResults")}
         open={openC}

@@ -33,23 +33,15 @@ import {
   getLocalizedTripTitle,
 } from "@/utils/format";
 import type { Trip } from "@/utils/schemas";
-import { getCountryImage } from "@/utils/countryImage";
+import { getTripCoverSrc } from "../utils/trip-cover";
 import { useDeleteTrip, useUpdateTripLifecycle } from "../hooks/useTrips";
 import { useTranslationStore } from "@/stores/useTranslationStore";
+import { STATUS_TONE_STYLES, TRIP_STATUS_TONE } from "../lib/statusStyles";
 
 interface TripCardProps {
   trip: Trip;
   priority?: boolean;
 }
-
-const AI_STATUS_COLORS: Record<string, string> = {
-  DRAFT: "bg-slate-700/80 text-slate-200",
-  QUEUED: "bg-blue-700/80 text-blue-100",
-  PROCESSING: "bg-amber-600/80 text-amber-100",
-  PROCESSING_STEP_1: "bg-amber-600/80 text-amber-100",
-  PROCESSING_STEP_2: "bg-amber-600/80 text-amber-100",
-  FAILED: "bg-red-700/80 text-red-100",
-};
 
 const LIFECYCLE_OPTIONS = [
   { value: "UPCOMING", labelKey: "trip.lifecycle_upcoming" },
@@ -73,10 +65,7 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
     useUpdateTripLifecycle();
   const { language, t, currency: preferredCurrency } = useTranslationStore();
 
-  const coverSrc =
-    trip.coverImage ||
-    getCountryImage(trip.destination || trip.title, trip._id) ||
-    null;
+  const coverSrc = getTripCoverSrc(trip);
 
   const convertedSpent = convertCurrency(
     trip.budget.totalSpent,
@@ -118,7 +107,7 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
               {coverSrc ? (
                 <img
                   src={coverSrc}
-                  alt={getLocalizedTripTitle(trip.title, t)}
+                  alt={getLocalizedTripTitle(trip.title, t, language)}
                   className="w-full h-full object-cover"
                   loading={priority ? undefined : "lazy"}
                   fetchPriority={priority ? "high" : "auto"}
@@ -134,7 +123,8 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
                 <div className="absolute top-3 left-3 flex gap-2 z-10">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium backdrop-blur-sm ${
-                      AI_STATUS_COLORS[trip.status] ?? AI_STATUS_COLORS.DRAFT
+                      STATUS_TONE_STYLES[TRIP_STATUS_TONE[trip.status]]
+                        .overlayPillClassName
                     }`}
                   >
                     {formatStatusLabel(trip.status)}
@@ -145,7 +135,9 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
               {/* ── Failed badge */}
               {isAiFailed && (
                 <div className="absolute top-3 left-3 z-10">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-700/80 text-red-100 backdrop-blur-sm">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium backdrop-blur-sm ${STATUS_TONE_STYLES.danger.overlayPillClassName}`}
+                  >
                     {t("trip.lifecycle_failed")}
                   </span>
                 </div>
@@ -222,21 +214,24 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
                 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1"
                 data-testid="trip-card-title"
               >
-                {getLocalizedTripTitle(trip.title, t)}
+                {getLocalizedTripTitle(trip.title, t, language)}
               </h3>
 
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="line-clamp-1">
                   {formatDateRange(trip.startDate, trip.endDate, language)}
-                  {duration > 0 && ` · ${duration}-day trip`}
+                  {duration > 0 &&
+                    ` · ${t("trips.durationDays").replace("{count}", String(duration))}`}
                 </span>
               </div>
 
               {trip.budget.totalLimit > 0 && (
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Budget</span>
+                    <span className="text-muted-foreground">
+                      {t("trip.budgetLabel")}
+                    </span>
                     <span>
                       {formatCurrency(
                         convertedSpent,
@@ -276,7 +271,7 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
               variant="ghost"
               size="icon"
               className="absolute top-2 right-2 h-7 w-7 rounded-full bg-background/70 backdrop-blur-sm hover:bg-background border border-border/40 shadow-sm z-10"
-              aria-label="Trip actions"
+              aria-label={t("trip.actionsMenu")}
               onClick={(e) => e.preventDefault()}
             >
               {isDeleting ? (
@@ -309,7 +304,7 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
             <AlertDialogTitle>
               {t("trip.deleteConfirmTitle").replace(
                 "{name}",
-                getLocalizedTripTitle(trip.title, t),
+                getLocalizedTripTitle(trip.title, t, language),
               )}
             </AlertDialogTitle>
             <AlertDialogDescription>

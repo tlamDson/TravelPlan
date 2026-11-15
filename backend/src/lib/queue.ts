@@ -11,7 +11,10 @@ const connection = {
   maxRetriesPerRequest: null,
 };
 
-export const createQueue = (name: string, options?: QueueOptions) => {
+export const createQueue = (
+  name: string,
+  options?: Omit<QueueOptions, "connection">,
+) => {
   return new Queue(name, {
     connection,
     ...options,

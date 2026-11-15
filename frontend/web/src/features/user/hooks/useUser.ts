@@ -6,6 +6,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { queryKeys } from "@/lib/query-client";
 import * as userApi from "../api/user.api";
 import type { UpdateUserRequest } from "../api/user.api";
@@ -32,10 +33,10 @@ export function useUpdateUserMe() {
     mutationFn: (data: UpdateUserRequest) => userApi.updateUserMe(data),
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(queryKeys.users.me(), updatedUser);
-      toast.success("Profile updated");
+      toast.success(toastT("toast.profile.updated"));
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to update profile");
+    onError: () => {
+      toast.error(toastT("toast.profile.updateFailed"));
     },
   });
 }

@@ -6,10 +6,13 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { queryKeys } from "@/lib/query-client";
 import { createTripFromWizard } from "../api/trip-wizard.api";
 import type { TripPreferences } from "@travelplan/shared";
 import { useSubscriptionStore } from "@/stores/useSubscriptionStore";
+import { track } from "@/features/analytics";
+import { getTripDays } from "../components/create-trip-dialog.utils";
 
 export type UseTripWizardOptions = {
   onSuccess?: (tripId: string, jobId: string) => void;
@@ -29,7 +32,15 @@ export function useTripWizard(options: UseTripWizardOptions = {}) {
       language?: string;
       title?: string;
     }) => createTripFromWizard(preferences, language, title),
-    onSuccess: (response) => {
+    onSuccess: (response, { preferences }) => {
+      track("trip_generation_requested", {
+        jobId: response.jobId,
+        // 0 only if the dates are broken; the catalog then refuses the event.
+        durationDays:
+          getTripDays(preferences.startDate, preferences.endDate) ?? 0,
+        // The wizard plans one destination per trip.
+        destinationCount: 1,
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
       if (response.quota) {
         const remaining = response.quota.remaining ?? 0;
@@ -47,11 +58,11 @@ export function useTripWizard(options: UseTripWizardOptions = {}) {
               : null,
         });
       }
-      toast.success("Trip queued! Your agent is getting started.");
+      toast.success(toastT("toast.trip.wizardQueued"));
       options.onSuccess?.(response.tripId, response.jobId);
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to start trip generation");
+    onError: () => {
+      toast.error(toastT("toast.trip.wizardFailed"));
     },
   });
 }

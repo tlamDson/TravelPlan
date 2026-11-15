@@ -8,6 +8,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { queryKeys } from "@/lib/query-client";
 import { useJobPoller } from "./useJobPoller";
 import * as plannerApi from "../api/planner.api";
@@ -37,10 +38,10 @@ export function useGenerateItinerary(
       plannerApi.generateItinerary(data),
     onSuccess: (response) => {
       setJobId(response.jobId);
-      toast.info("AI is generating your itinerary...");
+      toast.info(toastT("toast.planner.generating"));
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to start itinerary generation");
+    onError: () => {
+      toast.error(toastT("toast.planner.generateStartFailed"));
     },
   });
 
@@ -50,12 +51,12 @@ export function useGenerateItinerary(
     onComplete: (result) => {
       setJobId(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.all });
-      toast.success("Itinerary generated successfully!");
+      toast.success(toastT("toast.planner.generated"));
       options.onComplete?.(result);
     },
     onError: (error) => {
       setJobId(null);
-      toast.error(error || "Failed to generate itinerary");
+      toast.error(toastT("toast.planner.generateFailed"));
       options.onError?.(error);
     },
   });
@@ -91,10 +92,10 @@ export function useOptimizeRoute(options: UseGenerateItineraryOptions = {}) {
     mutationFn: (data: OptimizeRouteRequest) => plannerApi.optimizeRoute(data),
     onSuccess: (response) => {
       setJobId(response.jobId);
-      toast.info("Optimizing your route...");
+      toast.info(toastT("toast.planner.optimizing"));
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to start route optimization");
+    onError: () => {
+      toast.error(toastT("toast.planner.optimizeStartFailed"));
     },
   });
 
@@ -103,12 +104,12 @@ export function useOptimizeRoute(options: UseGenerateItineraryOptions = {}) {
     onComplete: (result) => {
       setJobId(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.all });
-      toast.success("Route optimized!");
+      toast.success(toastT("toast.planner.optimized"));
       options.onComplete?.(result);
     },
     onError: (error) => {
       setJobId(null);
-      toast.error(error || "Failed to optimize route");
+      toast.error(toastT("toast.planner.optimizeFailed"));
       options.onError?.(error);
     },
   });

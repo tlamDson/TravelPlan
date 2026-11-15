@@ -1,0 +1,97 @@
+import { describe, it, expect } from "vitest";
+import { getCountryImage } from "../countryImage";
+
+describe("getCountryImage", () => {
+  it("returns a France image for a French destination", () => {
+    expect(getCountryImage("Paris, France", "trip-1")).toMatch(
+      /^\/images\/countries\/france_/,
+    );
+  });
+
+  it("returns a Vietnam image for a Vietnamese city", () => {
+    expect(getCountryImage("Hanoi, Vietnam", "trip-2")).toMatch(
+      /^\/images\/countries\/vietnam_/,
+    );
+  });
+
+  it("returns a US image for a US destination", () => {
+    expect(getCountryImage("Chicago, United States", "trip-3")).toMatch(
+      /^\/images\/countries\/america_/,
+    );
+  });
+
+  it("returns null for Japan (a country with no images), never another country's landmark", () => {
+    for (const seed of ["a", "b", "c", "trip-4", "665f1c2e9b1d"]) {
+      expect(getCountryImage("Tokyo, Japan", seed)).toBeNull();
+    }
+    expect(getCountryImage("Tokyo, Japan")).toBeNull();
+  });
+
+  it("returns null for another country with no images", () => {
+    expect(getCountryImage("Reykjavik, Iceland", "trip-5")).toBeNull();
+  });
+
+  it("returns null when the destination is missing", () => {
+    expect(getCountryImage(undefined, "trip-6")).toBeNull();
+    expect(getCountryImage(null, "trip-6")).toBeNull();
+    expect(getCountryImage("", "trip-6")).toBeNull();
+  });
+
+  it("does not match keywords inside longer words", () => {
+    // "usa" in Busan, "nice" in Venice
+    expect(getCountryImage("Busan, South Korea", "trip-7")).toBeNull();
+    expect(getCountryImage("Venice, Italy", "trip-8")).toBeNull();
+  });
+
+  it("is deterministic for the same seed", () => {
+    expect(getCountryImage("Paris, France", "same")).toBe(
+      getCountryImage("Paris, France", "same"),
+    );
+  });
+
+  it("an explicit country name wins over a city alias of another country", () => {
+    // "hue" is a Vietnamese city alias, "phoenix"/"portland" are US ones.
+    expect(getCountryImage("Hue, United States", "t-1")).toMatch(
+      /^\/images\/countries\/america_/,
+    );
+    expect(getCountryImage("Phoenix, France", "t-2")).toMatch(
+      /^\/images\/countries\/france_/,
+    );
+    expect(getCountryImage("Portland, Vietnam", "t-3")).toMatch(
+      /^\/images\/countries\/vietnam_/,
+    );
+    expect(getCountryImage("Da Nang, France", "t-4")).toMatch(
+      /^\/images\/countries\/france_/,
+    );
+  });
+
+  it("an explicit country without images never falls back to another country's city alias", () => {
+    // Each city name collides with an alias of a country that has images.
+    for (const destination of [
+      "Hue, Japan",
+      "Portland, Australia",
+      "Paris, Canada",
+      "Washington, United Kingdom",
+      "Nice, Italy",
+      "Chicago, Japan",
+      "Trip to Da Nang, South Korea",
+      "France Street, Tokyo, Japan",
+    ]) {
+      expect(getCountryImage(destination, "t-5")).toBeNull();
+    }
+  });
+
+  it("treats Monaco as its own country, not France", () => {
+    expect(getCountryImage("Monaco", "t-6")).toBeNull();
+    expect(getCountryImage("Monte Carlo, Monaco", "t-6")).toBeNull();
+  });
+
+  it("still uses a city alias when no country is given", () => {
+    expect(getCountryImage("Trip to Hanoi", "t-7")).toMatch(
+      /^\/images\/countries\/vietnam_/,
+    );
+    expect(getCountryImage("Ba Dinh, Hanoi", "t-8")).toMatch(
+      /^\/images\/countries\/vietnam_/,
+    );
+  });
+});

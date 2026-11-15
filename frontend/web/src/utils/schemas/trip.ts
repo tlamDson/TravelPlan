@@ -43,6 +43,17 @@ export const activitySchema = z.object({
   priceLevel: z.number().optional(),
   photoUrl: z.string().optional(),
   openingHours: z.string().optional(),
+  // Language-neutral hours for this activity's weekday; labels are translated client-side
+  openingHoursDetail: z
+    .discriminatedUnion("kind", [
+      z.object({ kind: z.literal("open24h") }),
+      z.object({ kind: z.literal("closed") }),
+      z.object({
+        kind: z.literal("ranges"),
+        ranges: z.array(z.object({ open: z.string(), close: z.string() })),
+      }),
+    ])
+    .optional(),
   // Distance validation — set by geo-validator when activity is too far for chosen transport
   requiresTransport: z.boolean().optional(),
   distanceFromPrevious: z.number().optional(),

@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   useJobPoller,
   useTrip,
@@ -13,6 +13,7 @@ import {
   useRegenActivity,
 } from "@/features/planner/hooks";
 import { useLoadNextChunk } from "@/features/planner/hooks/useLoadNextChunk";
+import { useTrackTripViewed } from "@/features/planner/hooks/useTrackTripViewed";
 import {
   DndContext,
   PointerSensor,
@@ -42,7 +43,8 @@ import { DataError } from "@/components/DataError";
 import { PageLoader } from "@/components/PageLoader";
 import { retryJob, cancelJob } from "../api/jobs.api";
 import { toast } from "sonner";
-import { CalendarDays } from "lucide-react";
+import { toastT } from "@/lib/toast-i18n";
+import { CalendarDays, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-client";
@@ -56,6 +58,7 @@ export default function TripDetailPage() {
   const { tripId } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   const { data: trip, isLoading, error } = useTrip(tripId);
+  useTrackTripViewed(trip?._id);
   const { language, t, currency: preferredCurrency } = useTranslationStore();
   const queryClient = useQueryClient();
   const { mutate: updateLifecycle, isPending: isUpdatingLifecycle } =
@@ -167,14 +170,14 @@ export default function TripDetailPage() {
       const result = await retryJob(activeJobId);
       setActiveJobId(result.jobId);
       setJobError(null);
-      toast.success("Retry queued. The agent is working again.");
+      toast.success(toastT("toast.trip.retryQueued"));
     } catch (retryError: unknown) {
       const message =
         retryError instanceof Error
           ? retryError.message
-          : "Failed to retry trip generation";
+          : toastT("toast.trip.retryFailed");
       setJobError(message);
-      toast.error(message);
+      toast.error(toastT("toast.trip.retryFailed"));
     } finally {
       setIsRetrying(false);
     }
@@ -183,7 +186,7 @@ export default function TripDetailPage() {
   const { mutate: cancelTripJob, isPending: isCancelling } = useMutation({
     mutationFn: (id: string) => cancelJob(id),
     onSuccess: () => {
-      toast.success("Trip generation cancelled.");
+      toast.success(toastT("toast.trip.cancelled"));
       setActiveJobId(null);
       clearActiveJob();
       if (tripId) {
@@ -192,16 +195,8 @@ export default function TripDetailPage() {
         });
       }
     },
-    onError: (err: unknown) => {
-      const data = isAxiosError(err) ? err.response?.data : undefined;
-      const msg =
-        data &&
-        typeof data === "object" &&
-        "message" in data &&
-        typeof (data as { message: unknown }).message === "string"
-          ? (data as { message: string }).message
-          : "";
-      toast.error(msg || "Failed to cancel trip generation.");
+    onError: () => {
+      toast.error(toastT("toast.trip.cancelFailed"));
     },
   });
 
@@ -242,9 +237,10 @@ export default function TripDetailPage() {
         queryKey: queryKeys.trips.detail(tripId),
       });
       toast.success(
-        t("trip.reGeocodeSuccess")
-          .replace("{updated}", String(res.data.updated))
-          .replace("{failed}", String(res.data.failed)),
+        toastT("trip.reGeocodeSuccess", {
+          updated: res.data.updated,
+          failed: res.data.failed,
+        }),
         { id: toastId },
       );
     } catch {
@@ -444,6 +440,11 @@ export default function TripDetailPage() {
 
   const totalDays = getTripDuration(trip.startDate, trip.endDate);
   const isFallback = trip?.status === "FALLBACK";
+  // QUEUED has no agent lock yet, so isAgentProcessing alone misses it.
+  const isGenerating =
+    trip.isAgentProcessing ||
+    trip.status === "QUEUED" ||
+    trip.status.startsWith("PROCESSING");
 
   const itineraryDayIndex =
     activeDay != null
@@ -538,13 +539,31 @@ export default function TripDetailPage() {
                 </div>
               )}
 
-              {trip.itinerary.length === 0 ? (
+              {trip.itinerary.length === 0 && isGenerating ? (
+                <div
+                  data-testid="trip-generating-state"
+                  role="status"
+                  aria-live="polite"
+                  className="rounded-xl border border-border bg-muted/30 p-8 text-center"
+                >
+                  <Loader2 className="h-8 w-8 mx-auto mb-3 animate-spin text-muted-foreground" />
+                  <p className="font-medium mb-1">{t("trip.generating")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("trip.generatingDesc")}
+                  </p>
+                </div>
+              ) : trip.itinerary.length === 0 ? (
                 <div className="rounded-xl border border-border bg-muted/30 p-8 text-center transition-shadow duration-200">
                   <CalendarDays className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
                   <p className="font-medium mb-1">{t("trip.noItinerary")}</p>
                   <p className="text-sm text-muted-foreground">
                     {t("trip.noItineraryDesc")}
                   </p>
+                  <Button asChild size="sm" className="mt-4">
+                    <Link to="/trips" data-testid="trip-empty-itinerary-cta">
+                      {t("trip.noItineraryCta")}
+                    </Link>
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-4">

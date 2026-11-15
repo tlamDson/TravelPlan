@@ -19,51 +19,19 @@ import { aiAgentService } from "./ai-agent.service";
 import { intentParserService } from "./intent-parser.service";
 import { validationService } from "./validation.service";
 import { buildItinerary, updateJobProgress } from "../jobs/itinerary-builder";
+import {
+  countUnresolvedPlaces,
+  buildGenerationMeta,
+} from "../jobs/itinerary-metrics";
 import type { TripPreferences } from "@travelplan/shared";
 import type { TripIntents } from "./intent-parser.service";
 import { CityCost } from "../models/CityCost";
 import type { IItineraryDay } from "../models/Trip.types";
+import { fetchLocalInsightWithMeta } from "./local-insight.service";
+import { GEMINI_MODEL } from "../../../config/gemini-models";
+import { slicePreferences, rebaseDays } from "./chunk-helpers";
 
 const CHUNK_SIZE = 3; // days per chunk
-
-/**
- * Slice preferences to cover only `chunkDays` days starting from `dayOffset`.
- * We shift startDate forward so the AI generates the correct day numbers.
- */
-function slicePreferences(
-  preferences: TripPreferences,
-  dayOffset: number,
-  chunkDays: number,
-): TripPreferences {
-  const start = new Date(preferences.startDate);
-  start.setDate(start.getDate() + dayOffset);
-
-  const end = new Date(start);
-  end.setDate(end.getDate() + chunkDays - 1);
-
-  return {
-    ...preferences,
-    startDate: start.toISOString().split("T")[0]!,
-    endDate: end.toISOString().split("T")[0]!,
-  };
-}
-
-/**
- * Re-offset day numbers so that chunk Day 1 becomes the correct absolute day
- * within the full trip (e.g. chunk 2, day 1 → trip day 4).
- */
-function rebaseDays(
-  days: IItineraryDay[],
-  dayOffset: number,
-  startDate: Date,
-): IItineraryDay[] {
-  return days.map((d) => {
-    const absDay = d.day + dayOffset;
-    const absDate = new Date(startDate);
-    absDate.setDate(absDate.getDate() + dayOffset + (d.day - 1));
-    return { ...d, day: absDay, date: absDate };
-  });
-}
 
 /**
  * Process a long trip (Pro, > 5 days) by generating 3-day chunks sequentially
@@ -77,9 +45,10 @@ export async function processChunkedTrip(
 ): Promise<void> {
   const startDate = new Date(preferences.startDate);
   const endDate = new Date(preferences.endDate);
-  const totalDays = Math.ceil(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-  ) + 1;
+  const totalDays =
+    Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    ) + 1;
   const totalChunks = Math.ceil(totalDays / CHUNK_SIZE);
 
   logger.info(
@@ -93,13 +62,33 @@ export async function processChunkedTrip(
     chunksReady: Array(totalChunks).fill(false),
   });
 
-  const destination = preferences.destination.split(",")[0] || preferences.destination;
+  const destination =
+    preferences.destination.split(",")[0] || preferences.destination;
   const cityCost = await CityCost.findOne({
     cityName: { $regex: new RegExp(destination, "i") },
   }).lean();
 
+  // Fetched ONCE for the whole trip, not per chunk — the destination
+  // doesn't change between chunks, only the day range does, and
+  // buildRetrievalQuery()'s query text is keyed on focus/pace, not dates.
+  // Previously this file never called RAG retrieval at all: every Pro trip
+  // >5 days generated with zero local grounding, less than free-tier trips
+  // got.
+  const {
+    localInsight,
+    ragUsed,
+    ragResultCount,
+    ragAvgScore,
+    ragFallbackReason,
+  } = await fetchLocalInsightWithMeta(preferences, { tripId });
+
   // Collect all generated day objects across chunks
   const allDays: IItineraryDay[] = [];
+  let totalAiAttempts = 0;
+  let promptTokenSum = 0;
+  let totalTokenSum = 0;
+  let latencyMsSum = 0;
+  let anyUsageCaptured = false;
 
   for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
     const dayOffset = chunkIdx * CHUNK_SIZE;
@@ -120,12 +109,24 @@ export async function processChunkedTrip(
       `Generating days ${dayOffset + 1}–${dayOffset + chunkDays}…`,
     );
 
-    // Generate AI intents for this chunk
-    const intents = await aiAgentService.generateIntentsWithRetry(
-      chunkPrefs,
-      language,
-      cityCost ?? undefined,
-    );
+    // Generate AI intents for this chunk — localInsight is the same
+    // trip-wide RAG context fetched once above, not re-fetched per chunk.
+    const { intents, attempts, promptTokens, totalTokens, latencyMs } =
+      await aiAgentService.generateIntentsWithRetry(
+        chunkPrefs,
+        language,
+        cityCost ?? undefined,
+        4,
+        localInsight,
+      );
+    totalAiAttempts += attempts;
+    latencyMsSum += latencyMs;
+    if (promptTokens !== null || totalTokens !== null) {
+      anyUsageCaptured = true;
+      promptTokenSum += promptTokens ?? 0;
+      totalTokenSum += totalTokens ?? 0;
+    }
+
     const intentList = intentParserService.flattenIntents(intents);
 
     // Validate
@@ -171,6 +172,22 @@ export async function processChunkedTrip(
       `✅ [CHUNK ${chunkIdx + 1}/${totalChunks}] Saved to DB`,
     );
   }
+
+  // One generationMeta for the whole trip, not per chunk — aiAttempts/token
+  // sums are totals across every chunk's AI call.
+  const generationMeta = buildGenerationMeta({
+    ragUsed,
+    ragResultCount,
+    ragAvgScore,
+    ragFallbackReason,
+    model: GEMINI_MODEL,
+    aiAttempts: totalAiAttempts,
+    unresolvedPlaceCount: countUnresolvedPlaces(allDays),
+    promptTokens: anyUsageCaptured ? promptTokenSum : null,
+    totalTokens: anyUsageCaptured ? totalTokenSum : null,
+    latencyMs: latencyMsSum,
+  });
+  await tripRepository.update(tripId, { generationMeta });
 
   // Ensure final status
   await tripRepository.updateStatus(tripId, "COMPLETED");

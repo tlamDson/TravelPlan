@@ -14,6 +14,7 @@ import { apiClient } from "@/lib/axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-client";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import type { Trip } from "../api/trips.api";
 import type { ItineraryDay } from "@/utils/schemas";
 
@@ -56,9 +57,7 @@ export function useLoadNextChunk(
             if (!old) return old;
             const existingDays = old.itinerary ?? [];
             const newDays = (response.data.days ?? []) as ItineraryDay[];
-            const existingDayNums = new Set(
-              existingDays.map((d) => d.day),
-            );
+            const existingDayNums = new Set(existingDays.map((d) => d.day));
             const uniqueNewDays = newDays.filter(
               (d) => !existingDayNums.has(d.day),
             );
@@ -72,10 +71,10 @@ export function useLoadNextChunk(
         setNextChunkIndex((prev) => prev + 1);
       } else {
         // Chunk not ready yet — backend is still generating
-        toast.info("Đang tải thêm ngày... vui lòng thử lại sau vài giây.");
+        toast.info(toastT("toast.trip.loadingMore"));
       }
     } catch {
-      toast.error("Không thể tải thêm ngày. Vui lòng thử lại.");
+      toast.error(toastT("toast.trip.loadMoreFailed"));
     } finally {
       setIsLoadingChunk(false);
     }

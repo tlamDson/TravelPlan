@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "id": "hillstrom/mens-spend",
+  "method": "cuped",
+  "description": "Hillstrom e-mail test, Mens E-Mail vs No E-Mail: two-week spend per head in dollars, CUPED-adjusted by history (spend in the past year).",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "n_control": 21306,
+    "n_treatment": 21307,
+    "mean_control": 0.65,
+    "naive_estimate": 0.77,
+    "estimate": 0.77
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 0,
+      "rel": 0
+    },
+    "mean_control": {
+      "abs": 0.005,
+      "rel": 0
+    },
+    "naive_estimate": {
+      "abs": 0.005,
+      "rel": 0
+    },
+    "estimate": {
+      "abs": 0.014116783931032339,
+      "rel": 0
+    }
+  },
+  "source": {
+    "tool": "published",
+    "version": "Radcliffe (2008), Stochastic Solutions, Tables 1-2",
+    "call": "Table 2, Men's row, Spend / head: control $0.65, uplift $0.77 (treated $1.41 is not used: the file gives $1.4226); arm sizes from Table 1. Published numbers are unadjusted group means; CUPED keeps the same estimand.",
+    "url": "http://minethatdata.com/Stochastic_Solutions_E-Mail_Challenge_2008.04.30.pdf",
+    "data_url": "http://www.minethatdata.com/Kevin_Hillstrom_MineThatData_E-MailAnalytics_DataMiningChallenge_2008.03.20.csv",
+    "data_sha256": "0e5893329d8b93cefecc571777672028290ab69865718020c78c7284f291aece",
+    "generator": "abkit.golden.freeze_public",
+    "frozen_at": "2026-11-13"
+  }
+}

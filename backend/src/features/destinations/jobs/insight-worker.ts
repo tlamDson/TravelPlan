@@ -12,10 +12,9 @@ import { embedTexts } from "../services/embedding.service";
 import { PlaceInsight } from "../models/PlaceInsight";
 import { Country } from "../models/Country";
 import { createWorker } from "../../../lib/queue";
-import { logger } from "../../../lib/logger";
+import { QUEUE_NAMES } from "../../../lib/queue-defaults";
+import { workerLogger as logger } from "../../../lib/logger";
 import type { ScrapeCityPayload } from "./insight-queue";
-
-const INSIGHT_QUEUE_NAME = "insight-scraper";
 
 export async function insightScraperProcessor(
   job: Job<ScrapeCityPayload>,
@@ -37,9 +36,9 @@ export async function insightScraperProcessor(
 
   // Batch embed texts
   const textsToEmbed = entities.map(
-    (e) => `${e.name} ${e.description} ${e.tags.join(" ")}`
+    (e) => `${e.name} ${e.description} ${e.tags.join(" ")}`,
   );
-  
+
   const embeddings = await embedTexts(textsToEmbed);
 
   // Bulk write to PlaceInsight collection with updateOne + upsert
@@ -77,18 +76,23 @@ export async function insightScraperProcessor(
     { jobId: job.id, city: cityNameEn, totalProcessed: entities.length },
     "PlaceInsight entities extracted and bulk upserted",
   );
-  
+
   return `Done: ${cityNameEn} (${entities.length} places)`;
 }
 
 // Worker with rate limiter: max 1 job processed every 2 seconds
 // This protects Serper and Gemini API rate limits.
+//
+// No custom lockDuration/stalledInterval — see the comment above
+// startWorker() in worker.ts for why: this was a copy of the same
+// `{ stalledInterval: 30_000, lockDuration: 60_000 }` that measurement
+// (see B3, worker-lock-duration.integration.test.ts) showed was a no-op
+// plus pure downside. insightScraperProcessor is `await`-only (Serper +
+// Gemini HTTP calls), same shape as trip-generation's processor.
 export const insightWorker = createWorker(
-  INSIGHT_QUEUE_NAME,
+  QUEUE_NAMES.INSIGHT_SCRAPER,
   insightScraperProcessor,
   {
     limiter: { max: 1, duration: 2000 },
-    stalledInterval: 30_000,
-    lockDuration: 60_000,
   },
 );

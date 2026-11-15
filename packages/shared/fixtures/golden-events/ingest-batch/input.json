@@ -1,0 +1,195 @@
+{
+  "events": [
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000001",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:00:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "wizard_started",
+      "properties": {
+        "entryPoint": "dashboard"
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000002",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:05:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "trip_generation_requested",
+      "properties": {
+        "jobId": "job-g1",
+        "durationDays": 3,
+        "destinationCount": 1
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000003",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:07:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "trip_generation_completed",
+      "properties": {
+        "jobId": "job-g1",
+        "tripId": "trip-g1",
+        "outcome": "completed",
+        "durationMs": 98000
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000001",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:00:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "wizard_started",
+      "properties": {
+        "entryPoint": "dashboard"
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000005",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:10:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "trip_saved",
+      "properties": {
+        "tripId": "trip-g1"
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000006",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:11:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "trip_generation_requested",
+      "properties": {
+        "jobId": "job-g2",
+        "durationDays": "5",
+        "destinationCount": 2
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000007",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:12:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "trip_viewed",
+      "properties": {}
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000008",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:13:00.000Z",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "trip_viewed",
+      "properties": {
+        "tripId": "trip-g1"
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000009",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:14:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "trip_deleted",
+      "properties": {
+        "tripId": "trip-g1"
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000010",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:15:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "server",
+      "name": "experiment_exposure",
+      "properties": {
+        "experimentKey": "save-trip-cta-v1",
+        "variant": "treatment",
+        "bucket": 4821
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000011",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:16:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "experiment_exposure",
+      "properties": {
+        "experimentKey": "save-trip-cta-v1",
+        "variant": "control",
+        "bucket": 120
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000005",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:10:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "trip_saved",
+      "properties": {
+        "tripId": "trip-g1"
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000013",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:20:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "itinerary_edited",
+      "properties": {
+        "tripId": "trip-g1",
+        "editType": "reorder",
+        "dayIndex": 1
+      }
+    },
+    {
+      "eventId": "not-a-uuid",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:21:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "trip_viewed",
+      "properties": {
+        "tripId": "trip-g1"
+      }
+    },
+    {
+      "eventId": "0b7c6f0e-0000-4000-8000-000000000015",
+      "schemaVersion": 1,
+      "occurredAt": "2026-11-01T09:25:00.000Z",
+      "sessionId": "sess-g1",
+      "userId": "user_golden_1",
+      "source": "web",
+      "name": "calendar_synced",
+      "properties": {
+        "tripId": "trip-g1",
+        "provider": "google"
+      }
+    }
+  ]
+}

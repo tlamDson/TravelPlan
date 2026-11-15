@@ -1,6 +1,7 @@
 import { placeCacheRepository } from "../repositories/place-cache.repository";
 import { mapboxBreaker, placesTextBreaker } from "../tools/circuit-breaker";
 import { logger } from "../../../lib/logger";
+import type { OpeningPeriod } from "./opening-hours";
 
 export interface ValidatedPlace {
   name: string;
@@ -15,6 +16,7 @@ export interface ValidatedPlace {
   photoUrl?: string;
   openingHours?: string;
   openingHoursArray?: string[];
+  openingPeriods?: OpeningPeriod[];
 }
 
 const BROAD_MAPBOX_TYPES = new Set(["place", "region", "country"]);
@@ -93,6 +95,8 @@ export class ValidationService {
           if (cached.photoUrl) result.photoUrl = cached.photoUrl;
           if (cached.openingHoursArray)
             result.openingHoursArray = cached.openingHoursArray;
+          if (cached.openingPeriods?.length)
+            result.openingPeriods = cached.openingPeriods;
           if (cached.openingHours) result.openingHours = cached.openingHours;
           return result;
         }
@@ -127,6 +131,7 @@ export class ValidationService {
         if (place.photoUrl) result.photoUrl = place.photoUrl;
         if (place.openingHoursArray)
           result.openingHoursArray = place.openingHoursArray;
+        if (place.openingPeriods) result.openingPeriods = place.openingPeriods;
         if (place.openingHours) result.openingHours = place.openingHours; // legacy fallback
 
         // Cache the result, keyed by the same geo-constrained string that
@@ -153,6 +158,8 @@ export class ValidationService {
         if (place.photoUrl) cacheData.photoUrl = place.photoUrl;
         if (place.openingHoursArray)
           cacheData.openingHoursArray = place.openingHoursArray;
+        if (place.openingPeriods)
+          cacheData.openingPeriods = place.openingPeriods;
         if (place.openingHours) cacheData.openingHours = place.openingHours;
 
         await placeCacheRepository.upsert(geoConstrainedQuery, cacheData);

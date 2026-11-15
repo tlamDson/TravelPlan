@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "id": "sim-peeking/peek-trap-05",
+  "method": "readout",
+  "description": "A/A where a naive daily Welch test would have shipped at an interim look; decide once, at the planned horizon.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05,
+    "srm_threshold": 0.0005,
+    "expected_shares": {
+      "control": 0.5,
+      "treatment": 0.5
+    },
+    "metric": {
+      "kind": "mean",
+      "column": "saves"
+    },
+    "window_days": 7,
+    "looks": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ]
+  },
+  "expected": {
+    "srm": false,
+    "estimate": 0.0
+  },
+  "decision": "no_ship",
+  "tolerance": {
+    "default": {
+      "abs": 0.0,
+      "rel": 0.0
+    },
+    "estimate": {
+      "abs": 1.38919,
+      "rel": 0.0
+    }
+  },
+  "source": {
+    "tool": "simkit",
+    "version": "0.1.0",
+    "call": "simkit.golden_truth.observe: the same simulated users run in both arms; estimate = mean over enrolled users of Y(treatment) - Y(control) (ratio: sum Y_num / sum Y_den per arm); tolerance = 4 x the standard error of the observed difference",
+    "generator": "simkit.freeze_golden",
+    "seed": 45013,
+    "simulated": true,
+    "injected": {
+      "experiment": {
+        "definition": {
+          "key": "golden-sim-peeking-peek-trap-05",
+          "salt": "golden",
+          "holdoutBuckets": 0,
+          "variants": [
+            {
+              "key": "control",
+              "weight": 5000
+            },
+            {
+              "key": "treatment",
+              "weight": 5000
+            }
+          ]
+        },
+        "target": "trip_saved",
+        "relativeLift": {},
+        "noveltyLift": {},
+        "noveltyHalfLifeDays": 2.0,
+        "exposureStates": [
+          "trip_generation_completed",
+          "trip_viewed"
+        ],
+        "exposureLoss": {}
+      },
+      "users": 6000,
+      "days": 14,
+      "window_days": 7,
+      "start": "2026-11-01",
+      "enrolled": 2251
+    },
+    "screening": {
+      "first_seed": 45000,
+      "attempts": 14,
+      "reference": "scipy 1.14.1: chi-square SRM, then Welch or delta-method z",
+      "verdict": "flat",
+      "srm_p_value": 0.3429,
+      "p_value": 0.8312,
+      "naive_peek": {
+        "day": 9,
+        "estimate": 1.462,
+        "p_value": 0.04307
+      }
+    },
+    "frozen_at": "2026-11-13"
+  }
+}

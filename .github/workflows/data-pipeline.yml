@@ -48,6 +48,6 @@ jobs:
           curl -H "Content-Type: application/json" \
           -X POST \
           -d '{
-            "content": "🚨 **[TravelPlan] City Budget ETL Pipeline Failed!** 🚨\n\n**Repository:** `${{ github.repository }}`\n**Branch:** `${{ github.ref_name }}`\n**Run ID:** `${{ github.run_id }}`\n\n🔗 **[Click here to view full logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**\n\n_Vui lòng kiểm tra lại log xem API có đổi cấu trúc không hoặc Database có bị sập không._"
+            "content": "🚨 **[TravelPlan] City Budget ETL Pipeline Failed!** 🚨\n\n**Repository:** `${{ github.repository }}`\n**Branch:** `${{ github.ref_name }}`\n**Run ID:** `${{ github.run_id }}`\n\n🔗 **[Click here to view full logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**\n\n_Please check the logs to see whether the API changed its structure or the database is down._"
           }' \
           $DISCORD_WEBHOOK

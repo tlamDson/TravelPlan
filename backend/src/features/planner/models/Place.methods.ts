@@ -8,7 +8,7 @@ export const attachPlaceMethods = (schema: Schema<IPlace>) => {
    * Prevents duplicates by checking source + sourceId
    */
   schema.statics.findOrCreateFromSource = async function (
-    source: string,
+    source: IPlace["source"],
     sourceId: string,
     placeData: Partial<IPlace>,
   ) {

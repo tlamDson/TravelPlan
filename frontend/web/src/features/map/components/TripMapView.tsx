@@ -135,7 +135,7 @@ function SortableMapActivityRow({
       {...attributes}
       {...listeners}
       className={`relative group flex items-start gap-2 rounded-lg py-1 px-1 transition-colors cursor-grab active:cursor-grabbing touch-none ${
-        isSelected ? "bg-white/60 dark:bg-white/10" : "hover:bg-muted/50"
+        isSelected ? "bg-primary/10" : "hover:bg-muted/50"
       }`}
     >
       <button

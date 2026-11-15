@@ -1,5 +1,19 @@
 /**
  * Fetch Clerk user's primary email via Clerk REST API (server-side).
+ * Reused outside the calendar feature too (e.g. reliability-admin-guard.service.ts)
+ * — this is generic Clerk glue, not calendar-specific.
+ *
+ * Testability note: this makes a REAL network call via `axios`, separate
+ * from `@clerk/express` — the `clerk-express.stub.ts` alias every
+ * integration test gets (via `resolve.alias` in
+ * vitest.integration.config.ts) does NOT intercept this. Any integration
+ * test exercising a route that (transitively) calls this must `vi.mock()`
+ * something upstream of it — either this module directly, or a guard
+ * function that calls it (see reliability.integration.test.ts, which
+ * mocks `reliability-admin-guard.service.ts` one level up) — or it will
+ * silently hit the real Clerk API with the test env's dummy
+ * `CLERK_SECRET_KEY` and always fail closed (this function returns
+ * `null` on any error).
  */
 
 import axios from "axios";
@@ -46,10 +60,7 @@ export async function getClerkUserPrimaryEmail(
     const chosen = primary ?? emails[0];
     return chosen?.email_address?.trim().toLowerCase() ?? null;
   } catch (err: unknown) {
-    logger.error(
-      { err, clerkUserId },
-      "Failed to fetch Clerk user email for calendar VIP check",
-    );
+    logger.error({ err, clerkUserId }, "Failed to fetch Clerk user email");
     return null;
   }
 }

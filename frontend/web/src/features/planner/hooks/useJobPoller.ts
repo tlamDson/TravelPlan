@@ -5,7 +5,9 @@
  *
  * When triggering a long-running Agent task:
  * 1. Trigger: POST request returns { jobId }
- * 2. Poll: Use react-query to poll /jobs/:id every 2 seconds
+ * 2. Poll: Use react-query to poll /jobs/:id, backing off from 1s to 5s
+ *    (see utils/poll-backoff.ts) so a long generation stays under the API
+ *    rate limit; paused while the tab is hidden unless keepAliveInBackground
  * 3. States: Handle 4 distinct states: IDLE -> QUEUED -> PROCESSING -> COMPLETED
  *
  * Section 7: Testing - Accepts mockStatus prop for testing UI states
@@ -17,6 +19,11 @@ import { apiClient } from "@/lib/axios";
 import { queryKeys } from "@/lib/query-client";
 import { jobSchema, type Job, type JobStatus } from "@/utils/schemas";
 import { validateAPI } from "@/utils/validation";
+import {
+  getPollDelay,
+  POLL_INITIAL_INTERVAL_MS,
+  POLL_MAX_INTERVAL_MS,
+} from "../utils/poll-backoff";
 
 // ============================================
 // TYPES
@@ -25,8 +32,10 @@ import { validateAPI } from "@/utils/validation";
 export interface UseJobPollerOptions {
   /** Job ID to poll */
   jobId: string | null;
-  /** Polling interval in ms (default: 2000) */
+  /** First polling interval in ms; later polls back off (default: 1000) */
   interval?: number;
+  /** Polling interval cap in ms (default: 5000) */
+  maxInterval?: number;
   /** Callback when job completes */
   onComplete?: (result: unknown) => void;
   /** Callback when job fails */
@@ -97,7 +106,8 @@ async function fetchJobStatus(jobId: string): Promise<Job> {
  */
 export function useJobPoller({
   jobId,
-  interval = 2000,
+  interval = POLL_INITIAL_INTERVAL_MS,
+  maxInterval = POLL_MAX_INTERVAL_MS,
   onComplete,
   onError,
   mockStatus,
@@ -121,7 +131,11 @@ export function useJobPoller({
       if (data?.status === "COMPLETED" || data?.status === "FAILED") {
         return false;
       }
-      return interval;
+      // Back off by the number of polls already answered for this job
+      // (errors included, so a failing endpoint is not hammered at 1s).
+      const { dataUpdateCount, errorUpdateCount } = query.state;
+      const pollsDone = dataUpdateCount + errorUpdateCount;
+      return getPollDelay(Math.max(0, pollsDone - 1), interval, maxInterval);
     },
     refetchIntervalInBackground: keepAliveInBackground,
   });

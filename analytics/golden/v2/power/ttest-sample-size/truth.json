@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "power/ttest-sample-size",
+  "method": "sample_size_ttest_ind",
+  "description": "Users per group for 80% power at d = 0.1, treatment group twice control.",
+  "data": null,
+  "params": {
+    "effect_size": 0.1,
+    "power": 0.8,
+    "ratio": 2.0,
+    "alpha": 0.05,
+    "alternative": "two-sided"
+  },
+  "expected": {
+    "nobs1": 1177.969678577209
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-06
+    }
+  },
+  "source": {
+    "tool": "statsmodels",
+    "version": "0.14.4",
+    "call": "scipy.optimize.brentq(xtol=1e-14) on nobs1 of statsmodels.stats.power.TTestIndPower().power(effect_size, nobs1, alpha, ratio, alternative) - power; nobs1 not rounded up",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13"
+  }
+}

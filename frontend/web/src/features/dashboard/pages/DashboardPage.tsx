@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { WidgetError } from "@/components/WidgetError";
 import { useTrips } from "@/features/planner/hooks/useTrips";
 import { TripCard } from "@/features/planner/components/TripCard";
+import { countDestinations } from "../utils/countDestinations";
 import {
   Plus,
   Plane,
@@ -22,6 +23,11 @@ import { useSubscriptionStore } from "@/stores/useSubscriptionStore";
 import { getUserMe, type UserProfile } from "@/features/user/api/user.api";
 import { apiClient } from "@/lib/axios";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
+import {
+  BRAND_GRADIENT_BADGE,
+  BRAND_GRADIENT_BUTTON,
+} from "@/lib/brandGradient";
 
 export default function DashboardPage() {
   const { data: trips, isLoading, error } = useTrips();
@@ -38,7 +44,7 @@ export default function DashboardPage() {
     if (!success && !canceled) return;
 
     if (canceled) {
-      toast.info("Upgrade canceled. You are still on the Free plan.");
+      toast.info(toastT("toast.dashboard.upgradeCanceled"));
       searchParams.delete("canceled");
       setSearchParams(searchParams, { replace: true });
       return;
@@ -56,12 +62,10 @@ export default function DashboardPage() {
         });
         closeUpgradeModal();
         setShowConfetti(true);
-        toast.success(
-          "Welcome to TravelPlan Pro! Your limits have been removed.",
-        );
+        toast.success(toastT("toast.dashboard.proWelcome"));
         window.setTimeout(() => setShowConfetti(false), 3000);
       } catch {
-        toast.info("Upgrade processed. Refreshing your subscription status...");
+        toast.info(toastT("toast.dashboard.upgradeProcessed"));
       } finally {
         searchParams.delete("success");
         setSearchParams(searchParams, { replace: true });
@@ -76,8 +80,7 @@ export default function DashboardPage() {
   ]);
 
   // Computed Metrics
-  const totalPlaces =
-    trips?.reduce((acc, trip) => acc + (trip.cities?.length || 0), 0) || 0;
+  const totalPlaces = countDestinations(trips);
 
   const totalSpent =
     trips?.reduce((acc, trip) => acc + (trip.budget?.totalSpent || 0), 0) || 0;
@@ -108,7 +111,7 @@ export default function DashboardPage() {
           {Array.from({ length: 80 }).map((_, i) => (
             <span
               key={i}
-              className="absolute h-2 w-2 animate-bounce rounded-full bg-gradient-to-r from-purple-500 to-orange-500"
+              className={`absolute h-2 w-2 animate-bounce rounded-full ${BRAND_GRADIENT_BADGE}`}
               style={{
                 left: `${(i * 13) % 100}%`,
                 top: `${(i * 7) % 30}%`,
@@ -132,10 +135,10 @@ export default function DashboardPage() {
               onClick={async () => {
                 try {
                   await apiClient.post("/dev/toggle-pro");
-                  toast.success("Toggled Pro mode! Reloading page...");
+                  toast.success(toastT("toast.dashboard.proToggled"));
                   window.location.reload();
                 } catch {
-                  toast.error("Failed to toggle pro status");
+                  toast.error(toastT("toast.dashboard.proToggleFailed"));
                 }
               }}
             >
@@ -146,13 +149,14 @@ export default function DashboardPage() {
 
           {blockedByFreeLimit ? (
             <Button
-              className="bg-gradient-to-r from-purple-600 to-orange-500 text-white hover:from-purple-700 hover:to-orange-600"
+              className={BRAND_GRADIENT_BUTTON}
               onClick={() => openUpgradeModal("monthly-trip-limit")}
             >
               ✨ Get Pro for Unlimited Trips
             </Button>
           ) : (
             <CreateTripDialog
+              entryPoint="dashboard"
               trigger={
                 <Button data-testid="dashboard-new-trip-button">
                   <Plus className="h-4 w-4 mr-2" />
@@ -241,6 +245,7 @@ export default function DashboardPage() {
                     {t("dash.startPlanning")}
                   </p>
                   <CreateTripDialog
+                    entryPoint="dashboard"
                     trigger={
                       <Button data-testid="dashboard-empty-create-button">
                         <Plus className="h-4 w-4 mr-2" />

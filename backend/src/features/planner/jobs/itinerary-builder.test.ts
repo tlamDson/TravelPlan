@@ -340,4 +340,29 @@ describe("buildItinerary", () => {
     );
     expect(new Set(allNames).size).toBe(allNames.length);
   });
+  it("attaches the structured opening hours for the activity's weekday (2026-06-01 is a Monday)", async () => {
+    const intents: TripIntents = { day1: { morning: "Q1" } };
+    const validated = [
+      place({
+        name: "Pagoda",
+        coordinates: [105.85, 21.03],
+        openingHoursArray: ["Monday: Open 24 hours"],
+        openingPeriods: [
+          {
+            open: { day: 1, hour: 8, minute: 0 },
+            close: { day: 1, hour: 17, minute: 0 },
+          },
+        ],
+      }),
+    ];
+    const itinerary = await buildItinerary(
+      intents,
+      validated,
+      basePreferences(),
+    );
+    expect(itinerary[0].activities[0].openingHoursDetail).toEqual({
+      kind: "ranges",
+      ranges: [{ open: "08:00", close: "17:00" }],
+    });
+  });
 });

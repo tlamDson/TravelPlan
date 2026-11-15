@@ -6,7 +6,7 @@
  */
 
 import { Job } from "bullmq";
-import { logger } from "../../../lib/logger";
+import { workerLogger as logger } from "../../../lib/logger";
 import { tripRepository } from "../../planner/repositories/trip.repository";
 import { getGoogleAccessToken } from "../services/clerk-oauth.service";
 import { itineraryToGoogleEvents } from "../services/calendar-format.service";
@@ -65,8 +65,7 @@ export async function calendarSyncProcessor(
   // Step 4 — Sync events (with incremental DB save for partial failure protection)
   await job.updateProgress(60);
   const existingGoogleEventIds = (trip as any).googleEventIds as
-    | Record<string, string>
-    | undefined;
+    Record<string, string> | undefined;
 
   const updatedGoogleEventIds = await syncEventsToGoogle(
     token,

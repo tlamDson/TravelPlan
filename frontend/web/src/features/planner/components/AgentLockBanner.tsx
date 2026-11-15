@@ -14,11 +14,11 @@ import { useEffect, useState } from "react";
 
 // Progressive loading messages — cycle through as seconds pass
 const LOADING_MESSAGES = [
-  { after: 0, text: "Đang phân tích yêu cầu..." },
-  { after: 4, text: "Đang tìm các địa điểm phù hợp..." },
-  { after: 10, text: "Đang lên lịch trình theo sở thích..." },
-  { after: 18, text: "Đang tối ưu hoá hành trình theo khu vực..." },
-  { after: 28, text: "Sắp hoàn tất, chờ thêm chút nữa nhé..." },
+  { after: 0, text: "Analyzing your request..." },
+  { after: 4, text: "Finding matching places..." },
+  { after: 10, text: "Building your itinerary around your interests..." },
+  { after: 18, text: "Optimizing the route by area..." },
+  { after: 28, text: "Almost done, just a little longer..." },
 ];
 
 function useProgressiveMessage(
@@ -82,15 +82,13 @@ export function AgentLockBanner({
   // Fallback template banner (free user, AI unavailable)
   if (isFallback) {
     return (
-      <Alert className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
-        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-        <AlertTitle className="text-yellow-700 dark:text-yellow-400">
-          Chế độ dự phòng
-        </AlertTitle>
-        <AlertDescription className="text-yellow-700/80 dark:text-yellow-400/80">
-          AI đang bảo trì. Đây là lịch trình tiêu chuẩn
-          {fallbackCity ? ` cho ${fallbackCity}` : ""}. Một số tính năng bị giới
-          hạn.
+      <Alert className="border-tag-yellow-text/50 bg-tag-yellow">
+        <AlertTriangle className="h-4 w-4 text-tag-yellow-text" />
+        <AlertTitle className="text-tag-yellow-text">Fallback mode</AlertTitle>
+        <AlertDescription className="text-tag-yellow-text/80">
+          AI is under maintenance. This is a standard itinerary
+          {fallbackCity ? ` for ${fallbackCity}` : ""}. Some features are
+          limited.
         </AlertDescription>
       </Alert>
     );

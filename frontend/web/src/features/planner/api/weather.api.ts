@@ -1,7 +1,9 @@
 import { z } from "zod";
-import { OPENWEATHER_API_KEY, OPENWEATHER_BASE_URL } from "@/config/env";
+import { isAxiosError } from "axios";
+import { apiClient } from "@/lib/axios";
 import { validateAPI } from "@/utils/validation";
 import { createBrowserLogger } from "@/lib/logger";
+import type { Language } from "@/stores/useTranslationStore";
 
 const weatherLogger = createBrowserLogger("weather-forecast");
 
@@ -46,7 +48,15 @@ export interface TripDayWeather {
 interface GetTripDayWeatherParams {
   destination: string;
   dayDateIso: string;
+  /** UI language; weather descriptions are requested in it. */
+  language?: Language;
 }
+
+const WEATHER_LANG: Record<Language, string> = {
+  "English (US)": "en",
+  French: "fr",
+  Vietnamese: "vi",
+};
 
 function toTimezoneDayKey(epochSeconds: number, timezoneOffsetSeconds: number): string {
   return new Date((epochSeconds + timezoneOffsetSeconds) * 1000)
@@ -64,53 +74,38 @@ function selectRepresentativeEntry(
   });
 }
 
-export function canFetchWeather(): boolean {
-  return Boolean(OPENWEATHER_API_KEY);
+/**
+ * True when the backend answered that no OpenWeather key is configured on
+ * the server (503 WEATHER_NOT_CONFIGURED) — a config gap, not a transient error.
+ */
+export function isWeatherNotConfiguredError(error: unknown): boolean {
+  return (
+    isAxiosError(error) &&
+    error.response?.status === 503 &&
+    (error.response.data as { code?: unknown } | undefined)?.code ===
+      "WEATHER_NOT_CONFIGURED"
+  );
 }
 
+/**
+ * Forecast for one trip day, fetched through the backend proxy
+ * (GET /api/weather/forecast) so the OpenWeather key never reaches the browser.
+ */
 export async function getTripDayWeatherForecast({
   destination,
   dayDateIso,
+  language = "English (US)",
 }: GetTripDayWeatherParams): Promise<TripDayWeather | null> {
-  if (!OPENWEATHER_API_KEY) {
-    weatherLogger.warn(
-      { destination, dayDateIso },
-      "Missing VITE_OPENWEATHER_API_KEY; weather forecast is disabled",
-    );
-    return null;
-  }
-
-  const params = new URLSearchParams({
-    q: destination,
-    appid: OPENWEATHER_API_KEY,
-    units: "metric",
-  });
-
   weatherLogger.info(
-    {
-      destination,
-      dayDateIso,
-      endpoint: `${OPENWEATHER_BASE_URL}/forecast`,
-      query: { q: destination, units: "metric" },
-    },
-    "Requesting OpenWeather forecast",
+    { destination, dayDateIso },
+    "Requesting weather forecast via backend proxy",
   );
 
-  const response = await fetch(`${OPENWEATHER_BASE_URL}/forecast?${params}`);
-  if (!response.ok) {
-    weatherLogger.error(
-      {
-        destination,
-        dayDateIso,
-        status: response.status,
-        statusText: response.statusText,
-      },
-      "OpenWeather request failed",
-    );
-    throw new Error(`Weather request failed with status ${response.status}`);
-  }
+  const response = await apiClient.get<unknown>("/weather/forecast", {
+    params: { q: destination, lang: WEATHER_LANG[language] },
+  });
 
-  const rawData: unknown = await response.json();
+  const rawData: unknown = response.data;
   const parsed = validateAPI(
     forecastResponseSchema,
     rawData,
@@ -147,25 +142,16 @@ export async function getTripDayWeatherForecast({
 
     dayEntries = nearestDay ? groupedByDay.get(nearestDay) ?? [] : [];
 
-    weatherLogger.warn(
-      {
-        destination,
-        requestedDay: targetDayKey,
-        fallbackDay: nearestDay ?? null,
-        availableDays: [...groupedByDay.keys()],
-      },
-      "Requested day missing in forecast; using nearest available forecast day",
+    // Debug only, as one readable string: the browser logger would otherwise
+    // hand console.warn a raw object ("[object Object]" in devtools).
+    weatherLogger.debug(
+      `weather: Requested day missing in forecast; using nearest available forecast day (${targetDayKey} -> ${nearestDay ?? "none"} in ${destination})`,
     );
   }
 
   if (dayEntries.length === 0) {
-    weatherLogger.warn(
-      {
-        destination,
-        dayDateIso,
-        requestedDay: targetDayKey,
-      },
-      "No forecast entries available for requested/nearest day",
+    weatherLogger.debug(
+      `weather: No forecast entries available for requested/nearest day (${targetDayKey} in ${destination})`,
     );
     return null;
   }

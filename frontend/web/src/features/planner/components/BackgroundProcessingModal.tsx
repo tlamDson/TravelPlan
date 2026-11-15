@@ -49,11 +49,11 @@ export function BackgroundProcessingModal({
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
-            <DialogTitle>AI đang xử lý</DialogTitle>
+            <DialogTitle>AI is working</DialogTitle>
           </div>
           <DialogDescription className="pt-2 text-base">
-            Bạn có thể thoát trang. Chúng tôi sẽ thông báo khi lịch trình sẵn
-            sàng.
+            You can leave this page. We will notify you when your itinerary is
+            ready.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="sm:justify-end mt-4">
@@ -61,7 +61,7 @@ export function BackgroundProcessingModal({
             data-testid="background-processing-dismiss"
             onClick={() => setOpen(false)}
           >
-            Tôi hiểu
+            Got it
           </Button>
         </DialogFooter>
       </DialogContent>

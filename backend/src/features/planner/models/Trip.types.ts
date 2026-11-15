@@ -1,4 +1,5 @@
 import { Document, Types } from "mongoose";
+import type { DayHours } from "../services/opening-hours";
 import type {
   TripStatus as SharedTripStatus,
   TripLifecycle as SharedTripLifecycle,
@@ -51,6 +52,8 @@ export interface IActivity {
   priceLevel?: number;
   photoUrl?: string;
   openingHours?: string;
+  /** Language-neutral hours for this activity's weekday; the client renders the labels */
+  openingHoursDetail?: DayHours;
   /** Distance validation — set by geo-validator when activity requires non-walking transport */
   requiresTransport?: boolean;
   /** Distance from the previous activity in the day (in km) */
@@ -83,6 +86,32 @@ export interface IItineraryDay {
   /** GeoHash for map focus optimization */
   geoHash?: string;
   activities: IActivity[];
+}
+
+/** Generation provenance — makes "did RAG fire" / "did the AI fall back
+ * silently" queryable Trip fields instead of only ever a [RAG_USED] log
+ * line. See trip.processor.ts and plans/1-rag-eval-eventual-hickey.md. */
+export interface IGenerationMeta {
+  /** true only when Atlas $vectorSearch returned >=1 result. */
+  ragUsed: boolean;
+  ragResultCount: number;
+  /** Avg vectorSearchScore, or null when !ragUsed. */
+  ragAvgScore?: number | null;
+  /** null when ragUsed; else a coarse machine string — see
+   * place-insight-retrieval.service.ts's fallback paths (deliberately
+   * doesn't distinguish "no city resolved" vs "zero hits" vs "errored";
+   * retrievePlaceInsights() collapses all three to [] by design). */
+  ragFallbackReason?: string | null;
+  /** Gemini model string used — see config/gemini-models.ts. */
+  model: string;
+  /** generateContent attempts generateIntentsWithRetry() took. */
+  aiAttempts: number;
+  /** Activities left at [0,0] by the passthrough guard. */
+  unresolvedPlaceCount: number;
+  promptTokens?: number | null;
+  totalTokens?: number | null;
+  /** Wall-clock ms for the generateContent call. */
+  latencyMs?: number | null;
 }
 
 /** City stop within the trip */
@@ -146,6 +175,9 @@ export interface ITrip extends Document {
   totalChunks?: number;
   chunksReady?: boolean[];
   regenCount?: number;
+
+  // 4c. GENERATION PROVENANCE — see IGenerationMeta above
+  generationMeta?: IGenerationMeta;
 
   // 5. OPTIMISTIC CONCURRENCY CONTROL
   version: number;

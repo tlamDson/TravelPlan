@@ -5,21 +5,10 @@
 
 import { differenceInDays, isPast, isFuture } from "date-fns";
 import type { Language } from "@/stores/useTranslationStore";
+import { getLocaleCode } from "./locale";
+import { localizeDestination } from "./country-name";
 
-/**
- * Maps the app's Language type to standard BCP 47 locale codes.
- */
-export function getLocaleCode(lang?: Language): string {
-  switch (lang) {
-    case "French":
-      return "fr-FR";
-    case "Vietnamese":
-      return "vi-VN";
-    case "English (US)":
-    default:
-      return "en-US";
-  }
-}
+export { getLocaleCode };
 
 /**
  * Format a date for display using native Intl API
@@ -42,6 +31,22 @@ export function formatDate(
 }
 
 /**
+ * Trip dates are calendar dates (no time zone). The API sends them as UTC
+ * midnight ("2026-11-18T00:00:00.000Z"), so parsing them with `new Date()` and
+ * formatting in local time shifts them back one day in negative-offset zones.
+ * Read the Y-M-D part and build a local-midnight Date instead.
+ */
+export function toCalendarDate(value: string | Date): Date {
+  if (typeof value === "string") {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    if (match) {
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+  }
+  return new Date(value);
+}
+
+/**
  * Format a date range natively
  * Uses Intl.DateTimeFormat.formatRange to smartly collapse months/years
  * Example: "Feb 23 - 25, 2026"
@@ -51,8 +56,8 @@ export function formatDateRange(
   end: string | Date,
   lang?: Language,
 ): string {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
+  const startDate = toCalendarDate(start);
+  const endDate = toCalendarDate(end);
   const locale = getLocaleCode(lang);
 
   // Create a formatter that handles ranges intelligently
@@ -143,13 +148,16 @@ const DEFAULT_TRIP_PREFIXES = ["Trip to ", "Voyage à ", "Chuyến đi tới "];
 export function getLocalizedTripTitle(
   title: string,
   t: (key: string) => string,
+  lang?: Language,
 ): string {
   if (!title) return title;
 
   for (const prefix of DEFAULT_TRIP_PREFIXES) {
     if (title.startsWith(prefix)) {
       const destination = title.slice(prefix.length);
-      return `${t("trips.defaultTitle")} ${destination}`;
+      return `${t("trips.defaultTitle")} ${
+        lang ? localizeDestination(destination, lang) : destination
+      }`;
     }
   }
 

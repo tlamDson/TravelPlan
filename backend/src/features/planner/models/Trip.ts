@@ -1,131 +1,16 @@
 import mongoose, { Schema } from "mongoose";
-import {
-  IBudgetCategory,
-  IEmbeddedBudget,
-  IActivity,
-  IItineraryDay,
-  ICityStop,
-  ITrip,
-} from "./Trip.types";
+import { ITrip } from "./Trip.types";
 import { TripStatusValues, TripLifecycleValues } from "@travelplan/shared";
 import { attachTripMethods } from "./Trip.methods";
+import {
+  EmbeddedBudgetSchema,
+  ItineraryDaySchema,
+  CityStopSchema,
+  GenerationMetaSchema,
+} from "./Trip.schemas";
 
 export type { ITrip } from "./Trip.types";
 
-const BudgetCategorySchema = new Schema<IBudgetCategory>(
-  {
-    name: { type: String, required: true },
-    limit: { type: Number, required: true, min: 0 },
-    spent: { type: Number, required: true, default: 0, min: 0 },
-  },
-  { _id: false },
-);
-
-const EmbeddedBudgetSchema = new Schema<IEmbeddedBudget>(
-  {
-    currency: { type: String, default: "USD" },
-    totalLimit: { type: Number, required: true, min: 0 },
-    totalSpent: { type: Number, default: 0, min: 0 },
-    breakdown: [BudgetCategorySchema],
-  },
-  { _id: false },
-);
-
-const ActivitySchema = new Schema<IActivity>(
-  {
-    type: {
-      type: String,
-      enum: ["poi", "accommodation", "transport", "custom"],
-      required: true,
-    },
-    placeId: { type: Schema.Types.ObjectId, ref: "Place" },
-    name: { type: String, required: true },
-    location: {
-      type: {
-        type: String,
-        enum: ["Point"],
-      },
-      coordinates: [Number],
-      googlePlaceId: String,
-    },
-    time: String,
-    endTime: String,
-    cost: Number,
-    status: {
-      type: String,
-      enum: ["planned", "confirmed", "completed", "cancelled"],
-      default: "planned",
-    },
-    notes: String,
-    order: { type: Number, required: true },
-    // Rich place data from Mapbox + Google Places validation
-    rating: Number,
-    priceLevel: Number,
-    photoUrl: String,
-    openingHours: String,
-    // Distance validation flag — set when next activity is too far for chosen transport mode
-    requiresTransport: { type: Boolean, default: false },
-    distanceFromPrevious: Number,
-    // Nearby food/snack suggestions cached from Google Places Nearby Search
-    nearbySuggestions: [
-      {
-        name: String,
-        placeId: String,
-        distanceKm: Number,
-        priceLevel: Number,
-        photoUrl: String,
-      },
-    ],
-  },
-  { _id: true }, // Keep _id for individual activity updates
-);
-
-const ItineraryDaySchema = new Schema<IItineraryDay>(
-  {
-    day: { type: Number, required: true },
-    date: { type: Date, required: true },
-    geoHash: String,
-    activities: [ActivitySchema],
-  },
-  { _id: true },
-);
-
-const StaySchema = new Schema(
-  {
-    placeId: { type: Schema.Types.ObjectId, ref: "Place" },
-    name: { type: String, required: true },
-    type: {
-      type: String,
-      enum: ["hotel", "hostel", "airbnb", "other"],
-      required: true,
-    },
-    checkIn: { type: Date, required: true },
-    checkOut: { type: Date, required: true },
-    pricePerNight: { type: Number, required: true },
-    totalPrice: { type: Number, required: true },
-    confirmationNumber: String,
-    status: {
-      type: String,
-      enum: ["pending", "confirmed", "cancelled"],
-      default: "pending",
-    },
-  },
-  { _id: true },
-);
-
-const CityStopSchema = new Schema<ICityStop>(
-  {
-    cityId: {
-      type: Schema.Types.ObjectId,
-      ref: "City",
-      required: true,
-    },
-    order: { type: Number, required: true },
-    stayNights: { type: Number, required: true },
-    stays: [StaySchema],
-  },
-  { _id: false },
-);
 const TripSchema = new Schema<ITrip>(
   {
     userId: {
@@ -191,6 +76,11 @@ const TripSchema = new Schema<ITrip>(
     totalChunks: { type: Number, default: 0 },
     chunksReady: { type: [Boolean], default: [] },
     regenCount: { type: Number, default: 0, min: 0 },
+
+    // Generation provenance — absent until the first generation writes it
+    // (see IGenerationMeta / GenerationMetaSchema), not defaulted to a
+    // wall of zeros.
+    generationMeta: { type: GenerationMetaSchema, default: undefined },
 
     version: { type: Number, default: 1 },
 

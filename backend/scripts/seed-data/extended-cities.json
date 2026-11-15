@@ -1,0 +1,236 @@
+{
+    "vn": [
+        {
+            "idKey": "hanoi",
+            "name": "Hà Nội",
+            "nameEn": "Hanoi",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "hochiminh",
+            "name": "TP. Hồ Chí Minh",
+            "nameEn": "Ho Chi Minh City",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "danang",
+            "name": "Đà Nẵng",
+            "nameEn": "Da Nang",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "hoian",
+            "name": "Hội An",
+            "nameEn": "Hoi An",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "nhatrang",
+            "name": "Nha Trang",
+            "nameEn": "Nha Trang",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "dalat",
+            "name": "Đà Lạt",
+            "nameEn": "Da Lat",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "phuquoc",
+            "name": "Phú Quốc",
+            "nameEn": "Phu Quoc",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "halong",
+            "name": "Hạ Long",
+            "nameEn": "Ha Long",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "sapa",
+            "name": "Sapa",
+            "nameEn": "Sapa",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "hue",
+            "name": "Huế",
+            "nameEn": "Hue",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "cantho",
+            "name": "Cần Thơ",
+            "nameEn": "Can Tho",
+            "timezone": "Asia/Ho_Chi_Minh"
+        },
+        {
+            "idKey": "vungtau",
+            "name": "Vũng Tàu",
+            "nameEn": "Vung Tau",
+            "timezone": "Asia/Ho_Chi_Minh"
+        }
+    ],
+    "us": [
+        {
+            "idKey": "nyc",
+            "name": "New York City",
+            "nameEn": "New York City",
+            "timezone": "America/New_York"
+        },
+        {
+            "idKey": "la",
+            "name": "Los Angeles",
+            "nameEn": "Los Angeles",
+            "timezone": "America/Los_Angeles"
+        },
+        {
+            "idKey": "sanfrancisco",
+            "name": "San Francisco",
+            "nameEn": "San Francisco",
+            "timezone": "America/Los_Angeles"
+        },
+        {
+            "idKey": "chicago",
+            "name": "Chicago",
+            "nameEn": "Chicago",
+            "timezone": "America/Chicago"
+        },
+        {
+            "idKey": "miami",
+            "name": "Miami",
+            "nameEn": "Miami",
+            "timezone": "America/New_York"
+        },
+        {
+            "idKey": "lasvegas",
+            "name": "Las Vegas",
+            "nameEn": "Las Vegas",
+            "timezone": "America/Los_Angeles"
+        },
+        {
+            "idKey": "seattle",
+            "name": "Seattle",
+            "nameEn": "Seattle",
+            "timezone": "America/Los_Angeles"
+        },
+        {
+            "idKey": "boston",
+            "name": "Boston",
+            "nameEn": "Boston",
+            "timezone": "America/New_York"
+        },
+        {
+            "idKey": "washington",
+            "name": "Washington DC",
+            "nameEn": "Washington DC",
+            "timezone": "America/New_York"
+        },
+        {
+            "idKey": "austin",
+            "name": "Austin",
+            "nameEn": "Austin",
+            "timezone": "America/Chicago"
+        },
+        {
+            "idKey": "denver",
+            "name": "Denver",
+            "nameEn": "Denver",
+            "timezone": "America/Denver"
+        },
+        {
+            "idKey": "atlanta",
+            "name": "Atlanta",
+            "nameEn": "Atlanta",
+            "timezone": "America/New_York"
+        },
+        {
+            "idKey": "sandiego",
+            "name": "San Diego",
+            "nameEn": "San Diego",
+            "timezone": "America/Los_Angeles"
+        },
+        {
+            "idKey": "honolulu",
+            "name": "Honolulu",
+            "nameEn": "Honolulu",
+            "timezone": "Pacific/Honolulu"
+        },
+        {
+            "idKey": "neworleans",
+            "name": "New Orleans",
+            "nameEn": "New Orleans",
+            "timezone": "America/Chicago"
+        }
+    ],
+    "fr": [
+        {
+            "idKey": "paris",
+            "name": "Paris",
+            "nameEn": "Paris",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "lyon",
+            "name": "Lyon",
+            "nameEn": "Lyon",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "marseille",
+            "name": "Marseille",
+            "nameEn": "Marseille",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "nice",
+            "name": "Nice",
+            "nameEn": "Nice",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "bordeaux",
+            "name": "Bordeaux",
+            "nameEn": "Bordeaux",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "toulouse",
+            "name": "Toulouse",
+            "nameEn": "Toulouse",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "strasbourg",
+            "name": "Strasbourg",
+            "nameEn": "Strasbourg",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "nantes",
+            "name": "Nantes",
+            "nameEn": "Nantes",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "montpellier",
+            "name": "Montpellier",
+            "nameEn": "Montpellier",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "lille",
+            "name": "Lille",
+            "nameEn": "Lille",
+            "timezone": "Europe/Paris"
+        },
+        {
+            "idKey": "cannes",
+            "name": "Cannes",
+            "nameEn": "Cannes",
+            "timezone": "Europe/Paris"
+        }
+    ]
+}

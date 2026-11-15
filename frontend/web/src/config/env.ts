@@ -18,12 +18,6 @@ export const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 export const MAPBOX_TOKEN =
   import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || import.meta.env.VITE_MAPBOX_TOKEN;
 
-// OpenWeather (Public key usage on client for short-term forecast)
-export const OPENWEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
-export const OPENWEATHER_BASE_URL =
-  import.meta.env.VITE_OPENWEATHER_BASE_URL ||
-  "https://api.openweathermap.org/data/2.5";
-
 // Sentry error tracking — empty = disabled (initSentry() in main.tsx no-ops)
 export const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 

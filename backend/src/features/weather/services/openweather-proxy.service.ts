@@ -23,6 +23,28 @@ export function isOpenWeatherConfigured(): boolean {
   return Boolean(normalizedKey());
 }
 
+/** OpenWeather's 3-hourly forecast changes slowly; one upstream call per city per window. */
+const FORECAST_CACHE_TTL_MS = 10 * 60 * 1000;
+const FORECAST_CACHE_MAX_ENTRIES = 500;
+const forecastCache = new Map<string, { data: unknown; expiresAt: number }>();
+
+/** Languages the UI ships (en/vi/fr); anything else falls back to English. */
+const SUPPORTED_LANGS = ["en", "vi", "fr"] as const;
+type WeatherLang = (typeof SUPPORTED_LANGS)[number];
+
+function normalizeLang(lang: string | undefined): WeatherLang {
+  return SUPPORTED_LANGS.find((l) => l === lang) ?? "en";
+}
+
+function cacheKey(q: string, lang: WeatherLang): string {
+  return `${lang}:${q.trim().toLowerCase().replace(/\s+/g, " ")}`;
+}
+
+/** Test hook: drop all cached forecasts. */
+export function clearOpenWeatherForecastCache(): void {
+  forecastCache.clear();
+}
+
 export class OpenWeatherProxyError extends Error {
   constructor(
     message: string,
@@ -36,22 +58,42 @@ export class OpenWeatherProxyError extends Error {
 
 /**
  * Returns raw JSON body from OpenWeather /forecast (same shape as direct API).
+ * `lang` selects the language of the weather descriptions (en | vi | fr).
  */
-export async function fetchOpenWeatherForecastJson(q: string): Promise<unknown> {
+export async function fetchOpenWeatherForecastJson(
+  q: string,
+  lang?: string,
+): Promise<unknown> {
   const appid = normalizedKey();
   if (!appid) {
     throw new OpenWeatherProxyError("OPENWEATHER_NOT_CONFIGURED", 503);
   }
 
+  const weatherLang = normalizeLang(lang);
+  const key = cacheKey(q, weatherLang);
+  const cached = forecastCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+  forecastCache.delete(key);
+
   const url = `${openWeatherBaseUrl()}/forecast`;
   const response = await axios.get(url, {
-    params: { q, units: "metric", appid },
+    params: { q, units: "metric", appid, lang: weatherLang },
     validateStatus: () => true,
     timeout: 20_000,
   });
 
   const data = response.data;
   if (response.status === 200) {
+    if (forecastCache.size >= FORECAST_CACHE_MAX_ENTRIES) {
+      const oldest = forecastCache.keys().next().value;
+      if (oldest !== undefined) forecastCache.delete(oldest);
+    }
+    forecastCache.set(key, {
+      data,
+      expiresAt: Date.now() + FORECAST_CACHE_TTL_MS,
+    });
     return data;
   }
 

@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "delta/ctr-lift",
+  "method": "delta_ratio",
+  "description": "1,000 vs 1,000 users, CTR 10% against 11%.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.05
+  },
+  "expected": {
+    "ratio_control": 0.10557244174265452,
+    "ratio_treatment": 0.10626757734029732,
+    "estimate": 0.0006951355976427959,
+    "se": 0.00618419723910798,
+    "statistic": 0.11240514666105048,
+    "p_value": 0.9105021747462301,
+    "ci_low": -0.011425668264300881,
+    "ci_high": 0.012815939459586473
+  },
+  "decision": "fail_to_reject",
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "numpy+scipy",
+    "version": "numpy 2.1.3, scipy 1.14.1",
+    "call": "delta method for a ratio of means (Deng, Knoblich & Lu, KDD 2018): per group R = mean(y)/mean(x), Var(R) = (var_y - 2 R cov_xy + R^2 var_x) / (n mean_x^2) with ddof=1; two-sided z-test on R_t - R_c via scipy.stats.norm",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13",
+    "seed": 201
+  }
+}

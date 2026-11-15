@@ -40,6 +40,9 @@ process.env.STRIPE_SECRET_KEY ??= "sk_test_dummy_key_for_tests";
 // Needed to sign+verify test Stripe webhook payloads with
 // `stripe.webhooks.generateTestHeaderString()` / `constructEvent()`.
 process.env.STRIPE_WEBHOOK_SECRET ??= "whsec_test_" + "x".repeat(24);
+// features/analytics/services/pseudonymize.ts refuses to hash userIds with
+// a secret shorter than 32 chars; analytics integration tests need one.
+process.env.ANALYTICS_HASH_SECRET ??= "integration-test-analytics-hash-secret";
 
 // config/env.ts runs `dotenv.config()` with CWD=backend/, which loads
 // backend/.env *before* this setup file runs — so on a machine whose
@@ -68,26 +71,34 @@ afterEach(async () => {
 // address). Without clearing its keys between tests, unrelated test files
 // would start intermittently 429-ing each other depending on run order —
 // worse, the 15-minute window means a red run could stay red on immediate
-// retry. Scoped to the `rl:general:` prefix only, so it never touches
-// BullMQ/other app keys sharing the same Redis instance.
+// retry. Scoped to the `rl:general:`, `rl:analytics:` and `rl:job_status:`
+// prefixes only, so it never touches BullMQ/other app keys sharing the same
+// Redis instance.
 afterEach(async () => {
   const { redisConnection } = await import("../lib/queue");
-  const keys = await redisConnection.keys("rl:general:*");
+  const keys = [
+    ...(await redisConnection.keys("rl:general:*")),
+    ...(await redisConnection.keys("rl:analytics:*")),
+    ...(await redisConnection.keys("rl:job_status:*")),
+  ];
   if (keys.length > 0) await redisConnection.del(...keys);
 });
 
 afterAll(async () => {
   await mongoose.disconnect();
   // Integration tests reuse the shared local dev Redis (docker-compose) —
-  // obliterate just the queue(s) our own requests create so leftover test
-  // jobs don't pile up in that instance. Skipped if BullMQ never touched
-  // Redis for a given file (e.g. cors/destinations tests).
-  try {
-    const { createQueue } = await import("../lib/queue");
-    const queue = createQueue("trip-generation");
-    await queue.obliterate({ force: true });
-    await queue.close();
-  } catch {
-    // Best-effort cleanup only — never fail the suite over it.
+  // obliterate every queue our own requests could have touched so leftover
+  // test jobs don't pile up in that instance. Skipped per-queue if BullMQ
+  // never touched Redis for a given file (e.g. cors/destinations tests).
+  const { createQueue } = await import("../lib/queue");
+  const { QUEUE_NAMES } = await import("../lib/queue-defaults");
+  for (const name of Object.values(QUEUE_NAMES)) {
+    try {
+      const queue = createQueue(name);
+      await queue.obliterate({ force: true });
+      await queue.close();
+    } catch {
+      // Best-effort cleanup only — never fail the suite over it.
+    }
   }
 });

@@ -15,7 +15,7 @@ describe("BackgroundProcessingModal — 15s timer", () => {
     act(() => {
       vi.advanceTimersByTime(14000);
     });
-    expect(screen.queryByText("AI đang xử lý")).not.toBeInTheDocument();
+    expect(screen.queryByText("AI is working")).not.toBeInTheDocument();
   });
 
   it("opens the modal after 15s of processing", () => {
@@ -23,7 +23,7 @@ describe("BackgroundProcessingModal — 15s timer", () => {
     act(() => {
       vi.advanceTimersByTime(15000);
     });
-    expect(screen.getByText("AI đang xử lý")).toBeInTheDocument();
+    expect(screen.getByText("AI is working")).toBeInTheDocument();
   });
 
   it("never opens when isProcessing stays false", () => {
@@ -31,7 +31,7 @@ describe("BackgroundProcessingModal — 15s timer", () => {
     act(() => {
       vi.advanceTimersByTime(30000);
     });
-    expect(screen.queryByText("AI đang xử lý")).not.toBeInTheDocument();
+    expect(screen.queryByText("AI is working")).not.toBeInTheDocument();
   });
 
   it("only shows the modal once, even after it is dismissed and processing continues", () => {
@@ -42,12 +42,12 @@ describe("BackgroundProcessingModal — 15s timer", () => {
     act(() => {
       vi.advanceTimersByTime(15000);
     });
-    expect(screen.getByText("AI đang xử lý")).toBeInTheDocument();
+    expect(screen.getByText("AI is working")).toBeInTheDocument();
 
     act(() => {
-      screen.getByRole("button", { name: "Tôi hiểu" }).click();
+      screen.getByRole("button", { name: "Got it" }).click();
     });
-    expect(screen.queryByText("AI đang xử lý")).not.toBeInTheDocument();
+    expect(screen.queryByText("AI is working")).not.toBeInTheDocument();
 
     rerender(
       <BackgroundProcessingModal
@@ -56,7 +56,7 @@ describe("BackgroundProcessingModal — 15s timer", () => {
       />,
     );
     // No new 15s timer should reopen it — hasShownModal guards this.
-    expect(screen.queryByText("AI đang xử lý")).not.toBeInTheDocument();
+    expect(screen.queryByText("AI is working")).not.toBeInTheDocument();
   });
 });
 
@@ -69,7 +69,7 @@ describe("BackgroundProcessingModal — immediate open on retry step", () => {
       />,
     );
     await waitFor(() =>
-      expect(screen.getByText("AI đang xử lý")).toBeInTheDocument(),
+      expect(screen.getByText("AI is working")).toBeInTheDocument(),
     );
   });
 
@@ -78,7 +78,7 @@ describe("BackgroundProcessingModal — immediate open on retry step", () => {
       <BackgroundProcessingModal isProcessing={true} currentStep="RETRY now" />,
     );
     await waitFor(() =>
-      expect(screen.getByText("AI đang xử lý")).toBeInTheDocument(),
+      expect(screen.getByText("AI is working")).toBeInTheDocument(),
     );
   });
 });

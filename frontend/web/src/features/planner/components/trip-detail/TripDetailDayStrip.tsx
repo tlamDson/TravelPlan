@@ -57,7 +57,7 @@ export function TripDetailDayStrip({
               )}
             >
               <span className="block text-xs font-semibold uppercase tracking-wide opacity-90">
-                Day {day.day}
+                {t("trip.dayLabel").replace("{n}", String(day.day))}
               </span>
               {shortDate ? (
                 <span className="block text-xs font-normal opacity-90">

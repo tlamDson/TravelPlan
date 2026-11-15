@@ -1,9 +1,19 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/axios";
 import { useSubscriptionStore } from "@/stores/useSubscriptionStore";
+import {
+  BRAND_GRADIENT_BUTTON,
+  BRAND_GRADIENT_WASH,
+} from "@/lib/brandGradient";
 
 const reasonText: Record<string, string> = {
   "trip-duration": "6+ day trips require TravelPlan Pro.",
@@ -47,30 +57,30 @@ export function UpgradeModal() {
         if (!open) closeUpgradeModal();
       }}
     >
-      <DialogContent className="max-w-md overflow-hidden border border-white/30 bg-white/15 text-foreground backdrop-blur-xl">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-purple-600/20 via-transparent to-orange-500/20" />
+      <DialogContent className="max-w-md overflow-hidden border border-foreground/20 bg-card/15 text-foreground backdrop-blur-xl">
+        <div className={`absolute inset-0 -z-10 ${BRAND_GRADIENT_WASH}`} />
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Sparkles className="h-5 w-5 text-purple-500" />
+            <Sparkles className="h-5 w-5 text-tag-purple-text" />
             Upgrade to TravelPlan Pro
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
+          <DialogDescription>
             {reasonText[upgradeReason] ?? reasonText["general-upgrade"]}
-          </p>
-          <div className="rounded-lg border border-purple-200/60 bg-background/70 p-3">
+          </DialogDescription>
+          <div className="rounded-lg border border-tag-purple-text/60 bg-background/70 p-3">
             <p className="text-sm text-muted-foreground">Pro plan</p>
             <p className="text-2xl font-bold">$10/month</p>
           </div>
           {errorMessage && (
-            <p className="rounded-md border border-red-300 bg-red-50 p-2 text-sm text-red-600">
+            <p className="rounded-md border border-tag-red-text/40 bg-tag-red p-2 text-sm text-tag-red-text">
               {errorMessage}
             </p>
           )}
           <Button
-            className="w-full bg-gradient-to-r from-purple-600 to-orange-500 text-white hover:from-purple-700 hover:to-orange-600"
+            className={`w-full ${BRAND_GRADIENT_BUTTON}`}
             onClick={handleCheckout}
             disabled={isLoading}
           >
@@ -88,4 +98,3 @@ export function UpgradeModal() {
     </Dialog>
   );
 }
-

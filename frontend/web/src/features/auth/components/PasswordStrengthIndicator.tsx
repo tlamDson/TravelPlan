@@ -5,6 +5,7 @@
  */
 
 import type { PasswordStrength } from "../utils/password";
+import { STATUS_TONE_STYLES } from "@/features/planner/lib/statusStyles";
 
 interface PasswordStrengthIndicatorProps {
   strength: PasswordStrength;
@@ -32,10 +33,10 @@ export function PasswordStrengthIndicator({
         <span
           className={`font-medium ${
             strength.score < 2
-              ? "text-destructive"
+              ? STATUS_TONE_STYLES.danger.textClassName
               : strength.score < 3
-                ? "text-yellow-600"
-                : "text-green-600"
+                ? STATUS_TONE_STYLES.warning.textClassName
+                : STATUS_TONE_STYLES.success.textClassName
           }`}
         >
           {strength.label}

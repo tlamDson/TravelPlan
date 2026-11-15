@@ -1,15 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  Smartphone,
-  MonitorPlay,
-  KeyRound,
-  Users,
-  Loader2,
-} from "lucide-react";
+import { MonitorPlay, KeyRound, Users, Loader2 } from "lucide-react";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DeviceSessions } from "../components/DeviceSessions";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 
 export function SecuritySettings() {
@@ -47,15 +43,8 @@ export function SecuritySettings() {
       setCurrentPassword("");
       setNewPassword("");
       setIsPasswordDialogOpen(false);
-    } catch (error: unknown) {
-      const clerkMsg =
-        error &&
-        typeof error === "object" &&
-        "errors" in error &&
-        Array.isArray((error as { errors: { message?: string }[] }).errors)
-          ? (error as { errors: { message?: string }[] }).errors[0]?.message
-          : undefined;
-      toast.error(clerkMsg || "Failed to update password");
+    } catch {
+      toast.error(toastT("toast.settings.passwordFailed"));
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -181,38 +170,7 @@ export function SecuritySettings() {
           <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <MonitorPlay className="w-4 h-4" /> {t("security.deviceHistory")}
           </h4>
-          <div className="rounded-lg border shadow-sm divide-y">
-            <div className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MonitorPlay className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">MacBook Pro - Chrome</p>
-                  <p className="text-xs text-muted-foreground">
-                    New York, US • Active now
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Smartphone className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">iPhone 14 Pro - Safari</p>
-                  <p className="text-xs text-muted-foreground">
-                    New York, US • Yesterday at 4:32 PM
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => toast.info(t("security.toastRevokeDemo"))}
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-              >
-                {t("security.btnRevoke")}
-              </Button>
-            </div>
-          </div>
+          <DeviceSessions />
         </section>
 
         {/* Shared Access */}

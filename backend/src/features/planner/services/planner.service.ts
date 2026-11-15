@@ -1,10 +1,10 @@
-import { createQueue } from "../../../lib/queue";
 import { Job } from "bullmq";
 import { logger } from "../../../lib/logger";
 import { tripRepository } from "../repositories/trip.repository";
 import { userRepository } from "../../user/repositories/user.repository";
 import { budgetValidatorService } from "./budget-validator.service";
 import { TripPreferences } from "../schemas/trip-request.schema";
+import { tripQueue, TRIP_JOB_OPTIONS } from "../trip.queue";
 import {
   getJobStatusForUser,
   retryTripJobForUser,
@@ -13,8 +13,6 @@ import {
   cancelTripJobForUser,
   cancelTripForUser,
 } from "./trip-status.service";
-
-const tripQueue = createQueue("trip-generation");
 
 interface GenerateTripParams {
   userId: string;
@@ -112,8 +110,7 @@ export class PlannerService {
         },
         {
           priority,
-          attempts: 3,
-          backoff: { type: "exponential", delay: 5000 },
+          ...TRIP_JOB_OPTIONS,
         },
       );
 

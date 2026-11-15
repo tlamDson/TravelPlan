@@ -1,0 +1,4 @@
+variant,count,expected_share
+holdout,1003,0.1
+control,4511,0.45
+treatment,4486,0.45

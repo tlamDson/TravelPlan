@@ -39,7 +39,7 @@ const PlaceInsightSchema = new Schema<IPlaceInsight>(
 // Compound index for city lookup (non-vector)
 PlaceInsightSchema.index({ countryIdKey: 1, cityIdKey: 1 });
 
-// UNIQUE: Idempotency key — tránh trùng khi Worker chạy định kỳ
+// UNIQUE: Idempotency key — avoids duplicates when the worker runs periodically
 PlaceInsightSchema.index({ cityIdKey: 1, name: 1 }, { unique: true });
 
 export const PlaceInsight = mongoose.model<IPlaceInsight>("PlaceInsight", PlaceInsightSchema);

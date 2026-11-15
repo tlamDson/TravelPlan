@@ -6,7 +6,9 @@ import { useUser } from "@clerk/clerk-react";
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { toastT } from "@/lib/toast-i18n";
 import { isVipUser } from "@/lib/vip-check";
+import { track } from "@/features/analytics";
 import { syncTripToCalendar } from "../api/calendar.api";
 
 const SESSION_KEY = "travelplan_pending_calendar_sync_trip";
@@ -32,12 +34,12 @@ export function useTripCalendarSync(tripId: string | undefined) {
 
   const { mutate: syncCalendar, isPending: isSyncing } = useMutation({
     mutationFn: () => syncTripToCalendar(tripId!),
-    onSuccess: (data) => {
-      toast.success(
-        data.message ??
-          "Đang đồng bộ lên Google Calendar... Sự kiện sẽ xuất hiện trong ít phút!",
-        { duration: 6000 },
-      );
+    onSuccess: () => {
+      // The server queues the sync; this marks the request as accepted.
+      track("calendar_synced", { tripId: tripId!, provider: "google" });
+      toast.success(toastT("toast.calendar.syncing"), {
+        duration: 6000,
+      });
     },
     onError: (err: unknown) => {
       const e = err as {
@@ -48,26 +50,19 @@ export function useTripCalendarSync(tripId: string | undefined) {
       };
       const code = e?.response?.data?.code;
       if (code === "GOOGLE_NOT_CONNECTED") {
-        toast.error(
-          "Vui lòng đăng nhập bằng tài khoản Google để sử dụng tính năng đồng bộ lịch.",
-          { duration: 8000 },
-        );
+        toast.error(toastT("toast.calendar.needGoogleSignIn"), {
+          duration: 8000,
+        });
         return;
       }
       if (code === "CALENDAR_VIP_ONLY" || code === "CALENDAR_VIP_REQUIRED") {
-        toast.error(
-          e?.response?.data?.message ??
-            "Tài khoản chưa được bật đồng bộ lịch trên hệ thống.",
-          { duration: 6000 },
-        );
+        toast.error(toastT("toast.calendar.notEnabled"), { duration: 6000 });
         return;
       }
       if (e?.response?.status === 404) {
         return;
       }
-      toast.error(
-        e?.response?.data?.message ?? "Không thể đồng bộ lên Google Calendar.",
-      );
+      toast.error(toastT("toast.calendar.syncFailed"));
     },
   });
 
@@ -85,7 +80,7 @@ export function useTripCalendarSync(tripId: string | undefined) {
   const handleSync = useCallback(async () => {
     if (!tripId) return;
     if (!user) {
-      toast.error("Vui lòng đăng nhập.");
+      toast.error(toastT("toast.calendar.signIn"));
       return;
     }
     const email = user.primaryEmailAddress?.emailAddress;
@@ -102,18 +97,14 @@ export function useTripCalendarSync(tripId: string | undefined) {
     ) as ExternalAccountWithReauthorize | undefined;
 
     if (!google) {
-      toast.error(
-        "Vui lòng liên kết tài khoản Google (đăng nhập bằng Google) để đồng bộ lịch.",
-        { duration: 8000 },
-      );
+      toast.error(toastT("toast.calendar.linkGoogle"), { duration: 8000 });
       return;
     }
 
     if (typeof google.reauthorize !== "function") {
-      toast.error(
-        "Không thể xin thêm quyền Calendar từ trình duyệt này. Hãy cập nhật @clerk/clerk-react hoặc kiểm tra cấu hình Clerk.",
-        { duration: 8000 },
-      );
+      toast.error(toastT("toast.calendar.permissionUnavailable"), {
+        duration: 8000,
+      });
       return;
     }
 
@@ -128,17 +119,9 @@ export function useTripCalendarSync(tripId: string | undefined) {
         sessionStorage.removeItem(SESSION_KEY);
         syncCalendar();
       }
-    } catch (unknownErr: unknown) {
+    } catch {
       sessionStorage.removeItem(SESSION_KEY);
-      const clerkErr = unknownErr as {
-        errors?: Array<{ message?: string }>;
-        message?: string;
-      };
-      const msg =
-        clerkErr?.errors?.[0]?.message ??
-        clerkErr?.message ??
-        "Không thể cấp quyền Google Calendar.";
-      toast.error(msg, { duration: 8000 });
+      toast.error(toastT("toast.calendar.accessFailed"), { duration: 8000 });
     }
   }, [tripId, user, syncCalendar]);
 

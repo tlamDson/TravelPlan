@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "source": "hand-computed from events.json; not computed by any TravelPlan or abkit code",
+  "definitions": {
+    "dau": "Number of distinct non-null userId with at least one event on a UTC calendar date. occurredAt is converted to UTC before bucketing; anonymous events (userId null) are excluded.",
+    "funnel": "Per non-null userId, over the whole log, ordered by occurredAt: a user reaches step k only after reaching step k-1 at an earlier or equal time. Counts are users per step."
+  },
+  "traps": [
+    "user_d's trip_viewed at 2026-11-03T01:30:00+07:00 is 2026-11-02T18:30Z, so it counts for 2026-11-02, not 2026-11-03.",
+    "The anonymous wizard_started on 2026-11-01 counts for neither DAU nor the funnel.",
+    "user_c saves a trip without any trip_generation_completed, so user_c stops at step 2."
+  ],
+  "expected": {
+    "dau": {
+      "2026-11-01": 2,
+      "2026-11-02": 4,
+      "2026-11-03": 2
+    },
+    "funnel": {
+      "steps": [
+        "wizard_started",
+        "trip_generation_requested",
+        "trip_generation_completed",
+        "trip_saved"
+      ],
+      "users": [3, 3, 2, 2]
+    }
+  }
+}

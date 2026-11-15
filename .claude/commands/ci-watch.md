@@ -4,10 +4,12 @@ argument-hint: [pr-number|stop]
 allowed-tools: Bash(gh pr view *), Bash(gh pr checks *), Bash(gh pr merge *), Bash(gh run list *), Bash(gh run view *), Bash(git rev-parse *), Bash(git branch *), Read, Write
 ---
 
-Nếu `$1` là `stop`: xoá `.claude/.ci-watch.json` nếu tồn tại, báo đã disarm, dừng ở đây.
+An optional command for **manual sessions**; the conductor's headless sessions do not use it.
 
-Ngược lại, resolve PR: dùng `$1` nếu là số, ngược lại `gh pr view --json number --jq .number` cho branch hiện tại. Nếu không tìm được PR nào, báo rõ và dừng.
+If `$1` is `stop`: delete `.claude/.ci-watch.json` if it exists, report that it is disarmed, and stop here.
 
-Ghi `.claude/.ci-watch.json` với `pr`, `branch` (từ `git rev-parse --abbrev-ref HEAD`), `armed_at_epoch` = now, `deadline_epoch` = now + 3600, `attempts: 0`, `max_attempts: 6`.
+Otherwise, resolve the PR: use `$1` if it is a number, else `gh pr view --json number --jq .number` for the current branch. If no PR can be found, say so and stop.
 
-Sau đó thực hiện đúng bước 7–12 của `/pr` (chờ check đăng ký → watch có giới hạn → phân loại → xử lý fail/pass/timeout). Khi PASSED: kiểm `gh pr view <n> --json baseRefName` — nếu base là `develop` thì tự merge (`gh pr merge <n> --squash`), không cần hỏi lại; nếu base là `main` thì không bao giờ tự merge, chỉ báo cáo sẵn sàng.
+Write `.claude/.ci-watch.json` with `pr`, `branch` (from `git rev-parse --abbrev-ref HEAD`), `armed_at_epoch` = now, `deadline_epoch` = now + 3600, `attempts: 0`, `max_attempts: 6`.
+
+Then follow steps 7–12 of `/pr` exactly (wait for checks to register → bounded watch → classify → handle fail/pass/timeout). When PASSED: check `gh pr view <n> --json baseRefName` — if the base is `develop`, merge (`gh pr merge <n> --squash`) only if an independent review has already PASSed; if not, report that it is ready and waiting for review; if the base is `main`, never merge on your own, only report that it is ready.

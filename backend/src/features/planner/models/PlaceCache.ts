@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import type { OpeningPeriod } from "../services/opening-hours";
 
 export interface IPlaceCache extends Document {
   query: string;
@@ -19,6 +20,8 @@ export interface IPlaceCache extends Document {
   photoUrl?: string;
   openingHours?: string;
   openingHoursArray?: string[];
+  /** Structured periods (language-neutral) — see services/opening-hours.ts */
+  openingPeriods?: OpeningPeriod[];
   categories?: string[];
   isVerified: boolean;
   source: "mapbox" | "google" | "both";
@@ -37,6 +40,15 @@ export interface IPlaceCache extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+const periodPointSchema = new Schema(
+  { day: Number, hour: Number, minute: Number },
+  { _id: false },
+);
+const openingPeriodSchema = new Schema(
+  { open: periodPointSchema, close: periodPointSchema },
+  { _id: false },
+);
 
 const PlaceCacheSchema = new Schema<IPlaceCache>(
   {
@@ -69,6 +81,7 @@ const PlaceCacheSchema = new Schema<IPlaceCache>(
     photoUrl: String,
     openingHours: String,
     openingHoursArray: [String],
+    openingPeriods: [openingPeriodSchema],
     categories: [String],
     isVerified: { type: Boolean, default: false },
     source: {

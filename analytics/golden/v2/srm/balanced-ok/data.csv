@@ -1,0 +1,3 @@
+variant,count,expected_share
+control,5012,0.5
+treatment,4988,0.5

@@ -116,6 +116,6 @@ jobs:
             frontend/web/coverage/
           retention-days: 14
 
-# Env vars nhạy cảm thật (JWT/API key/DB credential) dùng ${{ secrets.XXX }} khi
-# workflow này cần chạy integration/e2e thật — hiện tại chỉ dùng giá trị dummy
-# đủ để build/test pass mà không cần secret thật.
+# Real sensitive env vars (JWT/API key/DB credential) should use ${{ secrets.XXX }} when
+# this workflow needs to run real integration/e2e — for now it only uses dummy values
+# sufficient for build/test to pass without real secrets.

@@ -3,6 +3,7 @@ import { CalendarDays, Map, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 import { convertCurrency } from "@/utils/format";
+import { localizeDestination } from "@/utils/country-name";
 import { TripDetailWeatherPanel } from "@/features/planner/components/trip-detail/TripDetailWeatherPanel";
 import { MAPBOX_TOKEN } from "@/config/env";
 
@@ -37,7 +38,7 @@ export function TripDetailSummaryRail({
   showViewOnMap,
   onViewMap,
 }: TripDetailSummaryRailProps) {
-  const { t } = useTranslationStore();
+  const { t, language } = useTranslationStore();
   const previewCoordinates =
     activeDayCoordinates.length > 0 ? activeDayCoordinates : allTripCoordinates;
 
@@ -94,7 +95,9 @@ export function TripDetailSummaryRail({
                 className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground"
                 aria-hidden
               />
-              <span className="leading-snug">{destination}</span>
+              <span className="leading-snug">
+                {localizeDestination(destination, language)}
+              </span>
             </p>
           ) : null}
         </div>
@@ -128,7 +131,9 @@ export function TripDetailSummaryRail({
             <p className="text-muted-foreground text-xs uppercase tracking-wide font-medium">
               {t("trip.budgetLabel")}
             </p>
-            <p className="text-lg font-semibold tabular-nums">{displayBudget}</p>
+            <p className="text-lg font-semibold tabular-nums">
+              {displayBudget}
+            </p>
           </div>
         ) : null}
 

@@ -64,6 +64,36 @@ export const env = cleanEnv(process.env, {
   /** Sentry error tracking. Empty = disabled (initSentry() no-ops) — every
    * environment without a DSN configured yet must still boot cleanly. */
   SENTRY_DSN: str({ default: "" }),
+  /** When exactly "true", /api/reliability/* is mounted. Unlike calendar
+   * sync, this does NOT default to on in development — an SLO endpoint
+   * must be explicitly opted into everywhere, including local dev. */
+  ENABLE_RELIABILITY_API: str({ default: "" }),
+  /**
+   * Comma-separated emails allowed to read /api/reliability/* (production).
+   * Empty in production = no one. Empty outside production = everyone —
+   * same semantics as VIP_EMAILS, kept separate because "beta tester" and
+   * "can see internal reliability data" are different roles.
+   */
+  SRE_ADMIN_EMAILS: str({ default: "" }),
+  /** When exactly "true", POST /api/analytics/events is mounted (B2 event
+   * ingest). Off everywhere by default, including local dev — stored events
+   * use Atlas free-tier storage, so each environment opts in deliberately. */
+  ANALYTICS_ENABLED: str({ default: "" }),
+  /** HMAC key for userIds stored in analytics_events/analytics_quarantine
+   * (PII is hashed before it is stored for analysis). Min 32 chars; the app
+   * refuses to boot with ANALYTICS_ENABLED=true and no valid secret. Keep it
+   * stable per environment — rotating it splits every user's history. */
+  ANALYTICS_HASH_SECRET: str({ default: "" }),
+  /** When exactly "true" (and ANALYTICS_ENABLED), POST
+   * /api/analytics/sim/events is mounted for the simkit Locust driver
+   * (simulated users only, unmetered). Local load tests only: the app
+   * refuses to boot with it under NODE_ENV=production (staging included). */
+  ANALYTICS_SIM_INGEST: str({ default: "" }),
+  /** When exactly "true", /api/experiments/* is mounted (B2 assignment +
+   * exposure logging). Off everywhere by default. Exposures are stored as
+   * analytics events with hashed userIds, so it also needs
+   * ANALYTICS_HASH_SECRET — the app refuses to boot without one. */
+  EXPERIMENTS_ENABLED: str({ default: "" }),
 });
 
 /** Which environment this process is actually running as — APP_ENV if set

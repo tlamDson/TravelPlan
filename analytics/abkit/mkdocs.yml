@@ -1,0 +1,9 @@
+site_name: abkit
+site_description: Experimentation toolkit for TravelPlan
+docs_dir: docs
+strict: true
+nav:
+  - Home: index.md
+  - Methods: methods.md
+  - Results: results.md
+  - Releasing: release.md

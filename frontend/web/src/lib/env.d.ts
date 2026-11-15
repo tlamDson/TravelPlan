@@ -35,6 +35,9 @@ interface ImportMetaEnv {
    */
   readonly VITE_ENABLE_GOOGLE_CALENDAR_SYNC?: string;
 
+  /** Send analytics events to the API. Must match the server's ANALYTICS_ENABLED; exactly "true" turns it on, default off. */
+  readonly VITE_ANALYTICS_ENABLED?: string;
+
   /** Comma-separated emails allowed to see Calendar sync (not secret — backend enforces). */
   readonly VITE_VIP_EMAILS?: string;
 
@@ -55,11 +58,7 @@ interface ImportMetaEnv {
   /** Clerk publishable key (public) */
   readonly VITE_CLERK_PUBLISHABLE_KEY?: string;
 
-  /** OpenWeather API key (public key for client forecast requests) */
-  readonly VITE_OPENWEATHER_API_KEY?: string;
 
-  /** OpenWeather base URL override */
-  readonly VITE_OPENWEATHER_BASE_URL?: string;
 
   // ============================================
   // FORBIDDEN - NEVER ADD THESE:

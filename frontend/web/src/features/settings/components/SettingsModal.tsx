@@ -75,7 +75,11 @@ interface SettingsModalProps {
   initialTab?: TabId;
 }
 
-export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProps) {
+export function SettingsModal({
+  isOpen,
+  onClose,
+  initialTab,
+}: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>("personal");
   const { t } = useTranslationStore();
   const { autoLoadLongTripChunks, setAutoLoadLongTripChunks } =
@@ -93,7 +97,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden gap-0 bg-background h-[85vh] md:h-[700px] flex flex-col md:flex-row">
+      {/* No description: the title plus the labelled tabs say what this is. */}
+      <DialogContent
+        aria-describedby={undefined}
+        className="max-w-4xl p-0 overflow-hidden gap-0 bg-background h-[85vh] md:h-[700px] flex flex-col md:flex-row">
         <DialogTitle className="sr-only">{t("settings.title")}</DialogTitle>
         {/* Sidebar Navigation */}
         <aside className="w-full md:w-64 bg-muted/30 border-r md:h-full flex flex-col shrink-0">
@@ -132,11 +139,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProp
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold">
-                    Auto-load long trip days
+                    {t("settings.autoLoadLabel")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    If enabled, we load upcoming chunks automatically. This may
-                    take longer, and you can return later.
+                    {t("settings.autoLoadDesc")}
                   </p>
                 </div>
                 <Switch

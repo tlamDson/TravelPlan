@@ -1,0 +1,80 @@
+# Publishes the distribution abkit-experiments (import name: abkit) to PyPI when a tag
+# abkit-v<version> is pushed (B2 plan, PR 22, gate G-B2-2). PyPI Trusted Publishing: no token.
+# The publish job runs in the GitHub environment `pypi`; the OIDC token is granted to that job only.
+name: Release abkit
+
+on:
+  push:
+    tags:
+      - "abkit-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build abkit-experiments
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: analytics/abkit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check the tag matches the package version
+        run: |
+          expected="abkit-v$(python -c "import tomllib,sys; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+          init="abkit-v$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' src/abkit/__init__.py)"
+          if [ "$GITHUB_REF_NAME" != "$expected" ] || [ "$init" != "$expected" ]; then
+            echo "tag $GITHUB_REF_NAME, pyproject $expected, __init__ $init must all agree" >&2
+            exit 1
+          fi
+
+      - name: Install (core + dev + docs + release)
+        run: python -m pip install -e ".[dev,docs,release]"
+
+      - name: Tests
+        run: python -m pytest -q
+
+      - name: Docs (strict)
+        run: python -m mkdocs build --strict
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Check the distribution metadata
+        run: python -m twine check dist/*
+
+      - name: Upload distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: abkit-dist
+          path: analytics/abkit/dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/abkit-experiments/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: abkit-dist
+          path: dist/
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@v1.12.4
+        with:
+          packages-dir: dist/

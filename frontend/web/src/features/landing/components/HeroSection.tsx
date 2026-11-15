@@ -5,9 +5,20 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 import { HERO_IMAGE, DESTINATION_CARDS } from "../constants";
 
+function scrollToHowItWorks() {
+  const reduceMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+  document
+    .getElementById("how-it-works")
+    ?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+}
+
 export function HeroSection() {
+  const t = useTranslationStore((state) => state.t);
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background Image */}
@@ -24,13 +35,12 @@ export function HeroSection() {
 
       {/* Floating destination cards */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
-        {DESTINATION_CARDS.map((dest, i) => (
+        {DESTINATION_CARDS.map((dest) => (
           <div
             key={dest.city}
-            className="absolute rounded-xl p-2 bg-card/90 backdrop-blur shadow-lg hidden lg:block"
+            data-testid="hero-destination-card"
+            className={`absolute rounded-xl p-2 bg-card/90 backdrop-blur shadow-lg hidden xl:block ${dest.position}`}
             style={{
-              left: `${15 + i * 30}%`,
-              top: `${30 + (i % 2) * 20}%`,
               animation: `float 3s ease-in-out infinite`,
               animationDelay: `${dest.delay * 0.5}s`,
             }}
@@ -63,12 +73,17 @@ export function HeroSection() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg">
-              Watch Demo
+            <Button
+              variant="outline"
+              size="lg"
+              data-testid="hero-how-it-works-cta"
+              onClick={scrollToHowItWorks}
+            >
+              {t("landing.hero.howItWorks")}
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-6">
-            Join 10,000+ travelers planning smarter trips
+            {t("landing.hero.tagline")}
           </p>
         </div>
       </div>

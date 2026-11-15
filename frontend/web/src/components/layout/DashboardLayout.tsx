@@ -46,8 +46,11 @@ const navItems = [
   { labelKey: "sidebar.dashboard", href: "/dashboard", icon: LayoutDashboard },
   { labelKey: "sidebar.myTrips", href: "/trips", icon: Plane },
   { labelKey: "sidebar.explore", href: "/map", icon: Map },
-  { labelKey: "sidebar.ai", href: "/assistant", icon: Bot },
 ];
+
+// Not released yet: shown as a disabled "coming soon" entry, not a link to the
+// /assistant "In Development" dead end.
+const comingSoonNavItem = { labelKey: "sidebar.ai", icon: Bot };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
@@ -200,15 +203,32 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               );
             })}
+            <div
+              data-testid="nav-ai-coming-soon"
+              aria-disabled="true"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground/60 cursor-not-allowed"
+            >
+              <comingSoonNavItem.icon className="h-5 w-5" />
+              <span>{t(comingSoonNavItem.labelKey)}</span>
+              <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {t("sidebar.comingSoon")}
+              </span>
+            </div>
             {!isPro && usage && usage.tripLimit > 0 && (
               <div className="mx-2 mt-4 rounded-lg border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-foreground">
-                  {`${usage.tripsUsedThisCycle}/${usage.tripLimit} Free Trips Used`}
+                  {t("sidebar.freeTripsUsed")
+                    .replace("{used}", String(usage.tripsUsedThisCycle))
+                    .replace("{limit}", String(usage.tripLimit))}
                 </p>
                 <Progress className="mt-2 h-2" value={progressPercent} />
                 {resetDays !== null && (
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {`Resets in ${resetDays} day${resetDays === 1 ? "" : "s"}.`}
+                    {t(
+                      resetDays === 1
+                        ? "sidebar.resetsInOne"
+                        : "sidebar.resetsInOther",
+                    ).replace("{count}", String(resetDays))}
                   </p>
                 )}
               </div>

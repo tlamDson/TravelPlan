@@ -17,26 +17,44 @@ import {
   type UserPreferences,
 } from "@/features/settings/types/user-preferences.types";
 
-const FOCUS_OPTIONS: FocusKey[] = [
-  "Culture",
-  "Nature",
-  "Gastronomy",
-  "Lifestyle",
+const FOCUS_OPTIONS: Array<{ value: FocusKey; labelKey: string }> = [
+  { value: "Culture", labelKey: "pref.focusCulture" },
+  { value: "Nature", labelKey: "pref.focusNature" },
+  { value: "Gastronomy", labelKey: "pref.focusGastronomy" },
+  { value: "Lifestyle", labelKey: "pref.focusLifestyle" },
 ];
 
-const GROUP_OPTIONS: Array<{ value: GroupTypeKey; label: string }> = [
-  { value: "solo", label: "Solo" },
-  { value: "couple", label: "Couple" },
-  { value: "family_kids", label: "Family" },
-  { value: "friends", label: "Friends" },
-  { value: "work", label: "Work" },
+const GROUP_OPTIONS: Array<{ value: GroupTypeKey; labelKey: string }> = [
+  { value: "solo", labelKey: "pref.groupSolo" },
+  { value: "couple", labelKey: "pref.groupCouple" },
+  { value: "family_kids", labelKey: "pref.groupFamily" },
+  { value: "friends", labelKey: "pref.groupFriends" },
+  { value: "work", labelKey: "pref.groupWork" },
 ];
 
-const TRANSPORT_OPTIONS: Array<{ value: TransportModeKey; label: string }> = [
-  { value: "walking", label: "Walking" },
-  { value: "public_transport", label: "Public Transport" },
-  { value: "car", label: "Car" },
-];
+const TRANSPORT_OPTIONS: Array<{ value: TransportModeKey; labelKey: string }> =
+  [
+    { value: "walking", labelKey: "pref.transportWalking" },
+    { value: "public_transport", labelKey: "pref.transportPublic" },
+    { value: "car", labelKey: "pref.transportCar" },
+  ];
+
+const PACE_LABEL_KEYS = {
+  relaxed: "pref.paceRelaxed",
+  balanced: "pref.paceBalanced",
+  packed: "pref.pacePacked",
+} as const;
+
+const SEAT_OPTIONS = [
+  { value: "Aisle", labelKey: "pref.aisle" },
+  { value: "Window", labelKey: "pref.window" },
+  { value: "Middle", labelKey: "pref.middle" },
+] as const;
+
+const ROOM_OPTIONS = [
+  { value: "1 Bed", labelKey: "pref.1bed" },
+  { value: "2 Beds", labelKey: "pref.2beds" },
+] as const;
 
 const PACE_OPTIONS: Array<"relaxed" | "balanced" | "packed"> = [
   "relaxed",
@@ -53,7 +71,8 @@ export function TravelPreferencesSettings() {
 
   const [focus, setFocus] = useState<FocusKey[]>([]);
   const [groupType, setGroupType] = useState<GroupTypeKey | null>(null);
-  const [transportMode, setTransportMode] = useState<TransportModeKey>("walking");
+  const [transportMode, setTransportMode] =
+    useState<TransportModeKey>("walking");
   const [pace, setPace] = useState<"relaxed" | "balanced" | "packed">(
     "balanced",
   );
@@ -145,9 +164,9 @@ export function TravelPreferencesSettings() {
         loyaltyMarriott,
         loyaltyHertz,
       });
-      toast.success("Travel preferences saved");
+      toast.success(t("pref.toastSaved"));
     } catch {
-      toast.error("Failed to save preferences");
+      toast.error(t("pref.toastSaveFailed"));
     }
   };
 
@@ -156,14 +175,18 @@ export function TravelPreferencesSettings() {
   };
 
   const handleResetToOnboarding = () => {
-    const redirect = encodeURIComponent("/dashboard?openSettings=true&settingsTab=preferences");
+    const redirect = encodeURIComponent(
+      "/dashboard?openSettings=true&settingsTab=preferences",
+    );
     navigate(`/onboarding?mode=reset&redirect=${redirect}`);
   };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h3 className="text-2xl font-bold tracking-tight">{t("pref.pageTitle")}</h3>
+        <h3 className="text-2xl font-bold tracking-tight">
+          {t("pref.pageTitle")}
+        </h3>
         <p className="text-muted-foreground mt-1">{t("pref.pageSubtitle")}</p>
       </div>
 
@@ -171,23 +194,23 @@ export function TravelPreferencesSettings() {
 
       <form className="space-y-10">
         <section className="space-y-4">
-          <h4 className="text-sm font-semibold text-foreground">AI Trip Defaults</h4>
+          <h4 className="text-sm font-semibold text-foreground">{t("pref.aiDefaultsTitle")}</h4>
 
           <div className="space-y-2">
-            <Label>Focus (max 3)</Label>
+            <Label>{t("pref.focusLabel")}</Label>
             <div className="flex flex-wrap gap-2">
               {FOCUS_OPTIONS.map((item) => {
-                const active = focus.includes(item);
+                const active = focus.includes(item.value);
                 const disabled = !active && focus.length >= 3;
                 return (
                   <Button
-                    key={item}
+                    key={item.value}
                     type="button"
                     variant={active ? "default" : "outline"}
                     disabled={disabled}
-                    onClick={() => toggleFocus(item)}
+                    onClick={() => toggleFocus(item.value)}
                   >
-                    {item}
+                    {t(item.labelKey)}
                   </Button>
                 );
               })}
@@ -195,7 +218,7 @@ export function TravelPreferencesSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label>Group Type</Label>
+            <Label>{t("pref.groupLabel")}</Label>
             <div className="flex flex-wrap gap-2">
               {GROUP_OPTIONS.map((opt) => (
                 <Button
@@ -204,7 +227,7 @@ export function TravelPreferencesSettings() {
                   variant={groupType === opt.value ? "default" : "outline"}
                   onClick={() => setGroupType(opt.value)}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Button>
               ))}
               <Button
@@ -212,13 +235,13 @@ export function TravelPreferencesSettings() {
                 variant={groupType === null ? "default" : "outline"}
                 onClick={() => setGroupType(null)}
               >
-                None
+                {t("pref.groupNone")}
               </Button>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Transport Mode</Label>
+            <Label>{t("pref.transportLabel")}</Label>
             <div className="flex flex-wrap gap-2">
               {TRANSPORT_OPTIONS.map((opt) => (
                 <Button
@@ -227,14 +250,14 @@ export function TravelPreferencesSettings() {
                   variant={transportMode === opt.value ? "default" : "outline"}
                   onClick={() => setTransportMode(opt.value)}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Button>
               ))}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Pace</Label>
+            <Label>{t("pref.paceLabel")}</Label>
             <div className="flex flex-wrap gap-2">
               {PACE_OPTIONS.map((item) => (
                 <Button
@@ -242,9 +265,8 @@ export function TravelPreferencesSettings() {
                   type="button"
                   variant={pace === item ? "default" : "outline"}
                   onClick={() => setPace(item)}
-                  className="capitalize"
                 >
-                  {item}
+                  {t(PACE_LABEL_KEYS[item])}
                 </Button>
               ))}
             </div>
@@ -252,7 +274,7 @@ export function TravelPreferencesSettings() {
 
           <div className="grid gap-3 md:grid-cols-2">
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <Label>Mobility friendly</Label>
+              <Label>{t("pref.mobilityFriendly")}</Label>
               <Switch
                 checked={constraints.mobility_friendly}
                 onCheckedChange={(v) =>
@@ -262,7 +284,7 @@ export function TravelPreferencesSettings() {
             </div>
 
             <div className="flex items-center justify-between rounded-lg border p-3">
-              <Label>Avoid crowds</Label>
+              <Label>{t("pref.avoidCrowds")}</Label>
               <Switch
                 checked={constraints.avoid_crowds}
                 onCheckedChange={(v) =>
@@ -272,22 +294,25 @@ export function TravelPreferencesSettings() {
             </div>
 
             <div className="flex items-center justify-between rounded-lg border p-3 md:col-span-2">
-              <Label>Food as main activities</Label>
+              <Label>{t("pref.foodAsMain")}</Label>
               <Switch
                 checked={constraints.foodAsMainActivities}
                 onCheckedChange={(v) =>
-                  setConstraints((prev) => ({ ...prev, foodAsMainActivities: v }))
+                  setConstraints((prev) => ({
+                    ...prev,
+                    foodAsMainActivities: v,
+                  }))
                 }
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Special Requirements</Label>
+            <Label>{t("pref.specialRequirements")}</Label>
             <Textarea
               value={specialRequirements}
               onChange={(e) => setSpecialRequirements(e.target.value.slice(0, 400))}
-              placeholder="Dietary, accessibility, health, kid-friendly needs..."
+              placeholder={t("pref.specialRequirementsPlaceholder")}
               rows={4}
             />
           </div>
@@ -303,14 +328,14 @@ export function TravelPreferencesSettings() {
             <div className="space-y-2">
               <Label>{t("pref.seatPref")}</Label>
               <div className="flex gap-2">
-                {(["Aisle", "Window", "Middle"] as const).map((s) => (
+                {SEAT_OPTIONS.map((s) => (
                   <Button
-                    key={s}
+                    key={s.value}
                     type="button"
-                    variant={seatChoice === s ? "default" : "outline"}
-                    onClick={() => setSeatChoice(s)}
+                    variant={seatChoice === s.value ? "default" : "outline"}
+                    onClick={() => setSeatChoice(s.value)}
                   >
-                    {s}
+                    {t(s.labelKey)}
                   </Button>
                 ))}
               </div>
@@ -319,7 +344,7 @@ export function TravelPreferencesSettings() {
             <div className="space-y-2">
               <Label>{t("pref.defaultAirport")}</Label>
               <Input
-                placeholder="e.g., JFK, LHR, SFO"
+                placeholder={t("pref.airportPlaceholder")}
                 value={defaultAirport}
                 onChange={(e) => setDefaultAirport(e.target.value)}
               />
@@ -328,7 +353,7 @@ export function TravelPreferencesSettings() {
             <div className="space-y-2">
               <Label>{t("pref.meals")}</Label>
               <Input
-                placeholder="e.g., Vegetarian, Halal, Gluten-Free"
+                placeholder={t("pref.mealsPlaceholder")}
                 value={specialMeals}
                 onChange={(e) => setSpecialMeals(e.target.value)}
               />
@@ -337,14 +362,14 @@ export function TravelPreferencesSettings() {
             <div className="space-y-2">
               <Label>{t("pref.hotelRoom")}</Label>
               <div className="flex gap-2">
-                {(["1 Bed", "2 Beds"] as const).map((room) => (
+                {ROOM_OPTIONS.map((room) => (
                   <Button
-                    key={room}
+                    key={room.value}
                     type="button"
-                    variant={hotelRoom === room ? "default" : "outline"}
-                    onClick={() => setHotelRoom(room)}
+                    variant={hotelRoom === room.value ? "default" : "outline"}
+                    onClick={() => setHotelRoom(room.value)}
                   >
-                    {room}
+                    {t(room.labelKey)}
                   </Button>
                 ))}
               </div>
@@ -358,12 +383,30 @@ export function TravelPreferencesSettings() {
         </section>
 
         <section className="space-y-4">
-          <h4 className="text-sm font-semibold text-foreground">Loyalty Programs</h4>
+          <h4 className="text-sm font-semibold text-foreground">
+            {t("pref.loyaltyTitle")}
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input placeholder="Delta SkyMiles" value={loyaltyDelta} onChange={(e) => setLoyaltyDelta(e.target.value)} />
-            <Input placeholder="United MileagePlus" value={loyaltyUnited} onChange={(e) => setLoyaltyUnited(e.target.value)} />
-            <Input placeholder="Marriott Bonvoy" value={loyaltyMarriott} onChange={(e) => setLoyaltyMarriott(e.target.value)} />
-            <Input placeholder="Hertz Gold Plus" value={loyaltyHertz} onChange={(e) => setLoyaltyHertz(e.target.value)} />
+            <Input
+              placeholder="Delta SkyMiles"
+              value={loyaltyDelta}
+              onChange={(e) => setLoyaltyDelta(e.target.value)}
+            />
+            <Input
+              placeholder="United MileagePlus"
+              value={loyaltyUnited}
+              onChange={(e) => setLoyaltyUnited(e.target.value)}
+            />
+            <Input
+              placeholder="Marriott Bonvoy"
+              value={loyaltyMarriott}
+              onChange={(e) => setLoyaltyMarriott(e.target.value)}
+            />
+            <Input
+              placeholder="Hertz Gold Plus"
+              value={loyaltyHertz}
+              onChange={(e) => setLoyaltyHertz(e.target.value)}
+            />
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -373,7 +416,10 @@ export function TravelPreferencesSettings() {
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
               <Label>{t("pref.avoidTraffic")}</Label>
-              <Switch checked={avoidTraffic} onCheckedChange={setAvoidTraffic} />
+              <Switch
+                checked={avoidTraffic}
+                onCheckedChange={setAvoidTraffic}
+              />
             </div>
           </div>
         </section>

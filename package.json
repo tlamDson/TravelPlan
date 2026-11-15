@@ -19,6 +19,11 @@
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "check:services": "npm run check:services --workspace=backend",
+    "seed:destinations": "npm run seed:destinations --workspace=backend",
+    "seed:eval-corpus": "npm run seed:eval-corpus --workspace=backend",
+    "ensure:vector-index": "npm run ensure:vector-index --workspace=backend",
+    "seed:job-metrics": "npm run seed:job-metrics --workspace=backend",
+    "seed:real-trip-jobs": "npm run seed:real-trip-jobs --workspace=backend",
     "e2e": "playwright test --config=e2e/playwright.config.ts --grep-invert @live",
     "e2e:ui": "playwright test --config=e2e/playwright.config.ts --grep-invert @live --ui"
   },

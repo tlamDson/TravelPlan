@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "id": "bh/all-null-alpha-10",
+  "method": "bh_fdr",
+  "description": "Eight null metrics, alpha 0.10.",
+  "data": "data.csv",
+  "params": {
+    "alpha": 0.1
+  },
+  "expected": {
+    "p_adjusted": [
+      0.36,
+      0.52,
+      0.64,
+      0.66,
+      0.752,
+      0.8133333333333334,
+      0.937142857142857,
+      0.99
+    ],
+    "rejected": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "decision": null,
+  "tolerance": {
+    "default": {
+      "abs": 1e-10,
+      "rel": 1e-09
+    }
+  },
+  "source": {
+    "tool": "statsmodels",
+    "version": "0.14.4",
+    "call": "statsmodels.stats.multitest.multipletests(p_value, alpha, method='fdr_bh'); outputs in input row order",
+    "generator": "abkit.golden.freeze_ref",
+    "frozen_at": "2026-11-13"
+  }
+}

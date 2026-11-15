@@ -15,7 +15,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import type { Map as MapboxMap, Marker } from "mapbox-gl";
 import type { ItineraryDay, Activity } from "@/utils/schemas";
-import { getDayColor } from "../utils/dayColors";
+import { getDayColor, withAlpha } from "../utils/dayColors";
 import {
   convertCurrency,
   formatPriceLevel,
@@ -138,7 +138,7 @@ export function useTripMarkers({
     (el: HTMLElement, color: string) => {
       deselect();
       el.style.transform = "scale(1.5)";
-      el.style.boxShadow = `0 0 0 4px ${color}55, 0 6px 16px rgba(0,0,0,0.45)`;
+      el.style.boxShadow = `0 0 0 4px ${withAlpha(color, 0.33)}, 0 6px 16px rgba(0,0,0,0.45)`;
       el.style.zIndex = "100";
       selectedElRef.current = el;
       // Show the inline ping ring
@@ -313,6 +313,12 @@ export function useTripMarkers({
             .filter(Boolean)
             .join(" · ");
 
+          // Mapbox GL's built-in popup chrome renders a plain white card
+          // regardless of the app's theme (nothing here overrides its
+          // default CSS), so text-slate-* below is a deliberate fixed
+          // dark-on-white choice, not a raw-palette violation -- the
+          // themed --foreground token would turn white-on-white in dark
+          // mode, since the popup card itself never goes dark.
           let popupHtml = `
             <div class="px-3 py-2.5 max-w-[260px] font-sans">
               <div class="text-[9px] font-bold uppercase tracking-wider mb-1" style="color: ${dayColor};">

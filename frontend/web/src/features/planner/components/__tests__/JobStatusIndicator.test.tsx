@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { JobStatusIndicator, JobStatusBadge } from "../JobStatusIndicator";
 import type { JobStatus } from "@/utils/schemas";
+import { STATUS_TONE_STYLES, JOB_STATUS_TONE } from "../../lib/statusStyles";
 
 const ALL_STATUSES: { status: JobStatus; label: string }[] = [
   { status: "IDLE", label: "Ready" },
@@ -62,6 +63,24 @@ describe("JobStatusIndicator", () => {
     );
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
+
+  it.each(ALL_STATUSES)(
+    "applies the shared statusStyles text class for $status, not a hand-rolled one",
+    ({ status }) => {
+      render(<JobStatusIndicator status={status} />);
+      const label = screen.getByText(
+        ALL_STATUSES.find((s) => s.status === status)!.label,
+      );
+      const expectedClass =
+        STATUS_TONE_STYLES[JOB_STATUS_TONE[status]].textClassName;
+
+      expect(label).toHaveClass(expectedClass);
+    },
+  );
+
+  it("resolves QUEUED and PROCESSING to different tones (the divergence this PR fixes)", () => {
+    expect(JOB_STATUS_TONE.QUEUED).not.toBe(JOB_STATUS_TONE.PROCESSING);
+  });
 });
 
 describe("JobStatusBadge", () => {
@@ -80,4 +99,18 @@ describe("JobStatusBadge", () => {
     render(<JobStatusBadge status="COMPLETED" />);
     expect(screen.getByText("Completed")).toBeInTheDocument();
   });
+
+  it.each(ALL_STATUSES)(
+    "applies the shared statusStyles pill class for $status, not a hand-rolled one",
+    ({ status }) => {
+      render(<JobStatusBadge status={status} />);
+      const badge = screen.getByTestId("job-status-badge");
+      const expectedClass =
+        STATUS_TONE_STYLES[JOB_STATUS_TONE[status]].pillClassName;
+
+      for (const cls of expectedClass.split(" ")) {
+        expect(badge).toHaveClass(cls);
+      }
+    },
+  );
 });

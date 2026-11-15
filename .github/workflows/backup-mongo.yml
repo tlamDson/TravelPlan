@@ -49,6 +49,6 @@ jobs:
           curl -H "Content-Type: application/json" \
           -X POST \
           -d '{
-            "content": "🚨 **[TravelPlan] MongoDB Backup Failed!** 🚨\n\n**Repository:** `${{ github.repository }}`\n**Branch:** `${{ github.ref_name }}`\n**Run ID:** `${{ github.run_id }}`\n\n🔗 **[Click here to view full logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**\n\n_Backup thất bại — kiểm tra MONGO_URI, bucket credentials, hoặc dump có bị rỗng bất thường không._"
+            "content": "🚨 **[TravelPlan] MongoDB Backup Failed!** 🚨\n\n**Repository:** `${{ github.repository }}`\n**Branch:** `${{ github.ref_name }}`\n**Run ID:** `${{ github.run_id }}`\n\n🔗 **[Click here to view full logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**\n\n_Backup failed — check MONGO_URI, bucket credentials, or whether the dump is unexpectedly empty._"
           }' \
           $DISCORD_WEBHOOK

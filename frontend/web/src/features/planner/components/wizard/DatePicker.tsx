@@ -26,6 +26,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useTranslationStore } from "@/stores/useTranslationStore";
+import { getDateFnsLocale } from "@/utils/locale";
 import "@/styles/calendar.css";
 
 // ─── Types ────────────────────────────────────────────────
@@ -70,12 +72,15 @@ export function DatePicker({
   testId,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
+  const language = useTranslationStore((state) => state.language);
+  const t = useTranslationStore((state) => state.t);
+  const locale = getDateFnsLocale(language);
 
   const selected = toDate(value);
   const today = minDate ?? new Date();
   today.setHours(0, 0, 0, 0);
 
-  const label = selected ? format(selected, "MMM d, yyyy") : "";
+  const label = selected ? format(selected, "PP", { locale }) : "";
 
   const handleSelect = (day: Date | undefined) => {
     if (!day) return;
@@ -115,6 +120,21 @@ export function DatePicker({
           ]}
           defaultMonth={selected ?? today}
           showOutsideDays
+          locale={locale}
+          labels={{
+            labelDayButton: (date, modifiers) => {
+              let text = format(date, "PPPP", { locale });
+              if (modifiers.today) {
+                text = `${t("wizard.calendarToday")}, ${text}`;
+              }
+              if (modifiers.selected) {
+                text = `${text}, ${t("wizard.calendarSelected")}`;
+              }
+              return text;
+            },
+            labelNext: () => t("wizard.calendarNextMonth"),
+            labelPrevious: () => t("wizard.calendarPrevMonth"),
+          }}
           className="rdp-root"
         />
         {/* Clear button */}
@@ -129,7 +149,7 @@ export function DatePicker({
                 setOpen(false);
               }}
             >
-              Clear
+              {t("wizard.clearDate")}
             </Button>
           </div>
         )}
