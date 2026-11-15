@@ -42,6 +42,8 @@ const EN: Copy = {
   "toast.assistant.errorTitle": "Error",
   "toast.assistant.createSessionFailed": "Failed to create chat session",
   "toast.assistant.deleteSessionFailed": "Failed to delete chat session",
+  "toast.assistant.chatFailed":
+    "The assistant couldn't reply. Please try again.",
 
   "toast.settings.passwordFailed": "Failed to update password",
 
@@ -156,6 +158,8 @@ const FR: Copy = {
     "Échec de la création de la session de chat",
   "toast.assistant.deleteSessionFailed":
     "Échec de la suppression de la session de chat",
+  "toast.assistant.chatFailed":
+    "L'assistant n'a pas pu répondre. Veuillez réessayer.",
 
   "toast.settings.passwordFailed": "Échec de la mise à jour du mot de passe",
 
@@ -277,6 +281,7 @@ const VI: Copy = {
   "toast.assistant.errorTitle": "Lỗi",
   "toast.assistant.createSessionFailed": "Không thể tạo phiên trò chuyện",
   "toast.assistant.deleteSessionFailed": "Không thể xóa phiên trò chuyện",
+  "toast.assistant.chatFailed": "Trợ lý không thể trả lời. Vui lòng thử lại.",
 
   "toast.settings.passwordFailed": "Không thể cập nhật mật khẩu",
 

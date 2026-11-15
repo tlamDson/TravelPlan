@@ -42,10 +42,10 @@ export default function AIAssistantPage() {
   const { sendStreamingMessage, cancelStream, streamingContent, isStreaming } =
     useStreamingChat({
       sessionId: sessionId || "",
-      onError: (error) => {
+      onError: () => {
         toast({
           title: toastT("toast.assistant.errorTitle"),
-          description: error.message,
+          description: toastT("toast.assistant.chatFailed"),
           variant: "destructive",
         });
       },
