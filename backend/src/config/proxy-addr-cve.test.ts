@@ -2,13 +2,19 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const requireFromHere = createRequire(import.meta.url);
+const requireFromHere = createRequire(__filename);
 
 /** Resolve proxy-addr exactly as express does (from express's own location). */
 function loadProxyAddrFromExpress() {
-  const expressDir = path.dirname(requireFromHere.resolve("express/package.json"));
-  const requireFromExpress = createRequire(path.join(expressDir, "package.json"));
-  const pkg = requireFromExpress("proxy-addr/package.json") as { version: string };
+  const expressDir = path.dirname(
+    requireFromHere.resolve("express/package.json"),
+  );
+  const requireFromExpress = createRequire(
+    path.join(expressDir, "package.json"),
+  );
+  const pkg = requireFromExpress("proxy-addr/package.json") as {
+    version: string;
+  };
   return { version: pkg.version };
 }
 
