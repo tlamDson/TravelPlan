@@ -110,7 +110,7 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
               {coverSrc ? (
                 <img
                   src={coverSrc}
-                  alt={getLocalizedTripTitle(trip.title, t)}
+                  alt={getLocalizedTripTitle(trip.title, t, language)}
                   className="w-full h-full object-cover"
                   loading={priority ? undefined : "lazy"}
                   fetchPriority={priority ? "high" : "auto"}
@@ -217,7 +217,7 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
                 className="font-semibold text-base group-hover:text-primary transition-colors line-clamp-1"
                 data-testid="trip-card-title"
               >
-                {getLocalizedTripTitle(trip.title, t)}
+                {getLocalizedTripTitle(trip.title, t, language)}
               </h3>
 
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -307,7 +307,7 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
             <AlertDialogTitle>
               {t("trip.deleteConfirmTitle").replace(
                 "{name}",
-                getLocalizedTripTitle(trip.title, t),
+                getLocalizedTripTitle(trip.title, t, language),
               )}
             </AlertDialogTitle>
             <AlertDialogDescription>

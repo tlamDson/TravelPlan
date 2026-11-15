@@ -5,21 +5,10 @@
 
 import { differenceInDays, isPast, isFuture } from "date-fns";
 import type { Language } from "@/stores/useTranslationStore";
+import { getLocaleCode } from "./locale";
+import { localizeDestination } from "./country-name";
 
-/**
- * Maps the app's Language type to standard BCP 47 locale codes.
- */
-export function getLocaleCode(lang?: Language): string {
-  switch (lang) {
-    case "French":
-      return "fr-FR";
-    case "Vietnamese":
-      return "vi-VN";
-    case "English (US)":
-    default:
-      return "en-US";
-  }
-}
+export { getLocaleCode };
 
 /**
  * Format a date for display using native Intl API
@@ -159,13 +148,16 @@ const DEFAULT_TRIP_PREFIXES = ["Trip to ", "Voyage à ", "Chuyến đi tới "];
 export function getLocalizedTripTitle(
   title: string,
   t: (key: string) => string,
+  lang?: Language,
 ): string {
   if (!title) return title;
 
   for (const prefix of DEFAULT_TRIP_PREFIXES) {
     if (title.startsWith(prefix)) {
       const destination = title.slice(prefix.length);
-      return `${t("trips.defaultTitle")} ${destination}`;
+      return `${t("trips.defaultTitle")} ${
+        lang ? localizeDestination(destination, lang) : destination
+      }`;
     }
   }
 
