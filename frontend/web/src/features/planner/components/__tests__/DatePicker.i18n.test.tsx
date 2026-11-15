@@ -1,10 +1,18 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 import { getDateFnsLocale } from "@/utils/locale";
 import { DatePicker } from "../wizard/DatePicker";
+import { StepBasics } from "../wizard/StepBasics";
+
+vi.mock("../wizard/WizardDestinationPickers", () => ({
+  WizardDestinationPickers: () => null,
+}));
+
+const ENGLISH_DATE_WORDS =
+  /Today|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|January|February|March|April|May|June|July|August|September|October|November|December|\d(st|nd|rd|th),/;
 
 function renderPicker() {
   return renderWithProviders(
@@ -39,6 +47,47 @@ describe("DatePicker follows the UI language", () => {
       expect(document.body.textContent).not.toContain("November");
       expect(document.body.textContent).not.toMatch(/\bSu\b|\bMo\b|\bTu\b/);
       expect(screen.queryByLabelText(/Saturday|November/)).toBeNull();
+    });
+  });
+
+  describe("Vietnamese labels", () => {
+    beforeEach(() => useTranslationStore.setState({ language: "Vietnamese" }));
+
+    it("every day cell label is Vietnamese (no English month, weekday or ordinal)", async () => {
+      renderPicker();
+      await userEvent.click(screen.getByTestId("picker"));
+
+      const grid = await screen.findByRole("grid");
+      const labels = within(grid)
+        .getAllByRole("button")
+        .map((b) => b.getAttribute("aria-label") ?? "");
+      expect(labels.length).toBeGreaterThanOrEqual(28);
+      for (const label of labels) {
+        expect(label).not.toBe("");
+        expect(label).not.toMatch(ENGLISH_DATE_WORDS);
+      }
+      expect(labels.some((l) => /Tháng Mười Một/.test(l))).toBe(true);
+    });
+
+    it("the Clear button is Vietnamese", async () => {
+      renderPicker();
+      await userEvent.click(screen.getByTestId("picker"));
+      expect(
+        await screen.findByRole("button", { name: "Xóa ngày" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Clear" })).toBeNull();
+    });
+
+    it("the wizard date triggers have Vietnamese aria-labels", () => {
+      renderWithProviders(<StepBasics />);
+      expect(screen.getByTestId("trip-wizard-start-date")).toHaveAttribute(
+        "aria-label",
+        "Ngày bắt đầu",
+      );
+      expect(screen.getByTestId("trip-wizard-end-date")).toHaveAttribute(
+        "aria-label",
+        "Ngày kết thúc",
+      );
     });
   });
 
