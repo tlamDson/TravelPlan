@@ -68,6 +68,18 @@ describe("getLocalizedTripTitle", () => {
   it("re-localizes a French default title into the target language", () => {
     expect(getLocalizedTripTitle("Voyage à Paris", t)).toBe("Trip to Paris");
   });
+
+  it("localizes the country in a default title when a language is given", () => {
+    expect(getLocalizedTripTitle("Trip to Kyoto, Japan", t, "Vietnamese")).toBe(
+      "Trip to Kyoto, Nhật Bản",
+    );
+  });
+
+  it("keeps a custom title untouched even with a language", () => {
+    expect(getLocalizedTripTitle("Japan 2026", t, "Vietnamese")).toBe(
+      "Japan 2026",
+    );
+  });
 });
 
 describe("formatPriceCategory", () => {
