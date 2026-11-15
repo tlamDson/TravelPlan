@@ -38,7 +38,7 @@ describe("seedExperimentCatalog against Mongo", () => {
     const running = {
       key: saveTripCtaExperiment.key,
       salt: "original-salt",
-      status: "running",
+      status: "running" as const,
       holdoutBuckets: 1000,
       variants: [
         { key: "control", weight: 4500 },
