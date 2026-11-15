@@ -33,7 +33,7 @@ import {
   getLocalizedTripTitle,
 } from "@/utils/format";
 import type { Trip } from "@/utils/schemas";
-import { getCountryImage } from "@/utils/countryImage";
+import { getTripCoverSrc } from "../utils/trip-cover";
 import { useDeleteTrip, useUpdateTripLifecycle } from "../hooks/useTrips";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 import { STATUS_TONE_STYLES, TRIP_STATUS_TONE } from "../lib/statusStyles";
@@ -65,10 +65,7 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
     useUpdateTripLifecycle();
   const { language, t, currency: preferredCurrency } = useTranslationStore();
 
-  const coverSrc =
-    trip.coverImage ||
-    getCountryImage(trip.destination || trip.title, trip._id) ||
-    null;
+  const coverSrc = getTripCoverSrc(trip);
 
   const convertedSpent = convertCurrency(
     trip.budget.totalSpent,
