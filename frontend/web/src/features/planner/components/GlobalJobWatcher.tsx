@@ -55,9 +55,9 @@ export function GlobalJobWatcher() {
       else toast.success(toastT("toast.trip.ready"));
       clearActiveJob();
     },
-    onError: (err) => {
+    onError: () => {
       trackFinished();
-      toast.error(err || toastT("toast.trip.itineraryFailed"));
+      toast.error(toastT("toast.trip.itineraryFailed"));
       clearActiveJob();
     },
   });

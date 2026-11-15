@@ -177,7 +177,7 @@ export default function TripDetailPage() {
           ? retryError.message
           : toastT("toast.trip.retryFailed");
       setJobError(message);
-      toast.error(message);
+      toast.error(toastT("toast.trip.retryFailed"));
     } finally {
       setIsRetrying(false);
     }
@@ -195,16 +195,8 @@ export default function TripDetailPage() {
         });
       }
     },
-    onError: (err: unknown) => {
-      const data = isAxiosError(err) ? err.response?.data : undefined;
-      const msg =
-        data &&
-        typeof data === "object" &&
-        "message" in data &&
-        typeof (data as { message: unknown }).message === "string"
-          ? (data as { message: string }).message
-          : "";
-      toast.error(msg || toastT("toast.trip.cancelFailed"));
+    onError: () => {
+      toast.error(toastT("toast.trip.cancelFailed"));
     },
   });
 

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { toast } from "sonner";
-import { toastT } from "@/lib/toast-i18n";
+import { toastT, toastTOr } from "@/lib/toast-i18n";
 
 // Google Icon SVG with brand colors
 const GoogleIcon = () => (
@@ -95,8 +95,10 @@ export default function SignInPage() {
       };
 
       toast.error(
-        clerkError.errors?.[0]?.message ||
-          toastT("toast.auth.invalidCredentials"),
+        toastTOr(
+          `toast.authError.${clerkError.errors?.[0]?.code}`,
+          "toast.auth.signInFailed",
+        ),
       );
     } finally {
       setIsSubmitting(false);

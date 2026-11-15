@@ -35,8 +35,8 @@ export function useUpdateUserMe() {
       queryClient.setQueryData(queryKeys.users.me(), updatedUser);
       toast.success(toastT("toast.profile.updated"));
     },
-    onError: (error: Error) => {
-      toast.error(error.message || toastT("toast.profile.updateFailed"));
+    onError: () => {
+      toast.error(toastT("toast.profile.updateFailed"));
     },
   });
 }

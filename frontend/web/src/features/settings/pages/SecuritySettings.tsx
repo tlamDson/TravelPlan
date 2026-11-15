@@ -48,15 +48,8 @@ export function SecuritySettings() {
       setCurrentPassword("");
       setNewPassword("");
       setIsPasswordDialogOpen(false);
-    } catch (error: unknown) {
-      const clerkMsg =
-        error &&
-        typeof error === "object" &&
-        "errors" in error &&
-        Array.isArray((error as { errors: { message?: string }[] }).errors)
-          ? (error as { errors: { message?: string }[] }).errors[0]?.message
-          : undefined;
-      toast.error(clerkMsg || toastT("toast.settings.passwordFailed"));
+    } catch {
+      toast.error(toastT("toast.settings.passwordFailed"));
     } finally {
       setIsUpdatingPassword(false);
     }

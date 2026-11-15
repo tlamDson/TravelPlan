@@ -12,7 +12,7 @@ import { Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { toast } from "sonner";
-import { toastT } from "@/lib/toast-i18n";
+import { toastT, toastTOr } from "@/lib/toast-i18n";
 
 // Feature-specific imports
 import {
@@ -132,7 +132,12 @@ export default function SignUpPage() {
         );
         const errorField = getErrorField(firstError.code);
         setSignUpError({ field: errorField, message: friendlyMessage });
-        toast.error(friendlyMessage);
+        toast.error(
+          toastTOr(
+            `toast.authError.${firstError.code}`,
+            "toast.auth.signUpFailed",
+          ),
+        );
       } else {
         toast.error(toastT("toast.auth.signUpFailed"));
       }
@@ -178,11 +183,8 @@ export default function SignUpPage() {
       setResendCooldown(RESEND_COOLDOWN);
       setVerificationError("");
       toast.success(toastT("toast.auth.codeSent"));
-    } catch (error: unknown) {
-      const clerkError = error as ClerkError;
-      toast.error(
-        clerkError.errors?.[0]?.message || toastT("toast.auth.resendFailed"),
-      );
+    } catch {
+      toast.error(toastT("toast.auth.resendFailed"));
     }
   };
 

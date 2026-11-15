@@ -34,10 +34,10 @@ export function useTripCalendarSync(tripId: string | undefined) {
 
   const { mutate: syncCalendar, isPending: isSyncing } = useMutation({
     mutationFn: () => syncTripToCalendar(tripId!),
-    onSuccess: (data) => {
+    onSuccess: () => {
       // The server queues the sync; this marks the request as accepted.
       track("calendar_synced", { tripId: tripId!, provider: "google" });
-      toast.success(data.message ?? toastT("toast.calendar.syncing"), {
+      toast.success(toastT("toast.calendar.syncing"), {
         duration: 6000,
       });
     },
@@ -56,18 +56,13 @@ export function useTripCalendarSync(tripId: string | undefined) {
         return;
       }
       if (code === "CALENDAR_VIP_ONLY" || code === "CALENDAR_VIP_REQUIRED") {
-        toast.error(
-          e?.response?.data?.message ?? toastT("toast.calendar.notEnabled"),
-          { duration: 6000 },
-        );
+        toast.error(toastT("toast.calendar.notEnabled"), { duration: 6000 });
         return;
       }
       if (e?.response?.status === 404) {
         return;
       }
-      toast.error(
-        e?.response?.data?.message ?? toastT("toast.calendar.syncFailed"),
-      );
+      toast.error(toastT("toast.calendar.syncFailed"));
     },
   });
 
@@ -124,17 +119,9 @@ export function useTripCalendarSync(tripId: string | undefined) {
         sessionStorage.removeItem(SESSION_KEY);
         syncCalendar();
       }
-    } catch (unknownErr: unknown) {
+    } catch {
       sessionStorage.removeItem(SESSION_KEY);
-      const clerkErr = unknownErr as {
-        errors?: Array<{ message?: string }>;
-        message?: string;
-      };
-      const msg =
-        clerkErr?.errors?.[0]?.message ??
-        clerkErr?.message ??
-        toastT("toast.calendar.accessFailed");
-      toast.error(msg, { duration: 8000 });
+      toast.error(toastT("toast.calendar.accessFailed"), { duration: 8000 });
     }
   }, [tripId, user, syncCalendar]);
 

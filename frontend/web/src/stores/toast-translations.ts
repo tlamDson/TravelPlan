@@ -95,6 +95,25 @@ const EN: Copy = {
     "You have {count} free regeneration left for this trip.",
   "toast.regen.replaced": "Activity replaced with a new suggestion!",
   "toast.regen.notUnique": "Could not find a unique replacement. Try again.",
+
+  "toast.auth.signInFailed": "Failed to sign in. Please try again.",
+  "toast.authError.form_password_pwned":
+    "Password is too weak. Please choose a stronger password.",
+  "toast.authError.form_password_length_too_short":
+    "Password must be at least 8 characters.",
+  "toast.authError.form_password_no_uppercase":
+    "Password must contain at least one uppercase letter.",
+  "toast.authError.form_password_no_lowercase":
+    "Password must contain at least one lowercase letter.",
+  "toast.authError.form_password_no_number":
+    "Password must contain at least one number.",
+  "toast.authError.form_identifier_exists":
+    "An account with this email already exists. Try signing in instead.",
+  "toast.authError.form_param_format_invalid":
+    "Please enter a valid email address.",
+  "toast.authError.form_param_nil": "Please fill in all required fields.",
+  "toast.authError.form_password_incorrect": "Invalid email or password",
+  "toast.authError.form_identifier_not_found": "Invalid email or password",
 };
 
 const FR: Copy = {
@@ -202,6 +221,27 @@ const FR: Copy = {
   "toast.regen.replaced": "Activité remplacée par une nouvelle suggestion !",
   "toast.regen.notUnique":
     "Impossible de trouver un remplacement unique. Réessayez.",
+
+  "toast.auth.signInFailed": "Échec de la connexion. Veuillez réessayer.",
+  "toast.authError.form_password_pwned":
+    "Mot de passe trop faible. Choisissez-en un plus robuste.",
+  "toast.authError.form_password_length_too_short":
+    "Le mot de passe doit contenir au moins 8 caractères.",
+  "toast.authError.form_password_no_uppercase":
+    "Le mot de passe doit contenir au moins une majuscule.",
+  "toast.authError.form_password_no_lowercase":
+    "Le mot de passe doit contenir au moins une minuscule.",
+  "toast.authError.form_password_no_number":
+    "Le mot de passe doit contenir au moins un chiffre.",
+  "toast.authError.form_identifier_exists":
+    "Un compte existe déjà avec cet e-mail. Essayez de vous connecter.",
+  "toast.authError.form_param_format_invalid":
+    "Veuillez saisir une adresse e-mail valide.",
+  "toast.authError.form_param_nil":
+    "Veuillez remplir tous les champs obligatoires.",
+  "toast.authError.form_password_incorrect": "E-mail ou mot de passe invalide",
+  "toast.authError.form_identifier_not_found":
+    "E-mail ou mot de passe invalide",
 };
 
 const VI: Copy = {
@@ -298,6 +338,25 @@ const VI: Copy = {
   "toast.regen.replaced": "Đã thay hoạt động bằng một gợi ý mới!",
   "toast.regen.notUnique":
     "Không tìm được hoạt động thay thế phù hợp. Hãy thử lại.",
+
+  "toast.auth.signInFailed": "Không thể đăng nhập. Vui lòng thử lại.",
+  "toast.authError.form_password_pwned":
+    "Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn.",
+  "toast.authError.form_password_length_too_short":
+    "Mật khẩu phải có ít nhất 8 ký tự.",
+  "toast.authError.form_password_no_uppercase":
+    "Mật khẩu phải có ít nhất một chữ hoa.",
+  "toast.authError.form_password_no_lowercase":
+    "Mật khẩu phải có ít nhất một chữ thường.",
+  "toast.authError.form_password_no_number":
+    "Mật khẩu phải có ít nhất một chữ số.",
+  "toast.authError.form_identifier_exists":
+    "Đã có tài khoản dùng email này. Hãy thử đăng nhập.",
+  "toast.authError.form_param_format_invalid":
+    "Vui lòng nhập địa chỉ email hợp lệ.",
+  "toast.authError.form_param_nil": "Vui lòng điền đầy đủ các trường bắt buộc.",
+  "toast.authError.form_password_incorrect": "Email hoặc mật khẩu không đúng",
+  "toast.authError.form_identifier_not_found": "Email hoặc mật khẩu không đúng",
 };
 
 export const TOAST_TRANSLATIONS = { en: EN, fr: FR, vi: VI } as const;

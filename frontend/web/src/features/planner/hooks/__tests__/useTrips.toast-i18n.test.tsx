@@ -65,9 +65,11 @@ describe("trip toasts follow the UI language", () => {
     expect(toast.success).toHaveBeenLastCalledWith("Đã xóa chuyến đi");
   });
 
-  it("falls back to a translated message when the error has no text", async () => {
+  it("shows a translated message instead of the server error text", async () => {
     useTranslationStore.setState({ language: "Vietnamese" });
-    vi.mocked(tripsApi.deleteTrip).mockRejectedValue(new Error(""));
+    vi.mocked(tripsApi.deleteTrip).mockRejectedValue(
+      new Error("Trip not found"),
+    );
     const { result } = renderHookWithQuery(() => useDeleteTrip());
 
     await act(async () => {

@@ -61,8 +61,8 @@ export function useTripWizard(options: UseTripWizardOptions = {}) {
       toast.success(toastT("toast.trip.wizardQueued"));
       options.onSuccess?.(response.tripId, response.jobId);
     },
-    onError: (error: Error) => {
-      toast.error(error.message || toastT("toast.trip.wizardFailed"));
+    onError: () => {
+      toast.error(toastT("toast.trip.wizardFailed"));
     },
   });
 }

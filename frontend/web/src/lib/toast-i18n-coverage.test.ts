@@ -37,7 +37,7 @@ function withoutTranslatedParts(args: string): string {
   while (out !== prev) {
     prev = out;
     out = out
-      .replace(/\b(?:toastT|t)\([^()]*\)/g, "")
+      .replace(/\b(?:toastT|toastTOr|t)\([^()]*\)/g, "")
       .replace(/\{[^{}]*\}/g, "");
   }
   return out;
@@ -54,6 +54,22 @@ describe("toast text comes from i18n", () => {
       for (const m of text.matchAll(TOAST_CALL)) {
         const args = argsAt(text, m.index! + m[0].length - 1);
         if (/["'`]/.test(withoutTranslatedParts(args))) {
+          const line = text.slice(0, m.index).split("\n").length;
+          offenders.push(`${file}:${line}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("never shows raw server, Clerk or exception text in a toast", () => {
+    const RAW =
+      /(^|[^A-Za-z.])(message|msg|err|error|errors|friendlyMessage|data)([^A-Za-z]|$)/;
+    const offenders: string[] = [];
+    for (const [file, text] of Object.entries(sources)) {
+      for (const m of text.matchAll(TOAST_CALL)) {
+        const args = argsAt(text, m.index! + m[0].length - 1);
+        if (RAW.test(withoutTranslatedParts(args))) {
           const line = text.slice(0, m.index).split("\n").length;
           offenders.push(`${file}:${line}`);
         }

@@ -40,8 +40,8 @@ export function useGenerateItinerary(
       setJobId(response.jobId);
       toast.info(toastT("toast.planner.generating"));
     },
-    onError: (error: Error) => {
-      toast.error(error.message || toastT("toast.planner.generateStartFailed"));
+    onError: () => {
+      toast.error(toastT("toast.planner.generateStartFailed"));
     },
   });
 
@@ -56,7 +56,7 @@ export function useGenerateItinerary(
     },
     onError: (error) => {
       setJobId(null);
-      toast.error(error || toastT("toast.planner.generateFailed"));
+      toast.error(toastT("toast.planner.generateFailed"));
       options.onError?.(error);
     },
   });
@@ -94,8 +94,8 @@ export function useOptimizeRoute(options: UseGenerateItineraryOptions = {}) {
       setJobId(response.jobId);
       toast.info(toastT("toast.planner.optimizing"));
     },
-    onError: (error: Error) => {
-      toast.error(error.message || toastT("toast.planner.optimizeStartFailed"));
+    onError: () => {
+      toast.error(toastT("toast.planner.optimizeStartFailed"));
     },
   });
 
@@ -109,7 +109,7 @@ export function useOptimizeRoute(options: UseGenerateItineraryOptions = {}) {
     },
     onError: (error) => {
       setJobId(null);
-      toast.error(error || toastT("toast.planner.optimizeFailed"));
+      toast.error(toastT("toast.planner.optimizeFailed"));
       options.onError?.(error);
     },
   });

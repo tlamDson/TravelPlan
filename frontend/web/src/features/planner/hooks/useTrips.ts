@@ -60,8 +60,8 @@ export function useCreateTrip() {
       queryClient.setQueryData(queryKeys.trips.detail(newTrip._id), newTrip);
       toast.success(toastT("toast.trip.created"));
     },
-    onError: (error: Error) => {
-      toast.error(error.message || toastT("toast.trip.createFailed"));
+    onError: () => {
+      toast.error(toastT("toast.trip.createFailed"));
     },
   });
 }
@@ -90,8 +90,8 @@ export function useUpdateTrip() {
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
       toast.success(toastT("toast.trip.updated"));
     },
-    onError: (error: Error) => {
-      toast.error(error.message || toastT("toast.trip.updateFailed"));
+    onError: () => {
+      toast.error(toastT("toast.trip.updateFailed"));
     },
   });
 }
@@ -110,8 +110,8 @@ export function useDeleteTrip() {
       queryClient.invalidateQueries({ queryKey: queryKeys.trips.lists() });
       toast.success(toastT("toast.trip.deleted"));
     },
-    onError: (error: Error) => {
-      toast.error(error.message || toastT("toast.trip.deleteFailed"));
+    onError: () => {
+      toast.error(toastT("toast.trip.deleteFailed"));
     },
   });
 }
@@ -217,7 +217,7 @@ export function useUpdateTripLifecycle() {
     },
     onError: (error: Error) => {
       console.error("[lifecycle] ❌ Error:", error.message);
-      toast.error(error.message || toastT("toast.trip.lifecycleFailed"));
+      toast.error(toastT("toast.trip.lifecycleFailed"));
     },
   });
 }

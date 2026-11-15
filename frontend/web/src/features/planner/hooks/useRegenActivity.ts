@@ -10,7 +10,6 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { toastT } from "@/lib/toast-i18n";
 import { queryKeys } from "@/lib/query-client";
@@ -97,15 +96,7 @@ export function useRegenActivity() {
       if (message === "FREE_REGEN_LIMIT_REACHED") {
         return;
       }
-      const data = isAxiosError(err) ? err.response?.data : undefined;
-      const axiosMsg =
-        data &&
-        typeof data === "object" &&
-        "message" in data &&
-        typeof (data as { message: unknown }).message === "string"
-          ? (data as { message: string }).message
-          : undefined;
-      toast.error(axiosMsg || toastT("toast.regen.notUnique"));
+      toast.error(toastT("toast.regen.notUnique"));
     },
   });
 }

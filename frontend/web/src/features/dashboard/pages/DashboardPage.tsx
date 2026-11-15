@@ -62,9 +62,7 @@ export default function DashboardPage() {
         });
         closeUpgradeModal();
         setShowConfetti(true);
-        toast.success(
-          toastT("toast.dashboard.proWelcome"),
-        );
+        toast.success(toastT("toast.dashboard.proWelcome"));
         window.setTimeout(() => setShowConfetti(false), 3000);
       } catch {
         toast.info(toastT("toast.dashboard.upgradeProcessed"));
