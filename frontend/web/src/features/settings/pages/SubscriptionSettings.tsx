@@ -7,11 +7,11 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Zap, CheckCircle2 } from "lucide-react";
-import { format } from "date-fns";
+import { formatDate } from "@/utils/format";
 import { STATUS_TONE_STYLES } from "@/features/planner/lib/statusStyles";
 
 export function SubscriptionSettings() {
-  const { t } = useTranslationStore();
+  const { t, language } = useTranslationStore();
   const {
     isPro,
     tripsUsedThisCycle,
@@ -118,7 +118,7 @@ export function SubscriptionSettings() {
             <p className="text-xs text-muted-foreground flex justify-between items-center">
               <span>{t("sub.resetsAt")}</span>
               <span className="font-medium">
-                {format(new Date(quotaResetsAt), "MMM dd, yyyy")}
+                {formatDate(quotaResetsAt, language)}
               </span>
             </p>
           )}

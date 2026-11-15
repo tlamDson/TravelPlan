@@ -133,6 +133,37 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "pref.avoidTraffic": "Avoid Heavy Traffic",
     "pref.avoidTrafficDesc": "Reroute around known congestion.",
 
+    "pref.aiDefaultsTitle": "AI Trip Defaults",
+    "pref.focusLabel": "Focus (max 3)",
+    "pref.focusCulture": "Culture",
+    "pref.focusNature": "Nature",
+    "pref.focusGastronomy": "Gastronomy",
+    "pref.focusLifestyle": "Lifestyle",
+    "pref.groupLabel": "Group Type",
+    "pref.groupSolo": "Solo",
+    "pref.groupCouple": "Couple",
+    "pref.groupFamily": "Family",
+    "pref.groupFriends": "Friends",
+    "pref.groupWork": "Work",
+    "pref.groupNone": "None",
+    "pref.transportLabel": "Transport Mode",
+    "pref.transportWalking": "Walking",
+    "pref.transportPublic": "Public Transport",
+    "pref.transportCar": "Car",
+    "pref.paceLabel": "Pace",
+    "pref.paceRelaxed": "Relaxed",
+    "pref.paceBalanced": "Balanced",
+    "pref.pacePacked": "Packed",
+    "pref.mobilityFriendly": "Mobility friendly",
+    "pref.avoidCrowds": "Avoid crowds",
+    "pref.foodAsMain": "Food as main activities",
+    "pref.specialRequirements": "Special Requirements",
+    "pref.specialRequirementsPlaceholder": "Dietary, accessibility, health, kid-friendly needs...",
+    "pref.airportPlaceholder": "e.g., JFK, LHR, SFO",
+    "pref.mealsPlaceholder": "e.g., Vegetarian, Halal, Gluten-Free",
+    "pref.toastSaved": "Travel preferences saved",
+    "pref.toastSaveFailed": "Failed to save preferences",
+
     // AI Assistant Settings
     "ai.pageTitle": "AI Assistant Configurations",
     "ai.pageSubtitle":
@@ -183,6 +214,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.currentPassword": "Current Password",
     "security.newPassword": "New Password",
     "security.btnCancel": "Cancel",
+    "security.revokeConfirmTitle": "Sign out this device?",
+    "security.revokeConfirmDesc":
+      '"{device}" will be signed out of your account. You will need to sign in again on it.',
     "security.btnSavePassword": "Save Password",
     "security.externalProvider":
       "Your account is managed by an external provider (e.g., Google).",
@@ -199,8 +233,13 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.toastSavePassword": "Password updated successfully",
     "security.toastFillFields": "Please fill in both password fields.",
     "security.toastAccessUpdate": "Access settings updated",
-    "security.toastRevokeDemo":
-      "Revoking devices is currently disabled in demo mode",
+    "security.activeNow": "Active now",
+    "security.thisDevice": "This device",
+    "security.unknownDevice": "Unknown device",
+    "security.noSessions": "No active sessions found.",
+    "security.loadSessionsFailed": "Could not load your devices.",
+    "security.toastRevoked": "Device signed out",
+    "security.toastRevokeFailed": "Could not sign out this device",
 
     // Create Trip Wizard
     "wizard.step": "Step",
@@ -699,6 +738,37 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "pref.avoidTraffic": "Éviter les Bouchons",
     "pref.avoidTrafficDesc": "Contourner les congestions connues.",
 
+    "pref.aiDefaultsTitle": "Paramètres par défaut des voyages IA",
+    "pref.focusLabel": "Centres d'intérêt (max 3)",
+    "pref.focusCulture": "Culture",
+    "pref.focusNature": "Nature",
+    "pref.focusGastronomy": "Gastronomie",
+    "pref.focusLifestyle": "Style de vie",
+    "pref.groupLabel": "Type de groupe",
+    "pref.groupSolo": "Solo",
+    "pref.groupCouple": "Couple",
+    "pref.groupFamily": "Famille",
+    "pref.groupFriends": "Amis",
+    "pref.groupWork": "Travail",
+    "pref.groupNone": "Aucun",
+    "pref.transportLabel": "Mode de transport",
+    "pref.transportWalking": "Marche",
+    "pref.transportPublic": "Transports en commun",
+    "pref.transportCar": "Voiture",
+    "pref.paceLabel": "Rythme",
+    "pref.paceRelaxed": "Détendu",
+    "pref.paceBalanced": "Équilibré",
+    "pref.pacePacked": "Intense",
+    "pref.mobilityFriendly": "Accessible à mobilité réduite",
+    "pref.avoidCrowds": "Éviter la foule",
+    "pref.foodAsMain": "Restaurants comme activités principales",
+    "pref.specialRequirements": "Besoins particuliers",
+    "pref.specialRequirementsPlaceholder": "Régime alimentaire, accessibilité, santé, besoins enfants...",
+    "pref.airportPlaceholder": "ex. : CDG, ORY, LYS",
+    "pref.mealsPlaceholder": "ex. : Végétarien, Halal, Sans gluten",
+    "pref.toastSaved": "Préférences de voyage enregistrées",
+    "pref.toastSaveFailed": "Échec de l'enregistrement des préférences",
+
     // AI Assistant Settings
     "ai.pageTitle": "Configurations de l'Assistant IA",
     "ai.pageSubtitle":
@@ -749,6 +819,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.currentPassword": "Mot de passe actuel",
     "security.newPassword": "Nouveau mot de passe",
     "security.btnCancel": "Annuler",
+    "security.revokeConfirmTitle": "Déconnecter cet appareil ?",
+    "security.revokeConfirmDesc":
+      '"{device}" sera déconnecté de votre compte. Vous devrez vous reconnecter sur cet appareil.',
     "security.btnSavePassword": "Enregistrer le mot de passe",
     "security.externalProvider":
       "Votre compte est géré par un fournisseur externe (ex: Google).",
@@ -767,8 +840,13 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.toastFillFields":
       "Veuillez remplir les deux champs de mot de passe.",
     "security.toastAccessUpdate": "Paramètres d'accès mis à jour",
-    "security.toastRevokeDemo":
-      "La révocation des appareils est actuellement désactivée en mode démo",
+    "security.activeNow": "Actif maintenant",
+    "security.thisDevice": "Cet appareil",
+    "security.unknownDevice": "Appareil inconnu",
+    "security.noSessions": "Aucune session active trouvée.",
+    "security.loadSessionsFailed": "Impossible de charger vos appareils.",
+    "security.toastRevoked": "Appareil déconnecté",
+    "security.toastRevokeFailed": "Impossible de déconnecter cet appareil",
 
     // Create Trip Wizard
     "wizard.step": "Étape",
@@ -1278,6 +1356,37 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "pref.avoidTrafficDesc":
       "Đổi lộ trình để tránh các khu vực ùn tắc đã biết.",
 
+    "pref.aiDefaultsTitle": "Mặc định cho chuyến đi do AI lên",
+    "pref.focusLabel": "Trọng tâm (tối đa 3)",
+    "pref.focusCulture": "Văn hóa",
+    "pref.focusNature": "Thiên nhiên",
+    "pref.focusGastronomy": "Ẩm thực",
+    "pref.focusLifestyle": "Phong cách sống",
+    "pref.groupLabel": "Loại nhóm",
+    "pref.groupSolo": "Một mình",
+    "pref.groupCouple": "Cặp đôi",
+    "pref.groupFamily": "Gia đình",
+    "pref.groupFriends": "Bạn bè",
+    "pref.groupWork": "Công việc",
+    "pref.groupNone": "Không chọn",
+    "pref.transportLabel": "Phương tiện di chuyển",
+    "pref.transportWalking": "Đi bộ",
+    "pref.transportPublic": "Phương tiện công cộng",
+    "pref.transportCar": "Ô tô",
+    "pref.paceLabel": "Nhịp độ",
+    "pref.paceRelaxed": "Thong thả",
+    "pref.paceBalanced": "Cân bằng",
+    "pref.pacePacked": "Dày đặc",
+    "pref.mobilityFriendly": "Thuận tiện cho người khó đi lại",
+    "pref.avoidCrowds": "Tránh nơi đông người",
+    "pref.foodAsMain": "Quán ăn là hoạt động chính",
+    "pref.specialRequirements": "Yêu cầu đặc biệt",
+    "pref.specialRequirementsPlaceholder": "Chế độ ăn, khả năng tiếp cận, sức khỏe, nhu cầu cho trẻ em...",
+    "pref.airportPlaceholder": "VD: SGN, HAN, DAD",
+    "pref.mealsPlaceholder": "VD: ăn chay, halal, không gluten",
+    "pref.toastSaved": "Đã lưu sở thích du lịch",
+    "pref.toastSaveFailed": "Không thể lưu sở thích",
+
     // AI Assistant Settings
     "ai.pageTitle": "Cấu hình trợ lý AI",
     "ai.pageSubtitle":
@@ -1328,6 +1437,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.currentPassword": "Mật khẩu hiện tại",
     "security.newPassword": "Mật khẩu mới",
     "security.btnCancel": "Hủy bỏ",
+    "security.revokeConfirmTitle": "Đăng xuất thiết bị này?",
+    "security.revokeConfirmDesc":
+      '"{device}" sẽ bị đăng xuất khỏi tài khoản của bạn. Bạn cần đăng nhập lại trên thiết bị đó.',
     "security.btnSavePassword": "Lưu mật khẩu",
     "security.externalProvider":
       "Tài khoản của bạn được quản lý bởi nhà cung cấp bên ngoài (ví dụ: Google).",
@@ -1345,8 +1457,13 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "security.toastSavePassword": "Đã cập nhật mật khẩu thành công",
     "security.toastFillFields": "Vui lòng điền vào cả hai trường mật khẩu.",
     "security.toastAccessUpdate": "Đã cập nhật cài đặt truy cập",
-    "security.toastRevokeDemo":
-      "Tính năng thu hồi thiết bị hiện đã bị vô hiệu hóa trong chế độ dùng thử",
+    "security.activeNow": "Đang hoạt động",
+    "security.thisDevice": "Thiết bị này",
+    "security.unknownDevice": "Thiết bị không xác định",
+    "security.noSessions": "Không tìm thấy phiên đang hoạt động.",
+    "security.loadSessionsFailed": "Không thể tải danh sách thiết bị.",
+    "security.toastRevoked": "Đã đăng xuất thiết bị",
+    "security.toastRevokeFailed": "Không thể đăng xuất thiết bị này",
 
     // Create Trip Wizard
     "wizard.step": "Bước",

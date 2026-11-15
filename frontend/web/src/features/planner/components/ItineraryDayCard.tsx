@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import type { ItineraryDay, Activity } from "@/utils/schemas";
 import { getGoogleMapsUrl } from "../utils/maps";
 import { formatOpeningHours } from "../utils/opening-hours";
+import { formatTimeRange } from "../utils/time-slot";
 import {
   formatDate,
   convertCurrency,
@@ -143,20 +144,6 @@ function deriveEndTime(
   return addMinutes(activity.time, DEFAULT_DURATION[activity.type] ?? 120);
 }
 
-// ─── Time formatter ────────────────────────────────────────
-
-function formatTimeRange(time?: string, endTime?: string): string {
-  if (!time) return "";
-  const fmt = (t: string) => {
-    const [h, m] = t.split(":");
-    const hour = parseInt(h, 10);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const h12 = hour % 12 === 0 ? 12 : hour % 12;
-    return `${h12}:${m} ${ampm}`;
-  };
-  return endTime ? `${fmt(time)} – ${fmt(endTime)}` : fmt(time);
-}
-
 // ─── Star rating component ─────────────────────────────────
 
 function StarRating({ value }: { value: number }) {
@@ -214,7 +201,7 @@ function ActivityRow({
   const { t } = useTranslationStore();
   const meta = TYPE_META[activity.type] ?? TYPE_META.custom;
   const Icon = meta.icon;
-  const timeLabel = formatTimeRange(activity.time, derivedEndTime);
+  const timeLabel = formatTimeRange(activity.time, derivedEndTime, language);
   const mealKey = mealLabelKey(activity.notes);
   const openingHoursText = formatOpeningHours(activity, t);
 

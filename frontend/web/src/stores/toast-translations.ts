@@ -43,8 +43,6 @@ const EN: Copy = {
   "toast.assistant.createSessionFailed": "Failed to create chat session",
   "toast.assistant.deleteSessionFailed": "Failed to delete chat session",
 
-  "toast.settings.preferencesSaved": "Travel preferences saved",
-  "toast.settings.preferencesFailed": "Failed to save preferences",
   "toast.settings.passwordFailed": "Failed to update password",
 
   "toast.trip.created": "Trip created successfully!",
@@ -159,9 +157,6 @@ const FR: Copy = {
   "toast.assistant.deleteSessionFailed":
     "Échec de la suppression de la session de chat",
 
-  "toast.settings.preferencesSaved": "Préférences de voyage enregistrées",
-  "toast.settings.preferencesFailed":
-    "Échec de l'enregistrement des préférences",
   "toast.settings.passwordFailed": "Échec de la mise à jour du mot de passe",
 
   "toast.trip.created": "Voyage créé avec succès !",
@@ -283,8 +278,6 @@ const VI: Copy = {
   "toast.assistant.createSessionFailed": "Không thể tạo phiên trò chuyện",
   "toast.assistant.deleteSessionFailed": "Không thể xóa phiên trò chuyện",
 
-  "toast.settings.preferencesSaved": "Đã lưu tùy chọn du lịch",
-  "toast.settings.preferencesFailed": "Không thể lưu tùy chọn",
   "toast.settings.passwordFailed": "Không thể cập nhật mật khẩu",
 
   "toast.trip.created": "Đã tạo chuyến đi!",
