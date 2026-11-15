@@ -274,7 +274,7 @@ export function TripCard({ trip, priority = false }: TripCardProps) {
               variant="ghost"
               size="icon"
               className="absolute top-2 right-2 h-7 w-7 rounded-full bg-background/70 backdrop-blur-sm hover:bg-background border border-border/40 shadow-sm z-10"
-              aria-label="Trip actions"
+              aria-label={t("trip.actionsMenu")}
               onClick={(e) => e.preventDefault()}
             >
               {isDeleting ? (

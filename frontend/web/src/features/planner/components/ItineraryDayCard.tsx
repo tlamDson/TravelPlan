@@ -147,6 +147,7 @@ function deriveEndTime(
 // ─── Star rating component ─────────────────────────────────
 
 function StarRating({ value }: { value: number }) {
+  const { t } = useTranslationStore();
   const full = Math.floor(value);
   const half = value - full >= 0.5;
   const empty = 5 - full - (half ? 1 : 0);
@@ -154,7 +155,7 @@ function StarRating({ value }: { value: number }) {
   return (
     <span
       className="flex items-center gap-0.5"
-      aria-label={`Rating: ${value} out of 5`}
+      aria-label={t("trip.ratingAria").replace("{value}", String(value))}
     >
       {Array.from({ length: full }).map((_, i) => (
         <Star key={`f${i}`} className="h-3 w-3 fill-amber-400 text-amber-400" />
@@ -333,7 +334,10 @@ function ActivityRow({
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/80 transition-colors focus:outline-none focus:underline"
-            aria-label={`View ${activity.name} on Google Maps`}
+            aria-label={t("trip.viewOnGoogleMapsAria").replace(
+              "{name}",
+              activity.name,
+            )}
           >
             <MapPin className="h-3 w-3" aria-hidden="true" />
             <span className="truncate hover:underline">
@@ -361,7 +365,10 @@ function ActivityRow({
           {activity.priceLevel !== undefined && activity.priceLevel > 0 && (
             <div
               className="flex items-center gap-1.5 mt-1.5 text-xs font-medium bg-emerald-50/50 dark:bg-emerald-950/20 w-fit px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400"
-              aria-label={`Price level: ${activity.priceLevel} out of 4`}
+              aria-label={t("trip.priceLevelAria").replace(
+                "{level}",
+                String(activity.priceLevel),
+              )}
             >
               <span>
                 {formatPriceLevel(
