@@ -30,6 +30,7 @@ import { generateTrip } from "./trip-create.controller";
 import { plannerService } from "../services/planner.service";
 import { userQuotaService } from "../services/user-quota.service";
 import { idempotencyRepository } from "../../user/repositories/idempotency.repository";
+import { TripRequestRejectedError } from "../services/trip-request-rejected.error";
 
 const makeRes = () => {
   const res: any = {};
@@ -115,12 +116,12 @@ describe("generateTrip idempotency", () => {
     );
   });
 
-  it("releases the reservation when enqueueing fails, so a retry can proceed", async () => {
+  it("releases the reservation when the request is rejected before any write, so a retry can proceed", async () => {
     vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
       status: "reserved",
     });
     vi.mocked(plannerService.createTripGenerationJob).mockRejectedValue(
-      new Error("Trip too long"),
+      new TripRequestRejectedError("Trip too long"),
     );
     const res = makeRes();
     await generateTrip(makeReq("k1"), res);
@@ -128,6 +129,36 @@ describe("generateTrip idempotency", () => {
     expect(idempotencyRepository.release).toHaveBeenCalledWith("user-1", "k1");
     expect(idempotencyRepository.complete).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it("keeps the reservation when enqueueing fails partway, so a same-key retry cannot create a second trip or job", async () => {
+    vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
+      status: "reserved",
+    });
+    vi.mocked(plannerService.createTripGenerationJob).mockRejectedValue(
+      new Error("Redis connection lost"),
+    );
+    const res = makeRes();
+    await generateTrip(makeReq("k1"), res);
+
+    expect(idempotencyRepository.release).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it("still answers 202 when storing the result fails after the job was accepted", async () => {
+    vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
+      status: "reserved",
+    });
+    vi.mocked(idempotencyRepository.complete).mockRejectedValue(
+      new Error("Mongo down"),
+    );
+    const res = makeRes();
+    await generateTrip(makeReq("k1"), res);
+
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ tripId: "t1", jobId: "j1" }),
+    );
   });
 
   it("does not touch the idempotency log without a header", async () => {
