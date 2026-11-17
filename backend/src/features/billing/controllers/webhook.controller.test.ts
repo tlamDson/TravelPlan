@@ -4,7 +4,7 @@ import { handleStripeWebhook } from "./webhook.controller";
 import type Stripe from "stripe";
 import { getStripe } from "../services/stripe.service";
 import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
-import { userRepository } from "../../user/repositories/user.repository";
+import { syncSubscriptionEntitlement } from "../services/entitlement-sync.service";
 
 vi.mock("../services/stripe.service", () => ({
   getStripe: vi.fn(),
@@ -14,12 +14,12 @@ vi.mock("../services/subscription-owner.service", () => ({
 }));
 vi.mock("../repositories/stripe-event.repository", () => ({
   stripeEventRepository: {
-    claim: vi.fn().mockResolvedValue(true),
-    release: vi.fn().mockResolvedValue(undefined),
+    isProcessed: vi.fn().mockResolvedValue(false),
+    markProcessed: vi.fn().mockResolvedValue(undefined),
   },
 }));
-vi.mock("../../user/repositories/user.repository", () => ({
-  userRepository: { setTierFromStripe: vi.fn() },
+vi.mock("../services/entitlement-sync.service", () => ({
+  syncSubscriptionEntitlement: vi.fn(),
 }));
 
 const CREATED = 1_794_950_000;
@@ -82,6 +82,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
           id: "cs_1",
           payment_status: "paid",
           customer: "cus_9",
+          subscription: "sub_9",
           metadata: { userId: "u1" },
         },
       },
@@ -90,10 +91,15 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.setTierFromStripe).toHaveBeenCalledWith(
+    expect(syncSubscriptionEntitlement).toHaveBeenCalledWith(
       "u1",
-      { tier: "pro", stripeCustomerId: "cus_9" },
-      new Date(CREATED * 1000),
+      {
+        subscriptionId: "sub_9",
+        entitled: true,
+        ended: false,
+        eventAt: new Date(CREATED * 1000),
+      },
+      "cus_9",
     );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
@@ -107,6 +113,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
           id: "cs_2",
           payment_status: "unpaid",
           customer: "cus_9",
+          subscription: "sub_9",
           metadata: { userId: "u1" },
         },
       },
@@ -115,7 +122,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.setTierFromStripe).not.toHaveBeenCalled();
+    expect(syncSubscriptionEntitlement).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -136,11 +143,12 @@ describe("webhook.controller — handleStripeWebhook", () => {
     await handleStripeWebhook(signedReq(), res);
 
     expect(resolveSubscriptionOwner).toHaveBeenCalledWith(subscription);
-    expect(userRepository.setTierFromStripe).toHaveBeenCalledWith(
-      "u1",
-      { tier: "free" },
-      new Date(CREATED * 1000),
-    );
+    expect(syncSubscriptionEntitlement).toHaveBeenCalledWith("u1", {
+      subscriptionId: "sub_1",
+      entitled: false,
+      ended: true,
+      eventAt: new Date(CREATED * 1000),
+    });
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -161,7 +169,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.setTierFromStripe).not.toHaveBeenCalled();
+    expect(syncSubscriptionEntitlement).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -183,6 +191,6 @@ describe("webhook.controller — handleStripeWebhook", () => {
     await handleStripeWebhook(signedReq(), res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(userRepository.setTierFromStripe).not.toHaveBeenCalled();
+    expect(syncSubscriptionEntitlement).not.toHaveBeenCalled();
   });
 });

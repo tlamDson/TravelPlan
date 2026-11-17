@@ -17,6 +17,7 @@ export function checkoutSessionEvent(
     id?: string;
     userId?: string;
     customer?: string;
+    subscription?: string | null;
     created?: number;
   } = {},
 ): Stripe.Event {
@@ -32,6 +33,10 @@ export function checkoutSessionEvent(
         mode: "subscription",
         payment_status: paymentStatus,
         customer: overrides.customer ?? "cus_test_1",
+        subscription:
+          overrides.subscription === undefined
+            ? "sub_test_1"
+            : overrides.subscription,
         metadata: { userId: overrides.userId ?? "user_1" },
       },
     },
@@ -41,7 +46,7 @@ export function checkoutSessionEvent(
 export function subscriptionEvent(
   type: "customer.subscription.updated" | "customer.subscription.deleted",
   status: Stripe.Subscription.Status,
-  overrides: { id?: string; created?: number } = {},
+  overrides: { id?: string; subscriptionId?: string; created?: number } = {},
 ): Stripe.Event {
   return {
     id: overrides.id ?? nextId(),
@@ -50,7 +55,7 @@ export function subscriptionEvent(
     type,
     data: {
       object: {
-        id: "sub_test_1",
+        id: overrides.subscriptionId ?? "sub_test_1",
         object: "subscription",
         status,
         customer: "cus_test_1",

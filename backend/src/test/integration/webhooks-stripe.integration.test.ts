@@ -37,13 +37,18 @@ function checkoutCompletedEvent(
         id: "cs_test_1",
         object: "checkout.session",
         payment_status: paymentStatus,
+        subscription: "sub_test_1",
         metadata: { userId },
       },
     },
   });
 }
 
-function checkoutCompletedForCustomer(userId: string, customer: string) {
+function checkoutCompletedForCustomer(
+  userId: string,
+  customer: string,
+  subscription = "sub_test_2",
+) {
   return JSON.stringify({
     id: "evt_test_checkout_customer",
     object: "event",
@@ -55,21 +60,26 @@ function checkoutCompletedForCustomer(userId: string, customer: string) {
         object: "checkout.session",
         payment_status: "paid",
         customer,
+        subscription,
         metadata: { userId },
       },
     },
   });
 }
 
-function subscriptionDeletedForCustomer(customer: string, created = T0 + 60) {
+function subscriptionDeletedForCustomer(
+  customer: string,
+  created = T0 + 60,
+  subscription = "sub_test_2",
+) {
   return JSON.stringify({
-    id: "evt_test_sub_deleted_customer",
+    id: `evt_test_sub_deleted_${customer}_${subscription}_${created}`,
     object: "event",
     created,
     type: "customer.subscription.deleted",
     data: {
       object: {
-        id: "sub_test_2",
+        id: subscription,
         object: "subscription",
         status: "canceled",
         customer,
@@ -174,7 +184,7 @@ describe("POST /api/webhooks/stripe", () => {
     expect(user?.tier).toBe("free");
   });
 
-  it("does not let an older subscription event overwrite a newer upgrade", async () => {
+  it("does not let an older subscription's stale event revoke a newer upgrade", async () => {
     await seedUser("user-stripe-7", { tier: "free" });
     const checkout = checkoutCompletedForCustomer(
       "user-stripe-7",
@@ -186,7 +196,11 @@ describe("POST /api/webhooks/stripe", () => {
       .set("stripe-signature", sign(checkout))
       .send(checkout);
 
-    const stale = subscriptionDeletedForCustomer("cus_test_7", T0 - 60);
+    const stale = subscriptionDeletedForCustomer(
+      "cus_test_7",
+      T0 - 60,
+      "sub_prev_7",
+    );
     const res = await request(app)
       .post("/api/webhooks/stripe")
       .set("Content-Type", "application/json")
@@ -195,6 +209,69 @@ describe("POST /api/webhooks/stripe", () => {
 
     expect(res.status).toBe(200);
     const user = await User.findOne({ clerkUserId: "user-stripe-7" });
+    expect(user?.tier).toBe("pro");
+  });
+
+  it("does not restore PRO when a checkout arrives after its subscription was deleted in the same second", async () => {
+    await seedUser("user-stripe-8", { tier: "free" });
+    const deleted = subscriptionDeletedForCustomer("cus_test_8", T0);
+    await User.updateOne(
+      { clerkUserId: "user-stripe-8" },
+      { stripeCustomerId: "cus_test_8" },
+    );
+    const first = await request(app)
+      .post("/api/webhooks/stripe")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", sign(deleted))
+      .send(deleted);
+    expect(first.status).toBe(200);
+
+    const checkout = checkoutCompletedForCustomer(
+      "user-stripe-8",
+      "cus_test_8",
+    );
+    const res = await request(app)
+      .post("/api/webhooks/stripe")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", sign(checkout))
+      .send(checkout);
+
+    expect(res.status).toBe(200);
+    const user = await User.findOne({ clerkUserId: "user-stripe-8" });
+    expect(user?.tier).toBe("free");
+  });
+
+  it("keeps PRO when an older subscription is deleted after a newer one was paid", async () => {
+    await seedUser("user-stripe-9", { tier: "free" });
+    const oldCheckout = checkoutCompletedForCustomer(
+      "user-stripe-9",
+      "cus_test_9",
+      "sub_old_9",
+    );
+    const newCheckout = checkoutCompletedForCustomer(
+      "user-stripe-9",
+      "cus_test_9",
+      "sub_new_9",
+    );
+    const oldDeleted = subscriptionDeletedForCustomer(
+      "cus_test_9",
+      T0 + 120,
+      "sub_old_9",
+    );
+    for (const payload of [
+      oldCheckout.replace("evt_test_checkout_customer", "evt_old_9"),
+      newCheckout.replace("evt_test_checkout_customer", "evt_new_9"),
+      oldDeleted,
+    ]) {
+      const res = await request(app)
+        .post("/api/webhooks/stripe")
+        .set("Content-Type", "application/json")
+        .set("stripe-signature", sign(payload))
+        .send(payload);
+      expect(res.status).toBe(200);
+    }
+
+    const user = await User.findOne({ clerkUserId: "user-stripe-9" });
     expect(user?.tier).toBe("pro");
   });
 
