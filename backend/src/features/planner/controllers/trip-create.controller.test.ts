@@ -297,6 +297,78 @@ describe("generateTrip idempotency", () => {
     );
   });
 
+  it("returns the stored result for a same-key duplicate even when the quota is now used up", async () => {
+    // The first request took the last trip of the cycle; its duplicate must
+    // still get the stored result, not a 429.
+    vi.mocked(userQuotaService.canCreateTrip).mockResolvedValue({
+      allowed: false,
+      remaining: 0,
+      limit: 10,
+      resetAt: new Date("2026-12-01"),
+    } as any);
+    vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
+      status: "completed",
+      tripId: "t0",
+      jobId: "j0",
+    });
+    const res = makeRes();
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ tripId: "t0", idempotent: true }),
+    );
+  });
+
+  it("answers a pending same-key duplicate with 409, not 429, when the quota is used up", async () => {
+    vi.mocked(userQuotaService.canCreateTrip).mockResolvedValue({
+      allowed: false,
+      remaining: 0,
+      limit: 10,
+      resetAt: new Date("2026-12-01"),
+    } as any);
+    vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
+      status: "pending",
+    });
+    const res = makeRes();
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+  });
+
+  it("releases the reservation when the quota rejects the request", async () => {
+    vi.mocked(userQuotaService.canCreateTrip).mockResolvedValue({
+      allowed: false,
+      remaining: 0,
+      limit: 10,
+      resetAt: new Date("2026-12-01"),
+    } as any);
+    vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
+      status: "reserved",
+    });
+    const res = makeRes();
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
+
+    expect(res.status).toHaveBeenCalledWith(429);
+    expect(idempotencyRepository.release).toHaveBeenCalledWith("user_1", "k1");
+    expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
+  });
+
+  it("releases the reservation when the quota check itself fails", async () => {
+    vi.mocked(userQuotaService.canCreateTrip).mockRejectedValue(
+      new Error("Mongo down"),
+    );
+    vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
+      status: "reserved",
+    });
+    const res = makeRes();
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(idempotencyRepository.release).toHaveBeenCalledWith("user_1", "k1");
+    expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
+  });
+
   it("does not touch the idempotency log without a header", async () => {
     const res = makeRes();
     await generateTrip(makeReq({ preferences: validPreferences }), res);

@@ -40,8 +40,8 @@ beforeEach(() => {
   dropIndexMock.mockResolvedValue(undefined);
 });
 
-describe("idempotencyRepository index migration", () => {
-  it("drops the legacy global unique key_1 index, then builds the schema indexes, once", async () => {
+describe("idempotencyRepository index setup", () => {
+  it("builds the schema indexes once and never drops an index, so an older revision still running stays safe", async () => {
     indexesMock.mockResolvedValue([
       { name: "_id_" },
       { name: "key_1", unique: true },
@@ -51,32 +51,11 @@ describe("idempotencyRepository index migration", () => {
     await repo.reserve("user-1", "k1");
     await repo.reserve("user-1", "k2");
 
-    expect(dropIndexMock).toHaveBeenCalledTimes(1);
-    expect(dropIndexMock).toHaveBeenCalledWith("key_1");
-    expect(createIndexesMock).toHaveBeenCalledTimes(1);
-    expect(dropIndexMock.mock.invocationCallOrder[0]).toBeLessThan(
-      createIndexesMock.mock.invocationCallOrder[0]!,
-    );
-  });
-
-  it("does not drop anything when the legacy index is absent", async () => {
-    createMock.mockResolvedValue({});
-    await new IdempotencyRepository().reserve("user-1", "k1");
     expect(dropIndexMock).not.toHaveBeenCalled();
     expect(createIndexesMock).toHaveBeenCalledTimes(1);
   });
 
-  it("treats a missing collection (fresh DB) as nothing to migrate", async () => {
-    indexesMock.mockRejectedValue(
-      Object.assign(new Error("ns does not exist"), { code: 26 }),
-    );
-    createMock.mockResolvedValue({});
-    const r = await new IdempotencyRepository().reserve("user-1", "k1");
-    expect(r).toEqual({ status: "reserved" });
-    expect(createIndexesMock).toHaveBeenCalledTimes(1);
-  });
-
-  it("retries the migration on the next call when it failed", async () => {
+  it("retries the index setup on the next call when it failed", async () => {
     createIndexesMock.mockRejectedValueOnce(new Error("Mongo down"));
     createMock.mockResolvedValue({});
     const repo = new IdempotencyRepository();

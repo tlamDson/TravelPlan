@@ -16,4 +16,14 @@ describe("IdempotencyLog indexes", () => {
     const doc = new IdempotencyLog({ key: "k1", userId: "user-1" });
     expect(doc.validateSync()).toBeUndefined();
   });
+
+  it("lives in its own collection, apart from the legacy idempotencylogs one", () => {
+    // An older API revision that is still running during a deploy keeps
+    // using idempotencylogs (unique on key alone, tripId required). Sharing
+    // it would let that revision answer a pending reservation with a 200 and
+    // no tripId, or rebuild the global key index on restart.
+    expect(IdempotencyLog.collection.collectionName).toBe(
+      "idempotency_reservations",
+    );
+  });
 });
