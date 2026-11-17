@@ -53,9 +53,9 @@ describe("idempotencyRepository.reserve", () => {
 
   it("rethrows errors that are not duplicate-key errors", async () => {
     createMock.mockRejectedValue(new Error("Mongo down"));
-    await expect(
-      idempotencyRepository.reserve("user-1", "k1"),
-    ).rejects.toThrow("Mongo down");
+    await expect(idempotencyRepository.reserve("user-1", "k1")).rejects.toThrow(
+      "Mongo down",
+    );
   });
 });
 

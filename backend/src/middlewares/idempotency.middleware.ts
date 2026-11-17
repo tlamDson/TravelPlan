@@ -7,9 +7,10 @@ import { logger } from "../lib/logger";
  * Idempotency middleware for POST /api/trips.
  *
  * Reads the X-Idempotency-Key header. If a matching log exists for this
- * user, short-circuits with the cached tripId/jobId (200). Otherwise the
- * request continues normally and the controller is responsible for saving the
- * log after a successful enqueue.
+ * user and its job is already stored, short-circuits with the cached
+ * tripId/jobId (200). This is only a fast path: the controller reserves the
+ * key with a unique insert before enqueueing, which is what stops concurrent
+ * double submits.
  */
 export async function idempotencyMiddleware(
   req: ClerkRequest,
@@ -30,7 +31,7 @@ export async function idempotencyMiddleware(
 
   try {
     const existing = await IdempotencyLog.findOne({ key, userId }).exec();
-    if (existing) {
+    if (existing?.tripId) {
       logger.info(
         { key, userId, tripId: existing.tripId },
         "Idempotency: returning cached result",

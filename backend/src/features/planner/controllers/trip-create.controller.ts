@@ -5,7 +5,7 @@ import { TripPreferencesSchema } from "../schemas/trip-request.schema";
 import { logger } from "../../../lib/logger";
 import { userQuotaService } from "../services/user-quota.service";
 import { userRepository } from "../../user/repositories/user.repository";
-import IdempotencyLog from "../../user/models/IdempotencyLog";
+import { idempotencyRepository } from "../../user/repositories/idempotency.repository";
 
 /**
  * POST /api/trips - Generate new trip
@@ -54,28 +54,62 @@ export const generateTrip = async (
     const idempotencyKey = req.headers["x-idempotency-key"] as
       string | undefined;
 
+    // Reserve the key before enqueueing: only one of two concurrent requests
+    // with the same key wins the unique insert and creates a trip.
+    if (idempotencyKey) {
+      const reservation = await idempotencyRepository.reserve(
+        userId,
+        idempotencyKey,
+      );
+      if (reservation.status === "duplicate") {
+        if (reservation.tripId) {
+          res.status(200).json({
+            success: true,
+            message: "Trip generation already started (idempotent)",
+            tripId: reservation.tripId,
+            jobId: reservation.jobId,
+            idempotent: true,
+          });
+        } else {
+          res.status(409).json({
+            success: false,
+            message: "Trip generation for this request is already in progress",
+            idempotent: true,
+          });
+        }
+        return;
+      }
+    }
+
     const user = await userRepository.findByClerkId(userId);
 
     // Create job (with CFO validation)
-    const result = await plannerService.createTripGenerationJob({
-      userId,
-      preferences,
-      language,
-      title,
-    });
-
-    // Persist idempotency log so duplicate requests return the same result
-    if (idempotencyKey) {
-      try {
-        await IdempotencyLog.create({
-          key: idempotencyKey,
-          userId,
-          tripId: result.tripId,
-          jobId: result.jobId,
-        });
-      } catch {
-        // Unique constraint violation = race condition — safe to ignore
+    let result: Awaited<
+      ReturnType<typeof plannerService.createTripGenerationJob>
+    >;
+    try {
+      result = await plannerService.createTripGenerationJob({
+        userId,
+        preferences,
+        language,
+        title,
+      });
+    } catch (error) {
+      if (idempotencyKey) {
+        await idempotencyRepository
+          .release(userId, idempotencyKey)
+          .catch((err) =>
+            logger.warn({ err, userId }, "Failed to release idempotency key"),
+          );
       }
+      throw error;
+    }
+
+    if (idempotencyKey) {
+      await idempotencyRepository.complete(userId, idempotencyKey, {
+        tripId: result.tripId,
+        jobId: result.jobId,
+      });
     }
 
     res.status(202).json({
