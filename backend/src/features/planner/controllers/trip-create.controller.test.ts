@@ -17,11 +17,6 @@ vi.mock("../../user/repositories/idempotency.repository", () => ({
     release: vi.fn(),
   },
 }));
-vi.mock("../schemas/trip-request.schema", () => ({
-  TripPreferencesSchema: {
-    safeParse: (data: unknown) => ({ success: true, data }),
-  },
-}));
 vi.mock("../../../lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
@@ -29,8 +24,20 @@ vi.mock("../../../lib/logger", () => ({
 import { generateTrip } from "./trip-create.controller";
 import { plannerService } from "../services/planner.service";
 import { userQuotaService } from "../services/user-quota.service";
+import { userRepository } from "../../user/repositories/user.repository";
+import { logger } from "../../../lib/logger";
 import { idempotencyRepository } from "../../user/repositories/idempotency.repository";
-import { TripRequestRejectedError } from "../services/trip-request-rejected.error";
+import { TripRequestError } from "../errors";
+
+const SECRET_TEXT = "my-private-free-text-do-not-log";
+
+const validPreferences = {
+  destination: "Hanoi, Vietnam",
+  startDate: "2026-12-01T00:00:00.000Z",
+  endDate: "2026-12-03T00:00:00.000Z",
+  budget: { total: 1000, currency: "USD" },
+  travelers: { adults: 1, children: 0 },
+};
 
 const makeRes = () => {
   const res: any = {};
@@ -39,12 +46,87 @@ const makeRes = () => {
   return res as Response & { status: any; json: any };
 };
 
-const makeReq = (key?: string) =>
+const makeReq = (body: unknown, key?: string) =>
   ({
+    body,
     headers: key ? { "x-idempotency-key": key } : {},
-    body: { preferences: { destination: "Hanoi" } },
-    auth: () => ({ userId: "user-1" }),
+    auth: () => ({ userId: "user_1" }),
   }) as any;
+
+describe("generateTrip error handling", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(userQuotaService.canCreateTrip).mockResolvedValue({
+      allowed: true,
+      remaining: 5,
+      limit: 10,
+      resetAt: new Date(),
+    } as any);
+    vi.mocked(userRepository.findByClerkId).mockResolvedValue({
+      tier: "free",
+    } as any);
+  });
+
+  it("does not log the request body when validation fails", async () => {
+    const res = makeRes();
+    await generateTrip(
+      makeReq({
+        preferences: { destination: SECRET_TEXT },
+        title: SECRET_TEXT,
+      }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    const logged = JSON.stringify(vi.mocked(logger.error).mock.calls);
+    expect(logged).not.toContain(SECRET_TEXT);
+  });
+
+  it("logs validation issue paths at warn level, not error", async () => {
+    await generateTrip(
+      makeReq({ preferences: { destination: SECRET_TEXT } }),
+      makeRes(),
+    );
+
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    const payload = vi.mocked(logger.warn).mock.calls[0]![0] as any;
+    expect(payload.body).toBeUndefined();
+    expect(Array.isArray(payload.paths)).toBe(true);
+    expect(payload.paths.length).toBeGreaterThan(0);
+  });
+
+  it("returns 500 with a generic message for an infrastructure failure", async () => {
+    vi.mocked(plannerService.createTripGenerationJob).mockRejectedValue(
+      new Error("connect ECONNREFUSED 127.0.0.1:6379"),
+    );
+    const res = makeRes();
+
+    await generateTrip(makeReq({ preferences: validPreferences }), res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    const body = res.json.mock.calls[0][0];
+    expect(body.success).toBe(false);
+    expect(body.message).toBe("Failed to start trip generation");
+    expect(JSON.stringify(body)).not.toContain("ECONNREFUSED");
+  });
+
+  it("still returns 400 with the message for a rejected trip request", async () => {
+    const { TripRequestError } = await import("../errors");
+    vi.mocked(plannerService.createTripGenerationJob).mockRejectedValue(
+      new TripRequestError("Your plan allows a maximum of 5 days per trip."),
+    );
+    const res = makeRes();
+
+    await generateTrip(makeReq({ preferences: validPreferences }), res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0]).toEqual({
+      success: false,
+      message: "Your plan allows a maximum of 5 days per trip.",
+    });
+  });
+});
 
 describe("generateTrip idempotency", () => {
   beforeEach(() => {
@@ -74,12 +156,12 @@ describe("generateTrip idempotency", () => {
       },
     );
     const res = makeRes();
-    await generateTrip(makeReq("k1"), res);
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
 
     expect(order).toEqual(["reserve", "enqueue"]);
-    expect(idempotencyRepository.reserve).toHaveBeenCalledWith("user-1", "k1");
+    expect(idempotencyRepository.reserve).toHaveBeenCalledWith("user_1", "k1");
     expect(idempotencyRepository.complete).toHaveBeenCalledWith(
-      "user-1",
+      "user_1",
       "k1",
       { tripId: "t1", jobId: "j1" },
     );
@@ -93,7 +175,7 @@ describe("generateTrip idempotency", () => {
       jobId: "j0",
     });
     const res = makeRes();
-    await generateTrip(makeReq("k1"), res);
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
 
     expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
@@ -107,7 +189,7 @@ describe("generateTrip idempotency", () => {
       status: "duplicate",
     });
     const res = makeRes();
-    await generateTrip(makeReq("k1"), res);
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
 
     expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(409);
@@ -121,12 +203,12 @@ describe("generateTrip idempotency", () => {
       status: "reserved",
     });
     vi.mocked(plannerService.createTripGenerationJob).mockRejectedValue(
-      new TripRequestRejectedError("Trip too long"),
+      new TripRequestError("Trip too long"),
     );
     const res = makeRes();
-    await generateTrip(makeReq("k1"), res);
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
 
-    expect(idempotencyRepository.release).toHaveBeenCalledWith("user-1", "k1");
+    expect(idempotencyRepository.release).toHaveBeenCalledWith("user_1", "k1");
     expect(idempotencyRepository.complete).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
   });
@@ -139,10 +221,10 @@ describe("generateTrip idempotency", () => {
       new Error("Redis connection lost"),
     );
     const res = makeRes();
-    await generateTrip(makeReq("k1"), res);
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
 
     expect(idempotencyRepository.release).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(500);
   });
 
   it("still answers 202 when storing the result fails after the job was accepted", async () => {
@@ -153,7 +235,7 @@ describe("generateTrip idempotency", () => {
       new Error("Mongo down"),
     );
     const res = makeRes();
-    await generateTrip(makeReq("k1"), res);
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
 
     expect(res.status).toHaveBeenCalledWith(202);
     expect(res.json).toHaveBeenCalledWith(
@@ -163,7 +245,7 @@ describe("generateTrip idempotency", () => {
 
   it("does not touch the idempotency log without a header", async () => {
     const res = makeRes();
-    await generateTrip(makeReq(), res);
+    await generateTrip(makeReq({ preferences: validPreferences }), res);
 
     expect(idempotencyRepository.reserve).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(202);

@@ -3,9 +3,9 @@ import { logger } from "../../../lib/logger";
 import { tripRepository } from "../repositories/trip.repository";
 import { userRepository } from "../../user/repositories/user.repository";
 import { budgetValidatorService } from "./budget-validator.service";
-import { TripRequestRejectedError } from "./trip-request-rejected.error";
 import { TripPreferences } from "../schemas/trip-request.schema";
 import { tripQueue, TRIP_JOB_OPTIONS } from "../trip.queue";
+import { TripRequestError } from "../errors";
 import {
   getJobStatusForUser,
   retryTripJobForUser,
@@ -40,8 +40,8 @@ export class PlannerService {
         endDate,
       );
       if (!durationCheck.isValid) {
-        throw new TripRequestRejectedError(
-          durationCheck.reason ?? "Invalid trip duration",
+        throw new TripRequestError(
+          durationCheck.reason || "Invalid trip duration",
         );
       }
 
@@ -59,7 +59,7 @@ export class PlannerService {
           { userId, reason: budgetCheck.reason },
           "Budget validation failed - rejecting request",
         );
-        throw new TripRequestRejectedError(
+        throw new TripRequestError(
           budgetCheck.reason || "Budget validation failed",
         );
       }
@@ -68,7 +68,7 @@ export class PlannerService {
       const user = await userRepository.findByClerkId(userId);
       const maxDays = user?.tier === "pro" ? 30 : 5;
       if (tripDays > maxDays) {
-        throw new TripRequestRejectedError(
+        throw new TripRequestError(
           `Your plan allows a maximum of ${maxDays} days per trip. Upgrade to Pro for up to 30 days.`,
         );
       }
