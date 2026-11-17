@@ -20,9 +20,26 @@ const EXTRA_ALLOWED_ORIGINS = new Set(
     .filter(Boolean),
 );
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Vercel preview hosts for this project only: `<project>-<hash|git-branch>-<scope>.vercel.app`.
+ * Disabled (null) unless both CORS_VERCEL_PROJECT and CORS_VERCEL_SCOPE are set,
+ * so an attacker-owned *.vercel.app project is never trusted.
+ */
+const VERCEL_PREVIEW_PATTERN: RegExp | null =
+  env.CORS_VERCEL_PROJECT && env.CORS_VERCEL_SCOPE
+    ? new RegExp(
+        `^https://${escapeRegExp(env.CORS_VERCEL_PROJECT)}-[a-z0-9-]+-${escapeRegExp(env.CORS_VERCEL_SCOPE)}\\.vercel\\.app$`,
+        "i",
+      )
+    : null;
+
 /**
  * CORS: allow browser clients from local dev, FRONTEND_URL, optional comma list,
- * and any *.vercel.app (Vercel production + preview deployments).
+ * and this project's own Vercel preview deployments (see VERCEL_PREVIEW_PATTERN).
  */
 export const corsOptions: CorsOptions = {
   origin(origin, callback) {
@@ -48,7 +65,7 @@ export const corsOptions: CorsOptions = {
       return;
     }
 
-    if (normalized.endsWith(".vercel.app")) {
+    if (VERCEL_PREVIEW_PATTERN?.test(normalized)) {
       callback(null, true);
       return;
     }

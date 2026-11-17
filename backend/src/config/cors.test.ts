@@ -27,10 +27,13 @@ describe("corsOptions.origin", () => {
     await expect(checkOrigin("http://localhost:5173/")).resolves.toBe(true);
   });
 
-  it("allows any *.vercel.app origin", async () => {
+  it("blocks an arbitrary *.vercel.app origin when no Vercel project is configured", async () => {
+    await expect(checkOrigin("https://attacker.vercel.app")).resolves.toBe(
+      false,
+    );
     await expect(
       checkOrigin("https://travelplan-preview.vercel.app"),
-    ).resolves.toBe(true);
+    ).resolves.toBe(false);
   });
 
   it("blocks a domain that merely contains .vercel.app as a suffix trick", async () => {
@@ -86,5 +89,78 @@ describe("corsOptions.origin — env-driven allowlist", () => {
       );
     });
     expect(result).toBe(true);
+  });
+});
+
+describe("corsOptions.origin — Vercel preview pattern", () => {
+  const ORIGINAL_ENV = { ...process.env };
+
+  async function checkFresh(origin: string): Promise<boolean> {
+    const { corsOptions: fresh } = await import("./cors");
+    return new Promise<boolean>((resolve, reject) => {
+      (fresh.origin as OriginFn)(origin, (err, allow) =>
+        err ? reject(err) : resolve(!!allow),
+      );
+    });
+  }
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.CORS_VERCEL_PROJECT = "travelplan-web";
+    process.env.CORS_VERCEL_SCOPE = "lam-phams-projects-44c4677b";
+  });
+
+  afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
+    vi.resetModules();
+  });
+
+  it("allows a preview deployment of the configured project and scope", async () => {
+    await expect(
+      checkFresh(
+        "https://travelplan-web-k3j9x2abc-lam-phams-projects-44c4677b.vercel.app",
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it("allows the develop branch alias of the configured project and scope", async () => {
+    await expect(
+      checkFresh(
+        "https://travelplan-web-git-develop-lam-phams-projects-44c4677b.vercel.app",
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it("blocks an attacker-owned Vercel project", async () => {
+    await expect(checkFresh("https://attacker.vercel.app")).resolves.toBe(
+      false,
+    );
+  });
+
+  it("blocks the right project name under another scope", async () => {
+    await expect(
+      checkFresh("https://travelplan-web-abc123-attacker-scope.vercel.app"),
+    ).resolves.toBe(false);
+  });
+
+  it("blocks a lookalike that only embeds the pattern in a longer host", async () => {
+    await expect(
+      checkFresh(
+        "https://evil-travelplan-web-abc123-lam-phams-projects-44c4677b.vercel.app",
+      ),
+    ).resolves.toBe(false);
+    await expect(
+      checkFresh(
+        "https://travelplan-web-abc123-lam-phams-projects-44c4677b.vercel.app.attacker.com",
+      ),
+    ).resolves.toBe(false);
+  });
+
+  it("blocks plain http for a preview host", async () => {
+    await expect(
+      checkFresh(
+        "http://travelplan-web-abc123-lam-phams-projects-44c4677b.vercel.app",
+      ),
+    ).resolves.toBe(false);
   });
 });
