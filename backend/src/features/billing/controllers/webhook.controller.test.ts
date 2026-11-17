@@ -64,7 +64,12 @@ describe("webhook.controller — handleStripeWebhook", () => {
     mockStripeEvent({
       type: "checkout.session.completed",
       data: {
-        object: { id: "cs_1", customer: "cus_9", metadata: { userId: "u1" } },
+        object: {
+          id: "cs_1",
+          payment_status: "paid",
+          customer: "cus_9",
+          metadata: { userId: "u1" },
+        },
       },
     });
     const res = makeRes();
@@ -75,6 +80,27 @@ describe("webhook.controller — handleStripeWebhook", () => {
       tier: "pro",
       stripeCustomerId: "cus_9",
     });
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it("does not upgrade to PRO when checkout.session.completed arrives unpaid (delayed payment method)", async () => {
+    mockStripeEvent({
+      id: "evt_unpaid",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_2",
+          payment_status: "unpaid",
+          customer: "cus_9",
+          metadata: { userId: "u1" },
+        },
+      },
+    });
+    const res = makeRes();
+
+    await handleStripeWebhook(signedReq(), res);
+
+    expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
