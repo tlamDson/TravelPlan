@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
 import Stripe from "stripe";
 import { env } from "../../../config/env";
-import { userRepository } from "../../user/repositories/user.repository";
 import { logger } from "../../../lib/logger";
 import { getStripe } from "../services/stripe.service";
-import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
+import { processStripeEvent } from "../services/webhook-event.service";
 
 export const handleStripeWebhook = async (
   req: Request,
@@ -45,58 +44,7 @@ export const handleStripeWebhook = async (
   }
 
   try {
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        // The ID of the user should be passed during checkout session creation
-        const userId = session.metadata?.userId;
-
-        if (userId) {
-          const customerId =
-            typeof session.customer === "string"
-              ? session.customer
-              : session.customer?.id;
-          await userRepository.updateByClerkId(userId, {
-            tier: "pro",
-            ...(customerId ? { stripeCustomerId: customerId } : {}),
-          });
-          logger.info(
-            { userId, sessionId: session.id },
-            "User upgraded to PRO via Stripe webhook",
-          );
-        } else {
-          logger.warn(
-            { sessionId: session.id },
-            "Checkout session completed but missing userId in metadata",
-          );
-        }
-        break;
-      }
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const userId = await resolveSubscriptionOwner(subscription);
-
-        if (userId) {
-          await userRepository.updateByClerkId(userId, { tier: "free" });
-          logger.info(
-            { userId, subId: subscription.id },
-            "User downgraded to FREE via Stripe webhook (subscription deleted)",
-          );
-        } else {
-          logger.warn(
-            { subId: subscription.id },
-            "Subscription deleted but no user matches its metadata or customer",
-          );
-        }
-        break;
-      }
-      default:
-        logger.info(
-          { type: event.type },
-          "Unhandled Stripe webhook event type",
-        );
-    }
-
+    await processStripeEvent(event);
     res.json({ received: true });
   } catch (err: any) {
     logger.error(

@@ -12,6 +12,12 @@ vi.mock("../services/stripe.service", () => ({
 vi.mock("../services/subscription-owner.service", () => ({
   resolveSubscriptionOwner: vi.fn(),
 }));
+vi.mock("../repositories/stripe-event.repository", () => ({
+  stripeEventRepository: {
+    isProcessed: vi.fn().mockResolvedValue(false),
+    markProcessed: vi.fn(),
+  },
+}));
 vi.mock("../../user/repositories/user.repository", () => ({
   userRepository: { updateByClerkId: vi.fn() },
 }));

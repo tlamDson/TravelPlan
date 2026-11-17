@@ -4,14 +4,14 @@ Railway (API + worker + Redis), Vercel (web), MongoDB Atlas. `develop` → stagi
 
 ## Topology
 
-|                  | Production               | Staging                                                                                                                                       |
-| ---------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| API (Railway)    | `travelplan-api`         | `travelplan-api-staging` — domain is still `travelplan-web-staging-staging.up.railway.app` (renaming the service does not change the domain)  |
-| Worker (Railway) | `travelplan-worker`      | `travelplan-worker-staging`                                                                                                                   |
-| Redis            | Railway-hosted           | `Redis-hGhE` (Railway)                                                                                                                        |
-| Mongo            | Atlas (`mongodb+srv://`) | Atlas database `travelplan_staging`, a dedicated user scoped `readWrite @ travelplan_staging`                                                 |
-| Web              | Vercel Production        | Vercel Preview, `VITE_*` variables scoped to `git-branch=develop`                                                                             |
-| Webhook          | Clerk/Stripe live        | Clerk (Svix `user.created`) + Stripe test-mode (`checkout.session.completed`, `customer.subscription.deleted`) pointing at the staging domain |
+|                  | Production               | Staging                                                                                                                                                                                                                    |
+| ---------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API (Railway)    | `travelplan-api`         | `travelplan-api-staging` — domain is still `travelplan-web-staging-staging.up.railway.app` (renaming the service does not change the domain)                                                                               |
+| Worker (Railway) | `travelplan-worker`      | `travelplan-worker-staging`                                                                                                                                                                                                |
+| Redis            | Railway-hosted           | `Redis-hGhE` (Railway)                                                                                                                                                                                                     |
+| Mongo            | Atlas (`mongodb+srv://`) | Atlas database `travelplan_staging`, a dedicated user scoped `readWrite @ travelplan_staging`                                                                                                                              |
+| Web              | Vercel Production        | Vercel Preview, `VITE_*` variables scoped to `git-branch=develop`                                                                                                                                                          |
+| Webhook          | Clerk/Stripe live        | Clerk (Svix `user.created`) + Stripe test-mode (`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.updated`, `customer.subscription.deleted`) pointing at the staging domain |
 
 Staging deploys automatically on push to `develop`. `/health` = the process is alive, `/ready` = Mongo + Redis are connected — do not merge them.
 
