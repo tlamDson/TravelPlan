@@ -25,6 +25,30 @@ interface RegenOneParams {
   hint?: string;
 }
 
+/** True only for a [lng, lat] pair of two finite numbers (Mongoose defaults a missing location to `[]`). */
+function hasValidCoordinates(activity: any): boolean {
+  const c = activity?.location?.coordinates;
+  return (
+    Array.isArray(c) &&
+    c.length >= 2 &&
+    Number.isFinite(c[0]) &&
+    Number.isFinite(c[1])
+  );
+}
+
+/**
+ * Removes the distance fields. `delete` is a no-op on Mongoose subdocuments
+ * (fields are prototype accessors), so unset through `.set()` when available.
+ */
+function clearDistance(activity: any): void {
+  if (typeof activity.set === "function") {
+    activity.set("distanceFromPrevious", undefined);
+    activity.set("requiresTransport", undefined);
+  }
+  delete activity.distanceFromPrevious;
+  delete activity.requiresTransport;
+}
+
 /**
  * Recalculates distanceFromPrevious and requiresTransport for every activity
  * in a day after an insertion/replacement. Mutates the array in-place.
@@ -35,27 +59,24 @@ export function recalcDayDistances(
 ): void {
   // First activity has no "previous" — clear any stale distance from a prior position
   if (activities.length > 0) {
-    const first = activities[0] as any;
-    delete first.distanceFromPrevious;
-    delete first.requiresTransport;
+    clearDistance(activities[0]);
   }
 
   for (let i = 1; i < activities.length; i++) {
     const prev = activities[i - 1] as any;
     const curr = activities[i] as any;
 
-    if (prev?.location?.coordinates && curr?.location?.coordinates) {
+    if (hasValidCoordinates(prev) && hasValidCoordinates(curr)) {
       const result = geoValidatorService.validateDistance(
-        prev.location.coordinates as [number, number],
-        curr.location.coordinates as [number, number],
+        prev.location.coordinates,
+        curr.location.coordinates,
         mode,
       );
       curr.distanceFromPrevious = result.km;
       curr.requiresTransport = result.requiresTransport;
     } else {
       // Clear stale distance data if coordinates are missing
-      delete curr.distanceFromPrevious;
-      delete curr.requiresTransport;
+      clearDistance(curr);
     }
   }
 }

@@ -4,10 +4,6 @@ Do not fix on your own unless assigned. Each entry has 3 parts: **symptom**, **c
 
 ## Backend
 
-- **`activity-regen.service.ts`'s `recalcDayDistances()` returns 500 when an activity has no coordinates**
-  - Symptom: `PATCH /trips/:id/reorder-activities` or `POST /trips/:id/regen-activity` returns 500 (`CastError` on `Trip.save()`).
-  - Cause: `backend/src/features/planner/services/activity-regen.service.ts:47` — the guard treats `coordinates: []` as having coordinates (`[]` is truthy); Mongoose sets an empty array itself → `validateDistance()` yields `NaN`.
-  - Trigger: `validationService` cannot find coordinates for the replacement activity. Test: `trip-activities.integration.test.ts`.
 - **`redis-options.ts` ignores the db-index of `REDIS_URL`**
   - Symptom: `redis://host:6379/1` connects to db 0.
   - Cause: `backend/src/lib/redis-options.ts:44` — `buildRedisConnectionOptions()` does not read `u.pathname`.
