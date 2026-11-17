@@ -58,4 +58,6 @@ BullBoard `/admin/queues` must have Basic Auth if enabled outside dev. The conta
 
 ## Releasing abkit to PyPI
 
+Publishing abkit to PyPI is allowed (Lam, 2026-11-13), only through Trusted Publishing, never with a token.
+
 `.github/workflows/release-abkit.yml` runs on a push of the tag `abkit-v<version>` (must match `version` in `analytics/abkit/pyproject.toml` and `__version__`). The PyPI package is `abkit-experiments` (the name `abkit` on PyPI belongs to someone else; the import is still `abkit`). Published with Trusted Publishing, no token: the `publish` job runs in the GitHub environment `pypi` and is the only job with `id-token: write`. The repo owner's one-time job: add a pending trusted publisher on PyPI (project `abkit-experiments`, repo `tlamDson/TravelPlan`, workflow `release-abkit.yml`, environment `pypi`) and create the `pypi` environment. The results tables in the README and `analytics/abkit/docs/results.md` are generated from `runs.csv`: `python -m abkit.readme_results --write`.
