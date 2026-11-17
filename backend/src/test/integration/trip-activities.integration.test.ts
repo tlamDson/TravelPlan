@@ -91,6 +91,30 @@ describe("PATCH /api/trips/:tripId/reorder-activities", () => {
     expect(res.status).toBe(409);
   });
 
+  it("returns 400 and leaves the day untouched when ids are a strict subset", async () => {
+    const trip = await seedTrip("owner");
+    const [a] = trip.itinerary[0]!.activities;
+
+    const res = await request(app)
+      .patch(`/api/trips/${trip._id}/reorder-activities`)
+      .set(asUser("owner"))
+      .send({ dayIndex: 0, orderedActivityIds: [idOf(a)] });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when an id is repeated (would duplicate an activity)", async () => {
+    const trip = await seedTrip("owner");
+    const [a] = trip.itinerary[0]!.activities;
+
+    const res = await request(app)
+      .patch(`/api/trips/${trip._id}/reorder-activities`)
+      .set(asUser("owner"))
+      .send({ dayIndex: 0, orderedActivityIds: [idOf(a), idOf(a)] });
+
+    expect(res.status).toBe(400);
+  });
+
   it("persists the new activity order", async () => {
     const trip = await seedTrip("owner");
     const [a, b] = trip.itinerary[0]!.activities;

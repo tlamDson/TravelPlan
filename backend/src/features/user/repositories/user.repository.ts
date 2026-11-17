@@ -12,6 +12,11 @@ export class UserRepository {
   async findByClerkId(clerkUserId: string): Promise<IUser | null> {
     return User.findOne({ clerkUserId });
   }
+  async findByStripeCustomerId(
+    stripeCustomerId: string,
+  ): Promise<IUser | null> {
+    return User.findOne({ stripeCustomerId });
+  }
   // Takes a partial user object and saves it to the db
   async create(userData: Partial<IUser>): Promise<IUser> {
     const user = new User(userData);

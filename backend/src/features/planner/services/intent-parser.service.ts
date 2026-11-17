@@ -47,6 +47,15 @@ export class IntentParserService {
   private extractJson(aiResponse: string): string {
     const trimmed = aiResponse.trim();
 
+    // A reply that is already valid JSON (e.g. a bare array) must not be cut
+    // by the brace-based fallback below, which would drop the `[`/`]`.
+    try {
+      JSON.parse(trimmed);
+      return trimmed;
+    } catch {
+      // not plain JSON — fall through to fence/brace extraction
+    }
+
     const fencedJson = trimmed.match(/```json\s*([\s\S]*?)```/i);
     if (fencedJson?.[1]) {
       return fencedJson[1].trim();

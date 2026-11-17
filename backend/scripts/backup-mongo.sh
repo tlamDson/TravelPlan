@@ -30,6 +30,8 @@ if [ -z "${BACKUP_S3_ENDPOINT:-}" ] || [ -z "${BACKUP_S3_BUCKET:-}" ] || \
   exit 0
 fi
 
+bash "$(dirname "${BASH_SOURCE[0]}")/require-mongodump.sh"
+
 MIN_SIZE_BYTES="${BACKUP_MIN_SIZE_BYTES:-10240}"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 ARCHIVE_PATH="$(mktemp -d)/travelplan-${TIMESTAMP}.archive.gz"

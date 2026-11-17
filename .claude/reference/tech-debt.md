@@ -4,10 +4,6 @@ Do not fix on your own unless assigned. Each entry has 3 parts: **symptom**, **c
 
 ## Backend
 
-- **`intent-parser.service.ts`'s `extractJson()` breaks on a bare JSON array**
-  - Symptom: an AI response shaped as an array without a code fence is cut wrongly, parsing fails, and it falls into retry/fallback.
-  - Cause: `backend/src/features/planner/services/intent-parser.service.ts:61` — the fallback branch only cuts on `{`…`}`, even though `coerceRoot()` has a branch that handles arrays.
-  - Trigger: Gemini returns a bare array without ` ```json `.
 - **`redis-options.ts` ignores the db-index of `REDIS_URL`**
   - Symptom: `redis://host:6379/1` connects to db 0.
   - Cause: `backend/src/lib/redis-options.ts:44` — `buildRedisConnectionOptions()` does not read `u.pathname`.
