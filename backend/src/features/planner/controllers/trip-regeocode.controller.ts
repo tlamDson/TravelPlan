@@ -35,8 +35,11 @@ export const reGeocodeTrip = async (
       return;
     }
 
-    // Extract destination from trip title (first word(s) before comma or dash)
-    const destination = trip.title.split(/[,\-–]/)[0]?.trim() ?? "";
+    // Prefer the trip's real destination; the title is free text ("My Summer
+    // Vacation") and only a fallback when no destination was stored.
+    const destination =
+      trip.destination?.trim() ||
+      (trip.title.split(/[,\-–]/)[0]?.trim() ?? "");
 
     let updated = 0;
     let failed = 0;
@@ -44,9 +47,9 @@ export const reGeocodeTrip = async (
     for (const day of trip.itinerary) {
       for (const activity of day.activities) {
         try {
-          const query = `${activity.name}${destination ? `, ${destination}` : ""}`;
+          // validateIntent appends the destination city itself; pass the bare name.
           const result = await validationService.validateIntent(
-            query,
+            activity.name,
             destination,
           );
 
