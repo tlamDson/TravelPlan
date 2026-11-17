@@ -41,7 +41,7 @@ BullBoard `/admin/queues` must have Basic Auth if enabled outside dev. The conta
 
 ## MongoDB backup
 
-`backend/scripts/backup-mongo.sh` + `.github/workflows/backup-mongo.yml`: daily at 01:00 UTC, `mongodump --archive --gzip` → `aws s3 cp --endpoint-url` (Cloudflare R2), with a `BACKUP_MIN_SIZE_BYTES` guard (default 10 KiB). The 4 secrets `BACKUP_S3_ENDPOINT`/`BACKUP_S3_BUCKET`/`BACKUP_AWS_ACCESS_KEY_ID`/`BACKUP_AWS_SECRET_ACCESS_KEY` are set. The cron only runs when the workflow exists on `main` (see `pitfalls.md`). Restore runbook: `backend/scripts/BACKUP.md` (deliberately in git, not in `docs/`).
+`backend/scripts/backup-mongo.sh` + `.github/workflows/backup-mongo.yml`: daily at 01:00 UTC, `mongodump --archive --gzip` → `aws s3 cp --endpoint-url` (Cloudflare R2), with a `BACKUP_MIN_SIZE_BYTES` guard (default 10 KiB). The 4 secrets `BACKUP_S3_ENDPOINT`/`BACKUP_S3_BUCKET`/`BACKUP_AWS_ACCESS_KEY_ID`/`BACKUP_AWS_SECRET_ACCESS_KEY` are set. The cron only runs when the workflow exists on `main` (see `pitfalls.md`). Restore runbook: `backend/scripts/BACKUP.md` (deliberately in git, not in `docs/`). The workflow runs on a pinned `ubuntu-24.04` and installs `mongodb-database-tools` from a pinned, checksum-verified tgz (no apt repo, so a new `ubuntu-latest` codename cannot break it); `backend/scripts/require-mongodump.sh` fails fast if `mongodump` is missing.
 
 ## Google Cloud billing
 
