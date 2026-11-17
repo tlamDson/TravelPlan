@@ -35,6 +35,38 @@ function checkoutCompletedEvent(userId: string) {
   });
 }
 
+function checkoutCompletedForCustomer(userId: string, customer: string) {
+  return JSON.stringify({
+    id: "evt_test_checkout_customer",
+    object: "event",
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: "cs_test_3",
+        object: "checkout.session",
+        customer,
+        metadata: { userId },
+      },
+    },
+  });
+}
+
+function subscriptionDeletedForCustomer(customer: string) {
+  return JSON.stringify({
+    id: "evt_test_sub_deleted_customer",
+    object: "event",
+    type: "customer.subscription.deleted",
+    data: {
+      object: {
+        id: "sub_test_2",
+        object: "subscription",
+        customer,
+        metadata: {},
+      },
+    },
+  });
+}
+
 function subscriptionDeletedEvent(userId: string) {
   return JSON.stringify({
     id: "evt_test_sub_deleted",
@@ -106,6 +138,34 @@ describe("POST /api/webhooks/stripe", () => {
     expect(res.status).toBe(200);
 
     const user = await User.findOne({ clerkUserId: "user-stripe-2" });
+    expect(user?.tier).toBe("free");
+  });
+
+  it("downgrades by Stripe customer id when the deleted subscription has no metadata.userId", async () => {
+    await seedUser("user-stripe-4", { tier: "free" });
+    const checkout = checkoutCompletedForCustomer(
+      "user-stripe-4",
+      "cus_test_4",
+    );
+    const upgraded = await request(app)
+      .post("/api/webhooks/stripe")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", sign(checkout))
+      .send(checkout);
+    expect(upgraded.status).toBe(200);
+    const pro = await User.findOne({ clerkUserId: "user-stripe-4" });
+    expect(pro?.tier).toBe("pro");
+    expect(pro?.stripeCustomerId).toBe("cus_test_4");
+
+    const deleted = subscriptionDeletedForCustomer("cus_test_4");
+    const res = await request(app)
+      .post("/api/webhooks/stripe")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", sign(deleted))
+      .send(deleted);
+
+    expect(res.status).toBe(200);
+    const user = await User.findOne({ clerkUserId: "user-stripe-4" });
     expect(user?.tier).toBe("free");
   });
 

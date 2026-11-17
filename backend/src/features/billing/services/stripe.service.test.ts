@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type Stripe from "stripe";
 
 // STRIPE_SECRET_KEY is set to a dummy value globally in vitest.config.ts —
 // override it per-test via vi.stubEnv so we can exercise the "not
@@ -25,5 +26,28 @@ describe("stripe.service — lazy init", () => {
     const { getStripe } = await import("./stripe.service");
     expect(getStripe()).toBeDefined();
     expect(getStripe().checkout).toBeDefined();
+  });
+});
+
+describe("stripe.service — createCheckoutSession", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.unstubAllEnvs();
+  });
+
+  it("stamps userId on the subscription (subscription_data.metadata), not only on the session", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_dummy_key_for_tests");
+    const { getStripe, createCheckoutSession } =
+      await import("./stripe.service");
+    const create = vi
+      .spyOn(getStripe().checkout.sessions, "create")
+      .mockResolvedValue({ id: "cs_test_1" } as any);
+
+    await createCheckoutSession("user_abc");
+
+    const params = create.mock
+      .calls[0]![0] as unknown as Stripe.Checkout.SessionCreateParams;
+    expect(params.metadata).toEqual({ userId: "user_abc" });
+    expect(params.subscription_data?.metadata).toEqual({ userId: "user_abc" });
   });
 });
