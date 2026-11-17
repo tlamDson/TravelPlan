@@ -205,7 +205,7 @@ export function createApp(): Express {
 
     res.status(500).json({
       success: false,
-      message: "An unexpected error occured",
+      message: "An unexpected error occurred",
       error: process.env.NODE_ENV === "production" ? {} : err.message,
     });
   });
