@@ -1,12 +1,19 @@
 import IdempotencyLog from "../models/IdempotencyLog";
 
+/**
+ * How long a reservation may stay without a result before it counts as
+ * abandoned (its request failed partway or its process died). Enqueueing is
+ * one Mongo insert plus one Redis add, so this is far above normal latency.
+ */
+export const PENDING_TIMEOUT_MS = 60_000;
+
 export type IdempotencyReservation =
   | { status: "reserved" }
-  | {
-      status: "duplicate";
-      tripId?: string | undefined;
-      jobId?: string | undefined;
-    };
+  | { status: "completed"; tripId: string; jobId: string }
+  /** Another request holds the key and may still enqueue. */
+  | { status: "pending" }
+  /** The holder never stored a result; a trip may or may not exist. */
+  | { status: "abandoned" };
 
 const errorCode = (err: unknown): number | undefined =>
   (err as { code?: number } | null)?.code;
@@ -62,11 +69,19 @@ export class IdempotencyRepository {
       const existing = await IdempotencyLog.findOne({ key, userId })
         .lean()
         .exec();
-      return {
-        status: "duplicate",
-        tripId: existing?.tripId,
-        jobId: existing?.jobId,
-      };
+      if (existing?.tripId && existing.jobId) {
+        return {
+          status: "completed",
+          tripId: existing.tripId,
+          jobId: existing.jobId,
+        };
+      }
+      const age = existing
+        ? Date.now() - new Date(existing.createdAt).getTime()
+        : 0;
+      return age > PENDING_TIMEOUT_MS
+        ? { status: "abandoned" }
+        : { status: "pending" };
     }
   }
 

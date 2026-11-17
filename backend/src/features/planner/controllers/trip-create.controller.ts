@@ -6,7 +6,50 @@ import { TripRequestError } from "../errors";
 import { logger } from "../../../lib/logger";
 import { userQuotaService } from "../services/user-quota.service";
 import { userRepository } from "../../user/repositories/user.repository";
-import { idempotencyRepository } from "../../user/repositories/idempotency.repository";
+import {
+  idempotencyRepository,
+  type IdempotencyReservation,
+} from "../../user/repositories/idempotency.repository";
+
+/** Seconds a same-key duplicate should wait while the first one enqueues. */
+const PENDING_RETRY_AFTER_SECONDS = "2";
+
+/**
+ * Answers a request whose idempotency key is already held. A pending key is
+ * never answered with "use a new key": the first request may still create a
+ * trip, so a new key would create a second one.
+ */
+function sendDuplicate(
+  res: Response,
+  reservation: Exclude<IdempotencyReservation, { status: "reserved" }>,
+): void {
+  if (reservation.status === "completed") {
+    res.status(200).json({
+      success: true,
+      message: "Trip generation already started (idempotent)",
+      tripId: reservation.tripId,
+      jobId: reservation.jobId,
+      idempotent: true,
+    });
+    return;
+  }
+  if (reservation.status === "pending") {
+    res.set("Retry-After", PENDING_RETRY_AFTER_SECONDS);
+    res.status(409).json({
+      success: false,
+      message:
+        "A request with this idempotency key is still being processed; retry later with the same key",
+      idempotent: true,
+    });
+    return;
+  }
+  res.status(409).json({
+    success: false,
+    message:
+      "An earlier request with this idempotency key failed partway and may have created a trip; check your trips before submitting again",
+    idempotent: true,
+  });
+}
 
 /**
  * POST /api/trips - Generate new trip
@@ -55,6 +98,11 @@ export const generateTrip = async (
     const idempotencyKey = req.headers["x-idempotency-key"] as
       string | undefined;
 
+    // Read the user before reserving: nothing between the reservation and
+    // the service's first write may fail without releasing the key.
+    const user = await userRepository.findByClerkId(userId);
+    const userTier = user?.tier ?? "free";
+
     // Reserve the key before enqueueing: only one of two concurrent requests
     // with the same key wins the unique insert and creates a trip.
     if (idempotencyKey) {
@@ -62,28 +110,11 @@ export const generateTrip = async (
         userId,
         idempotencyKey,
       );
-      if (reservation.status === "duplicate") {
-        if (reservation.tripId) {
-          res.status(200).json({
-            success: true,
-            message: "Trip generation already started (idempotent)",
-            tripId: reservation.tripId,
-            jobId: reservation.jobId,
-            idempotent: true,
-          });
-        } else {
-          res.status(409).json({
-            success: false,
-            message:
-              "A request with this idempotency key is in progress or failed partway; retry with a new key",
-            idempotent: true,
-          });
-        }
+      if (reservation.status !== "reserved") {
+        sendDuplicate(res, reservation);
         return;
       }
     }
-
-    const user = await userRepository.findByClerkId(userId);
 
     // Create job (with CFO validation)
     let result: Awaited<
@@ -95,6 +126,7 @@ export const generateTrip = async (
         preferences,
         language,
         title,
+        userTier,
       });
     } catch (error) {
       // Free the key only when nothing was written. After a partial failure
@@ -129,7 +161,7 @@ export const generateTrip = async (
       success: true,
       message: "Trip generation started",
       ...result,
-      tier: user?.tier ?? "free",
+      tier: userTier,
       quota: {
         remaining:
           quota.limit === Number.MAX_SAFE_INTEGER

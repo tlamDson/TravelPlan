@@ -1,7 +1,6 @@
 import { Job } from "bullmq";
 import { logger } from "../../../lib/logger";
 import { tripRepository } from "../repositories/trip.repository";
-import { userRepository } from "../../user/repositories/user.repository";
 import { budgetValidatorService } from "./budget-validator.service";
 import { TripPreferences } from "../schemas/trip-request.schema";
 import { tripQueue, TRIP_JOB_OPTIONS } from "../trip.queue";
@@ -17,6 +16,8 @@ import {
 
 interface GenerateTripParams {
   userId: string;
+  /** Looked up by the caller before it reserves the idempotency key. */
+  userTier: "free" | "pro";
   preferences: TripPreferences;
   language?: string;
   title?: string;
@@ -29,7 +30,7 @@ export class PlannerService {
   async createTripGenerationJob(
     params: GenerateTripParams,
   ): Promise<{ jobId: string; tripId: string }> {
-    const { userId, preferences } = params;
+    const { userId, userTier, preferences } = params;
 
     try {
       const startDate = new Date(preferences.startDate);
@@ -65,8 +66,7 @@ export class PlannerService {
       }
 
       // Enforce per-tier day cap before creating DB record
-      const user = await userRepository.findByClerkId(userId);
-      const maxDays = user?.tier === "pro" ? 30 : 5;
+      const maxDays = userTier === "pro" ? 30 : 5;
       if (tripDays > maxDays) {
         throw new TripRequestError(
           `Your plan allows a maximum of ${maxDays} days per trip. Upgrade to Pro for up to 30 days.`,
@@ -102,7 +102,7 @@ export class PlannerService {
       const trip = await tripRepository.create(tripData);
 
       // Pro users get priority 1 (processed first), free users get priority 10
-      const priority = user?.tier === "pro" ? 1 : 10;
+      const priority = userTier === "pro" ? 1 : 10;
 
       const job: Job = await tripQueue.add(
         "generate-trip",
@@ -111,7 +111,7 @@ export class PlannerService {
           tripId: trip._id.toString(),
           preferences,
           language: params.language,
-          userTier: user?.tier ?? "free",
+          userTier,
         },
         {
           priority,
@@ -128,7 +128,7 @@ export class PlannerService {
           userId,
           budgetPerDay: budgetCheck.dailyBudgetPerPerson,
           priority,
-          tier: user?.tier ?? "free",
+          tier: userTier,
         },
         "Trip generation job queued (CFO validation passed)",
       );

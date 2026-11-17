@@ -85,11 +85,13 @@ describe("createTripGenerationJob rejections are TripRequestError", () => {
   });
 
   it("does not wrap an infrastructure failure as TripRequestError", async () => {
-    vi.mocked(tripRepository.create).mockRejectedValue(
-      new Error("mongo down"),
-    );
+    vi.mocked(tripRepository.create).mockRejectedValue(new Error("mongo down"));
     const err = await plannerService
-      .createTripGenerationJob({ userId: "u1", userTier: "free", preferences: prefs() })
+      .createTripGenerationJob({
+        userId: "u1",
+        userTier: "free",
+        preferences: prefs(),
+      })
       .catch((e) => e);
     expect(err).toBeInstanceOf(Error);
     expect(err).not.toBeInstanceOf(TripRequestError);
