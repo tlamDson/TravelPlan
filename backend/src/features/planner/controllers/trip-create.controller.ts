@@ -65,18 +65,6 @@ export const generateTrip = async (
       return;
     }
 
-    // Check quota (database-level fallback)
-    const quota = await userQuotaService.canCreateTrip(userId);
-    if (!quota.allowed) {
-      res.status(429).json({
-        error: "Monthly trip limit exceeded",
-        message: "Free tier users can create up to 10 trips per billing cycle.",
-        remaining: quota.remaining,
-        resetAt: quota.resetAt,
-      });
-      return;
-    }
-
     // Validate request with Zod
     const validation = TripPreferencesSchema.safeParse(req.body.preferences);
 
@@ -116,6 +104,37 @@ export const generateTrip = async (
       }
     }
 
+    // Frees the key after a failure that wrote nothing, so a retry can pass.
+    const releaseKey = async (): Promise<void> => {
+      if (!idempotencyKey) return;
+      try {
+        await idempotencyRepository.release(userId, idempotencyKey);
+      } catch (err) {
+        logger.warn({ err, userId }, "Failed to release idempotency key");
+      }
+    };
+
+    // Check quota (database-level fallback) only after the key is reserved:
+    // the first request may have used the last trip, and its same-key
+    // duplicate must still get the stored result above, not a 429.
+    let quota: Awaited<ReturnType<typeof userQuotaService.canCreateTrip>>;
+    try {
+      quota = await userQuotaService.canCreateTrip(userId);
+    } catch (error) {
+      await releaseKey();
+      throw error;
+    }
+    if (!quota.allowed) {
+      await releaseKey();
+      res.status(429).json({
+        error: "Monthly trip limit exceeded",
+        message: "Free tier users can create up to 10 trips per billing cycle.",
+        remaining: quota.remaining,
+        resetAt: quota.resetAt,
+      });
+      return;
+    }
+
     // Create job (with CFO validation)
     let result: Awaited<
       ReturnType<typeof plannerService.createTripGenerationJob>
@@ -131,13 +150,7 @@ export const generateTrip = async (
     } catch (error) {
       // Free the key only when nothing was written. After a partial failure
       // a trip or job may exist, so a same-key retry must not create another.
-      if (idempotencyKey && error instanceof TripRequestError) {
-        try {
-          await idempotencyRepository.release(userId, idempotencyKey);
-        } catch (err) {
-          logger.warn({ err, userId }, "Failed to release idempotency key");
-        }
-      }
+      if (error instanceof TripRequestError) await releaseKey();
       throw error;
     }
 

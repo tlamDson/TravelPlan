@@ -19,28 +19,6 @@ const errorCode = (err: unknown): number | undefined =>
   (err as { code?: number } | null)?.code;
 const isDuplicateKeyError = (err: unknown): boolean => errorCode(err) === 11000;
 
-/** Unique on `key` alone, from before keys were scoped per user. */
-const LEGACY_KEY_INDEX = "key_1";
-const NAMESPACE_NOT_FOUND = 26;
-const INDEX_NOT_FOUND = 27;
-
-/**
- * Drops the legacy global index (Mongoose never drops indexes on its own),
- * then builds the schema's (userId, key) unique index.
- */
-async function migrateIndexes(): Promise<void> {
-  try {
-    const indexes = await IdempotencyLog.collection.indexes();
-    if (indexes.some((i) => i.name === LEGACY_KEY_INDEX)) {
-      await IdempotencyLog.collection.dropIndex(LEGACY_KEY_INDEX);
-    }
-  } catch (err) {
-    const code = errorCode(err);
-    if (code !== NAMESPACE_NOT_FOUND && code !== INDEX_NOT_FOUND) throw err;
-  }
-  await IdempotencyLog.createIndexes();
-}
-
 /**
  * Idempotency keys for POST /api/trips, scoped per user. `reserve` inserts
  * first, so the unique (userId, key) index decides which of two concurrent
@@ -49,12 +27,17 @@ async function migrateIndexes(): Promise<void> {
 export class IdempotencyRepository {
   private indexesReady: Promise<void> | null = null;
 
-  /** Runs the index migration once per process; retried if it failed. */
+  /**
+   * Builds the schema indexes once per process (retried if it failed). It
+   * never drops an index, so it is safe while an older revision still runs.
+   */
   private ensureIndexes(): Promise<void> {
-    this.indexesReady ??= migrateIndexes().catch((err: unknown) => {
-      this.indexesReady = null;
-      throw err;
-    });
+    this.indexesReady ??= IdempotencyLog.createIndexes().catch(
+      (err: unknown) => {
+        this.indexesReady = null;
+        throw err;
+      },
+    );
     return this.indexesReady;
   }
 

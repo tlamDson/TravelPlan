@@ -28,7 +28,16 @@ IdempotencyLogSchema.index(
   { expireAfterSeconds: 60 * 60 * 24 },
 );
 
+/**
+ * Its own collection, not the legacy `idempotencylogs` (unique on `key` alone,
+ * `tripId` required). An older API revision still running during a deploy
+ * keeps using that one, so neither revision reads the other's documents and
+ * no index has to be dropped; the legacy documents expire through their TTL.
+ */
+export const IDEMPOTENCY_COLLECTION = "idempotency_reservations";
+
 export default mongoose.model<IIdempotencyLog>(
   "IdempotencyLog",
   IdempotencyLogSchema,
+  IDEMPOTENCY_COLLECTION,
 );
