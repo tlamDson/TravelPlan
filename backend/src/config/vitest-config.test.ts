@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it, expect } from "vitest";
-import config from "../../vitest.config";
 
 /**
  * [Guard] Unit tests that `await import()` heavy modules (stripe, @google/
@@ -7,13 +8,27 @@ import config from "../../vitest.config";
  * suite runs under CPU load (import time climbs past 300 s in aggregate).
  * Which test times out varies run to run, so the fix is a roomier timeout in
  * the config, not per-test overrides.
+ *
+ * The config is read as text, not imported: the backend Docker build copies
+ * only `backend/src`, and `tsc` compiles this file there, so an import of
+ * `../../vitest.config` would fail the "Backend Docker Build" check.
  */
+const configSource = readFileSync(
+  resolve(__dirname, "../../vitest.config.ts"),
+  "utf8",
+);
+
+function timeoutOf(key: "testTimeout" | "hookTimeout"): number {
+  const match = new RegExp(`${key}:\s*([\d_]+)`).exec(configSource);
+  return match ? Number(match[1]!.replace(/_/g, "")) : 0;
+}
+
 describe("vitest.config unit-run timeouts", () => {
   it("gives tests at least 20 s so heavy dynamic imports survive parallel load", () => {
-    expect(config.test?.testTimeout).toBeGreaterThanOrEqual(20_000);
+    expect(timeoutOf("testTimeout")).toBeGreaterThanOrEqual(20_000);
   });
 
   it("gives hooks at least 20 s", () => {
-    expect(config.test?.hookTimeout).toBeGreaterThanOrEqual(20_000);
+    expect(timeoutOf("hookTimeout")).toBeGreaterThanOrEqual(20_000);
   });
 });
