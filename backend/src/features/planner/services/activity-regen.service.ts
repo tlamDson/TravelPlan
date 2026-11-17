@@ -25,6 +25,17 @@ interface RegenOneParams {
   hint?: string;
 }
 
+/** True only for a [lng, lat] pair of two finite numbers (Mongoose defaults a missing location to `[]`). */
+function hasValidCoordinates(activity: any): boolean {
+  const c = activity?.location?.coordinates;
+  return (
+    Array.isArray(c) &&
+    c.length >= 2 &&
+    Number.isFinite(c[0]) &&
+    Number.isFinite(c[1])
+  );
+}
+
 /**
  * Recalculates distanceFromPrevious and requiresTransport for every activity
  * in a day after an insertion/replacement. Mutates the array in-place.
@@ -44,10 +55,10 @@ export function recalcDayDistances(
     const prev = activities[i - 1] as any;
     const curr = activities[i] as any;
 
-    if (prev?.location?.coordinates && curr?.location?.coordinates) {
+    if (hasValidCoordinates(prev) && hasValidCoordinates(curr)) {
       const result = geoValidatorService.validateDistance(
-        prev.location.coordinates as [number, number],
-        curr.location.coordinates as [number, number],
+        prev.location.coordinates,
+        curr.location.coordinates,
         mode,
       );
       curr.distanceFromPrevious = result.km;
