@@ -13,6 +13,7 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipGeneralLimit,
+  keyGenerator: userOrIpRateLimitKey,
   store: new RedisStore({
     sendCommand: async (...args: any[]): Promise<any> => {
       const [command, ...commandArgs] = args;
