@@ -52,6 +52,11 @@ export const createCheckoutSession = async (userId: string) => {
     metadata: {
       userId, // Required to map back to the DB upon webhook completion
     },
+    // Session metadata does not carry over to the subscription; without this
+    // customer.subscription.deleted cannot tell whose Pro access to revoke.
+    subscription_data: {
+      metadata: { userId },
+    },
     success_url: `${env.FRONTEND_URL}?upgrade=success`,
     cancel_url: `${env.FRONTEND_URL}?upgrade=canceled`,
   });

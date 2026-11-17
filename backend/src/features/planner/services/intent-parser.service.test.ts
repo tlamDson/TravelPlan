@@ -52,20 +52,26 @@ describe("intentParserService.parseIntents — root coercion", () => {
     });
   });
 
-  // New finding (not previously catalogued): extractJson()'s fallback
-  // brace-matching looks for the first `{` and last `}`, which is
-  // object-shaped logic. For a bare, UNFENCED JSON array it slices out the
-  // array elements without their wrapping `[`/`]`, producing invalid JSON
-  // ("{...},{...}") that fails to parse — even though coerceRoot() clearly
-  // anticipates array roots. This documents the current (broken) behavior.
-  it("[BUG] fails to parse an unfenced bare JSON array root", () => {
+  it("coerces an unfenced bare JSON array root into day1..dayN", () => {
     const raw = JSON.stringify([
       { morning: "Place A" },
       { morning: "Place B" },
     ]);
-    expect(() => intentParserService.parseIntents(raw)).toThrow(
-      "AI returned invalid JSON format",
-    );
+    expect(intentParserService.parseIntents(raw)).toEqual({
+      day1: { morning: "Place A" },
+      day2: { morning: "Place B" },
+    });
+  });
+
+  it("coerces a bare JSON array root surrounded by whitespace", () => {
+    const raw =
+      "\n  " +
+      JSON.stringify([{ morning: "Place A" }, { morning: "Place B" }]) +
+      "  \n";
+    expect(intentParserService.parseIntents(raw)).toEqual({
+      day1: { morning: "Place A" },
+      day2: { morning: "Place B" },
+    });
   });
 
   it("unwraps a root object with an `itinerary` key", () => {

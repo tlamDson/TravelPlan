@@ -91,6 +91,30 @@ describe("PATCH /api/trips/:tripId/reorder-activities", () => {
     expect(res.status).toBe(409);
   });
 
+  it("returns 400 and leaves the day untouched when ids are a strict subset", async () => {
+    const trip = await seedTrip("owner");
+    const [a] = trip.itinerary[0]!.activities;
+
+    const res = await request(app)
+      .patch(`/api/trips/${trip._id}/reorder-activities`)
+      .set(asUser("owner"))
+      .send({ dayIndex: 0, orderedActivityIds: [idOf(a)] });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when an id is repeated (would duplicate an activity)", async () => {
+    const trip = await seedTrip("owner");
+    const [a] = trip.itinerary[0]!.activities;
+
+    const res = await request(app)
+      .patch(`/api/trips/${trip._id}/reorder-activities`)
+      .set(asUser("owner"))
+      .send({ dayIndex: 0, orderedActivityIds: [idOf(a), idOf(a)] });
+
+    expect(res.status).toBe(400);
+  });
+
   it("persists the new activity order", async () => {
     const trip = await seedTrip("owner");
     const [a, b] = trip.itinerary[0]!.activities;
@@ -165,15 +189,7 @@ describe("POST /api/trips/:tripId/regen-activity", () => {
     expect(mockedRegenOne).toHaveBeenCalledTimes(1);
   });
 
-  it("[BUG] 500s instead of degrading gracefully when the replacement has no location", async () => {
-    // recalcDayDistances() guards on `prev?.location?.coordinates &&
-    // curr?.location?.coordinates` — but Mongoose casts an activity with no
-    // `location` at all into `location: { coordinates: [] }` (schema default
-    // for the array path), and `[]` is truthy. So the "coordinates present"
-    // branch runs geoValidatorService.validateDistance() against an empty
-    // array, produces NaN, and Trip.save()'s Number cast throws instead of
-    // the controller's catch-all turning it into a clean error response.
-    // Not fixed here — flagged for a follow-up PR.
+  it("saves successfully (and clears distance fields) when the replacement has no location", async () => {
     await seedUser("owner", { tier: "free" });
     const trip = await seedTrip("owner", { regenCount: 0 });
     const activityId = idOf(trip.itinerary[0]!.activities[0]!);
@@ -188,7 +204,8 @@ describe("POST /api/trips/:tripId/regen-activity", () => {
       .set(asUser("owner"))
       .send({ dayIndex: 0, activityId });
 
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(200);
+    expect(res.body.activity.name).toBe("No Coordinates Place");
   });
 });
 

@@ -4,6 +4,7 @@ import { env } from "../../../config/env";
 import { userRepository } from "../../user/repositories/user.repository";
 import { logger } from "../../../lib/logger";
 import { getStripe } from "../services/stripe.service";
+import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
 
 export const handleStripeWebhook = async (
   req: Request,
@@ -51,7 +52,14 @@ export const handleStripeWebhook = async (
         const userId = session.metadata?.userId;
 
         if (userId) {
-          await userRepository.updateByClerkId(userId, { tier: "pro" });
+          const customerId =
+            typeof session.customer === "string"
+              ? session.customer
+              : session.customer?.id;
+          await userRepository.updateByClerkId(userId, {
+            tier: "pro",
+            ...(customerId ? { stripeCustomerId: customerId } : {}),
+          });
           logger.info(
             { userId, sessionId: session.id },
             "User upgraded to PRO via Stripe webhook",
@@ -66,8 +74,7 @@ export const handleStripeWebhook = async (
       }
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        // Metadata on subscription carries over from checkout session if configured, or can be queried
-        const userId = subscription.metadata?.userId;
+        const userId = await resolveSubscriptionOwner(subscription);
 
         if (userId) {
           await userRepository.updateByClerkId(userId, { tier: "free" });
@@ -78,7 +85,7 @@ export const handleStripeWebhook = async (
         } else {
           logger.warn(
             { subId: subscription.id },
-            "Subscription deleted but missing userId in metadata",
+            "Subscription deleted but no user matches its metadata or customer",
           );
         }
         break;
