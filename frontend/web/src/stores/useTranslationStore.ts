@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { TOAST_TRANSLATIONS } from "@/stores/toast-translations";
 import { LANDING_INFO_TRANSLATIONS } from "@/features/landing/constants/info-page-translations";
+import { LANDING_SECTION_TRANSLATIONS } from "@/features/landing/constants/landing-section-translations";
 import { getUserPreferences } from "@/features/settings/types/user-preferences.types";
 
 export type Language = "English (US)" | "French" | "Vietnamese";
@@ -628,6 +629,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "landing.highlights.budget.body":
       "Track expenses and set limits right next to your itinerary.",
     ...LANDING_INFO_TRANSLATIONS.en,
+    ...LANDING_SECTION_TRANSLATIONS.en,
     ...TOAST_TRANSLATIONS.en,
   },
   French: {
@@ -1255,6 +1257,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "landing.highlights.budget.body":
       "Suivez vos dépenses et fixez des limites directement à côté de votre itinéraire.",
     ...LANDING_INFO_TRANSLATIONS.fr,
+    ...LANDING_SECTION_TRANSLATIONS.fr,
     ...TOAST_TRANSLATIONS.fr,
   },
   Vietnamese: {
@@ -1871,6 +1874,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "landing.highlights.budget.body":
       "Theo dõi chi tiêu và đặt hạn mức ngay cạnh lịch trình của bạn.",
     ...LANDING_INFO_TRANSLATIONS.vi,
+    ...LANDING_SECTION_TRANSLATIONS.vi,
     ...TOAST_TRANSLATIONS.vi,
   },
 };
