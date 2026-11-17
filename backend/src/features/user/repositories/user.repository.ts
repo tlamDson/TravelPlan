@@ -37,6 +37,28 @@ export class UserRepository {
     return User.findOneAndUpdate({ clerkUserId }, updateData, { new: true });
   }
 
+  /**
+   * Sets the tier from a Stripe event unless a newer event already did.
+   * Returns null when the user is missing or the event is stale.
+   */
+  async setTierFromStripe(
+    clerkUserId: string,
+    update: { tier: "free" | "pro"; stripeCustomerId?: string },
+    eventAt: Date,
+  ): Promise<IUser | null> {
+    return User.findOneAndUpdate(
+      {
+        clerkUserId,
+        $or: [
+          { stripeTierUpdatedAt: { $exists: false } },
+          { stripeTierUpdatedAt: { $lte: eventAt } },
+        ],
+      },
+      { $set: { ...update, stripeTierUpdatedAt: eventAt } },
+      { new: true },
+    );
+  }
+
   async decrementCredit(clerkUserId: string): Promise<IUser | null> {
     return User.findOneAndUpdate(
       { clerkUserId, credits: { $gt: 0 } },

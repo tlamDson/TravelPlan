@@ -10,6 +10,7 @@ export interface IUser extends Document {
   dateOfBirth: Date;
   tier: "free" | "pro";
   stripeCustomerId?: string;
+  stripeTierUpdatedAt?: Date;
   credits: number;
   quotaResetsAt?: Date;
   preferences: {
@@ -86,6 +87,9 @@ const UserSchema = new Schema<IUser>(
       index: true,
       sparse: true,
     },
+    // `created` time of the Stripe event that last set the tier; an older
+    // delivery arriving later must not overwrite a newer state.
+    stripeTierUpdatedAt: Date,
     quotaResetsAt: {
       type: Date,
       default: () => {

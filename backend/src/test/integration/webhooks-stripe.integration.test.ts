@@ -20,6 +20,9 @@ function sign(payload: string) {
   });
 }
 
+// Stripe event `created` (unix seconds); later events carry larger values.
+const T0 = 1_794_950_000;
+
 function checkoutCompletedEvent(
   userId: string,
   paymentStatus: "paid" | "unpaid" = "paid",
@@ -27,6 +30,7 @@ function checkoutCompletedEvent(
   return JSON.stringify({
     id: `evt_test_checkout_${paymentStatus}`,
     object: "event",
+    created: T0,
     type: "checkout.session.completed",
     data: {
       object: {
@@ -43,6 +47,7 @@ function checkoutCompletedForCustomer(userId: string, customer: string) {
   return JSON.stringify({
     id: "evt_test_checkout_customer",
     object: "event",
+    created: T0,
     type: "checkout.session.completed",
     data: {
       object: {
@@ -56,15 +61,17 @@ function checkoutCompletedForCustomer(userId: string, customer: string) {
   });
 }
 
-function subscriptionDeletedForCustomer(customer: string) {
+function subscriptionDeletedForCustomer(customer: string, created = T0 + 60) {
   return JSON.stringify({
     id: "evt_test_sub_deleted_customer",
     object: "event",
+    created,
     type: "customer.subscription.deleted",
     data: {
       object: {
         id: "sub_test_2",
         object: "subscription",
+        status: "canceled",
         customer,
         metadata: {},
       },
@@ -76,11 +83,13 @@ function subscriptionDeletedEvent(userId: string) {
   return JSON.stringify({
     id: "evt_test_sub_deleted",
     object: "event",
+    created: T0,
     type: "customer.subscription.deleted",
     data: {
       object: {
         id: "sub_test_1",
         object: "subscription",
+        status: "canceled",
         metadata: { userId },
       },
     },
@@ -145,6 +154,50 @@ describe("POST /api/webhooks/stripe", () => {
     expect(user?.tier).toBe("free");
   });
 
+  it("ignores a redelivered event id even after the tier changed since", async () => {
+    await seedUser("user-stripe-6", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-6");
+    const post = () =>
+      request(app)
+        .post("/api/webhooks/stripe")
+        .set("Content-Type", "application/json")
+        .set("stripe-signature", sign(payload))
+        .send(payload);
+
+    expect((await post()).status).toBe(200);
+    await User.updateOne({ clerkUserId: "user-stripe-6" }, { tier: "free" });
+    const again = await post();
+
+    expect(again.status).toBe(200);
+    expect(again.body.received).toBe(true);
+    const user = await User.findOne({ clerkUserId: "user-stripe-6" });
+    expect(user?.tier).toBe("free");
+  });
+
+  it("does not let an older subscription event overwrite a newer upgrade", async () => {
+    await seedUser("user-stripe-7", { tier: "free" });
+    const checkout = checkoutCompletedForCustomer(
+      "user-stripe-7",
+      "cus_test_7",
+    );
+    await request(app)
+      .post("/api/webhooks/stripe")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", sign(checkout))
+      .send(checkout);
+
+    const stale = subscriptionDeletedForCustomer("cus_test_7", T0 - 60);
+    const res = await request(app)
+      .post("/api/webhooks/stripe")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", sign(stale))
+      .send(stale);
+
+    expect(res.status).toBe(200);
+    const user = await User.findOne({ clerkUserId: "user-stripe-7" });
+    expect(user?.tier).toBe("pro");
+  });
+
   it("downgrades the user to free on customer.subscription.deleted", async () => {
     await seedUser("user-stripe-2", { tier: "pro" });
     const payload = subscriptionDeletedEvent("user-stripe-2");
@@ -194,6 +247,7 @@ describe("POST /api/webhooks/stripe", () => {
     const payload = JSON.stringify({
       id: "evt_test_no_metadata",
       object: "event",
+      created: T0,
       type: "checkout.session.completed",
       data: { object: { id: "cs_test_2", object: "checkout.session" } },
     });
@@ -213,6 +267,7 @@ describe("POST /api/webhooks/stripe", () => {
     const payload = JSON.stringify({
       id: "evt_test_unhandled",
       object: "event",
+      created: T0,
       type: "invoice.paid",
       data: { object: { id: "in_test_1", object: "invoice" } },
     });
