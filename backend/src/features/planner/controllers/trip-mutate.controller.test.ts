@@ -126,4 +126,33 @@ describe("updateTripById input validation", () => {
       title: "Hi there",
     });
   });
+
+  it("strips markup hidden under two layers of entity encoding", async () => {
+    const res = makeRes();
+    await updateTripById(
+      makeReq({ title: "Hi &amp;lt;b&amp;gt;x&amp;lt;/b&amp;gt;" }),
+      res,
+    );
+    expect(tripRepository.update).toHaveBeenCalledWith(VALID_ID, {
+      title: "Hi x",
+    });
+  });
+
+  it("returns 400 instead of storing markup hidden under many layers of entity encoding", async () => {
+    const encode = (s: string, n: number) => {
+      let out = s.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      for (let i = 1; i < n; i++) out = out.replace(/&/g, "&amp;");
+      return out;
+    };
+    const res = makeRes();
+    await updateTripById(
+      makeReq({
+        title: "Trip",
+        description: encode("<img src=x onerror=alert(1)>", 8),
+      }),
+      res,
+    );
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(tripRepository.update).not.toHaveBeenCalled();
+  });
 });
