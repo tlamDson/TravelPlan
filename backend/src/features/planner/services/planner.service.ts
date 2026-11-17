@@ -5,6 +5,7 @@ import { userRepository } from "../../user/repositories/user.repository";
 import { budgetValidatorService } from "./budget-validator.service";
 import { TripPreferences } from "../schemas/trip-request.schema";
 import { tripQueue, TRIP_JOB_OPTIONS } from "../trip.queue";
+import { TripRequestError } from "../errors";
 import {
   getJobStatusForUser,
   retryTripJobForUser,
@@ -39,7 +40,9 @@ export class PlannerService {
         endDate,
       );
       if (!durationCheck.isValid) {
-        throw new Error(durationCheck.reason);
+        throw new TripRequestError(
+          durationCheck.reason || "Invalid trip duration",
+        );
       }
 
       const tripDays = durationCheck.days!;
@@ -56,7 +59,9 @@ export class PlannerService {
           { userId, reason: budgetCheck.reason },
           "Budget validation failed - rejecting request",
         );
-        throw new Error(budgetCheck.reason || "Budget validation failed");
+        throw new TripRequestError(
+          budgetCheck.reason || "Budget validation failed",
+        );
       }
 
       // Enforce per-tier day cap before creating DB record
