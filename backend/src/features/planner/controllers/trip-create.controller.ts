@@ -6,6 +6,7 @@ import { logger } from "../../../lib/logger";
 import { userQuotaService } from "../services/user-quota.service";
 import { userRepository } from "../../user/repositories/user.repository";
 import { idempotencyRepository } from "../../user/repositories/idempotency.repository";
+import { TripRequestRejectedError } from "../services/trip-request-rejected.error";
 
 /**
  * POST /api/trips - Generate new trip
@@ -73,7 +74,8 @@ export const generateTrip = async (
         } else {
           res.status(409).json({
             success: false,
-            message: "Trip generation for this request is already in progress",
+            message:
+              "A request with this idempotency key is in progress or failed partway; retry with a new key",
             idempotent: true,
           });
         }
@@ -95,21 +97,32 @@ export const generateTrip = async (
         title,
       });
     } catch (error) {
-      if (idempotencyKey) {
-        await idempotencyRepository
-          .release(userId, idempotencyKey)
-          .catch((err) =>
-            logger.warn({ err, userId }, "Failed to release idempotency key"),
-          );
+      // Free the key only when nothing was written. After a partial failure
+      // a trip or job may exist, so a same-key retry must not create another.
+      if (idempotencyKey && error instanceof TripRequestRejectedError) {
+        try {
+          await idempotencyRepository.release(userId, idempotencyKey);
+        } catch (err) {
+          logger.warn({ err, userId }, "Failed to release idempotency key");
+        }
       }
       throw error;
     }
 
+    // The job is accepted: a failed result write must not turn into an error
+    // response. The key stays reserved, so duplicates still cannot enqueue.
     if (idempotencyKey) {
-      await idempotencyRepository.complete(userId, idempotencyKey, {
-        tripId: result.tripId,
-        jobId: result.jobId,
-      });
+      try {
+        await idempotencyRepository.complete(userId, idempotencyKey, {
+          tripId: result.tripId,
+          jobId: result.jobId,
+        });
+      } catch (err) {
+        logger.error(
+          { err, userId, tripId: result.tripId },
+          "Failed to store idempotency result",
+        );
+      }
     }
 
     res.status(202).json({
