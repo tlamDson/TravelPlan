@@ -18,8 +18,17 @@ const configSource = readFileSync(
   "utf8",
 );
 
-function timeoutOf(key: "testTimeout" | "hookTimeout"): number {
-  const match = new RegExp(String.raw`${key}:\s*([\d_]+)`).exec(configSource);
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+}
+
+function timeoutOf(
+  key: "testTimeout" | "hookTimeout",
+  source: string = configSource,
+): number {
+  const match = new RegExp(String.raw`^\s*${key}:\s*([\d_]+)`, "m").exec(
+    stripComments(source),
+  );
   return match ? Number(match[1]!.replace(/_/g, "")) : 0;
 }
 
@@ -30,5 +39,14 @@ describe("vitest.config unit-run timeouts", () => {
 
   it("gives hooks at least 20 s", () => {
     expect(timeoutOf("hookTimeout")).toBeGreaterThanOrEqual(20_000);
+  });
+
+  it("ignores a timeout that is commented out", () => {
+    const commented = [
+      "// testTimeout: 20_000,",
+      "/* hookTimeout: 20_000, */",
+    ].join("\n");
+    expect(timeoutOf("testTimeout", commented)).toBe(0);
+    expect(timeoutOf("hookTimeout", commented)).toBe(0);
   });
 });
