@@ -56,7 +56,9 @@ Python `analytics/abkit` and `analytics/simkit` (install abkit first): CI job `a
 
 - Every change goes through a PR into `develop`; never commit/push directly to `develop` or `main`.
 - A PR into `develop` may be self-merged when the 3 required checks are green **and** an independent review PASSes (squash).
-- Releasing `develop` → `main` follows the charter above; outside that charter `main` belongs to the repo owner — a broad phrase like "do it all" is not authorization to merge `main`. A `main` merge is a real merge commit, not a squash.
+- Releasing `develop` → `main`: the orchestrator releases on its own at milestones when CI on `main` is green (`python -m conductor release-main travelplan`). The version follows SemVer from the commit types since the last release (`feat:` minor, only `fix:` patch, breaking change major, minor while 0.x); the PR title is only `release: vX.Y.Z`. Before a release, run the app as a real user 2-3 times on staging (see the Conductor playbook) and file each problem as its own PR. A `main` merge is a real merge commit, not a squash. Outside these rules `main` belongs to the repo owner — a broad phrase like "do it all" is not authorization to merge `main`.
+- Approved work runs through to the end without "continue?" stops; by day report to Lam every 30 minutes, at night only on a blocker. Ask Lam for every permission a task needs once, before starting.
+- Labels produced by an LLM (abkit readouts, eval sets) are recorded as "LLM, owner-reviewed" in data and README, never as human labels.
 - **Maximum cost $0:** do not enable paid services, do not exceed the free tier/credits. If you are unsure whether something costs money, assume it does and do not do it.
 
 **Two kinds of session:**
