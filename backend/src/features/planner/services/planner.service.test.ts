@@ -18,6 +18,7 @@ import { plannerService } from "./planner.service";
 import { TripRequestError } from "../errors";
 import { tripRepository } from "../repositories/trip.repository";
 import { userRepository } from "../../user/repositories/user.repository";
+import { tripQueue } from "../trip.queue";
 
 const prefs = (over: Record<string, unknown> = {}) =>
   ({
@@ -32,15 +33,18 @@ const prefs = (over: Record<string, unknown> = {}) =>
 describe("createTripGenerationJob rejections are TripRequestError", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(userRepository.findByClerkId).mockResolvedValue({
-      tier: "free",
-    } as any);
+    // A user lookup here would run after the idempotency key is reserved;
+    // the service must take the tier from its caller instead.
+    vi.mocked(userRepository.findByClerkId).mockRejectedValue(
+      new Error("user lookup must not happen in the service"),
+    );
   });
 
   it("throws TripRequestError for a too-short duration", async () => {
     await expect(
       plannerService.createTripGenerationJob({
         userId: "u1",
+        userTier: "free",
         preferences: prefs({ endDate: "2026-12-01T00:00:00.000Z" }),
       }),
     ).rejects.toBeInstanceOf(TripRequestError);
@@ -50,6 +54,7 @@ describe("createTripGenerationJob rejections are TripRequestError", () => {
     await expect(
       plannerService.createTripGenerationJob({
         userId: "u1",
+        userTier: "free",
         preferences: prefs({ budget: { total: 1, currency: "USD" } }),
       }),
     ).rejects.toBeInstanceOf(TripRequestError);
@@ -59,6 +64,7 @@ describe("createTripGenerationJob rejections are TripRequestError", () => {
     await expect(
       plannerService.createTripGenerationJob({
         userId: "u1",
+        userTier: "free",
         preferences: prefs({
           endDate: "2026-12-11T00:00:00.000Z",
           budget: { total: 100000, currency: "USD" },
@@ -68,6 +74,7 @@ describe("createTripGenerationJob rejections are TripRequestError", () => {
     await expect(
       plannerService.createTripGenerationJob({
         userId: "u1",
+        userTier: "free",
         preferences: prefs({
           endDate: "2026-12-11T00:00:00.000Z",
           budget: { total: 100000, currency: "USD" },
@@ -82,9 +89,30 @@ describe("createTripGenerationJob rejections are TripRequestError", () => {
       new Error("mongo down"),
     );
     const err = await plannerService
-      .createTripGenerationJob({ userId: "u1", preferences: prefs() })
+      .createTripGenerationJob({ userId: "u1", userTier: "free", preferences: prefs() })
       .catch((e) => e);
     expect(err).toBeInstanceOf(Error);
     expect(err).not.toBeInstanceOf(TripRequestError);
+  });
+
+  it("applies the caller's tier to the day cap without looking the user up", async () => {
+    vi.mocked(tripRepository.create).mockResolvedValue({ _id: "trip1" } as any);
+    vi.mocked(tripQueue.add).mockResolvedValue({ id: "job1" } as any);
+    const result = await plannerService.createTripGenerationJob({
+      userId: "u1",
+      userTier: "pro",
+      preferences: prefs({
+        endDate: "2026-12-11T00:00:00.000Z",
+        budget: { total: 100000, currency: "USD" },
+      }),
+    });
+
+    expect(result).toEqual({ tripId: "trip1", jobId: "job1" });
+    expect(userRepository.findByClerkId).not.toHaveBeenCalled();
+    expect(tripQueue.add).toHaveBeenCalledWith(
+      "generate-trip",
+      expect.objectContaining({ userTier: "pro" }),
+      expect.objectContaining({ priority: 1 }),
+    );
   });
 });

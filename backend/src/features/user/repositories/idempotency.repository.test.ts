@@ -25,6 +25,7 @@ vi.mock("../models/IdempotencyLog", () => ({
 import {
   idempotencyRepository,
   IdempotencyRepository,
+  PENDING_TIMEOUT_MS,
 } from "./idempotency.repository";
 
 const lean = (value: unknown) => ({
@@ -97,21 +98,37 @@ describe("idempotencyRepository.reserve", () => {
 
   it("returns the stored result on a duplicate-key error", async () => {
     createMock.mockRejectedValue(dupError());
-    findOneMock.mockReturnValue(lean({ tripId: "t1", jobId: "j1" }));
+    findOneMock.mockReturnValue(
+      lean({ tripId: "t1", jobId: "j1", createdAt: new Date() }),
+    );
     const r = await idempotencyRepository.reserve("user-1", "k1");
-    expect(r).toEqual({ status: "duplicate", tripId: "t1", jobId: "j1" });
+    expect(r).toEqual({ status: "completed", tripId: "t1", jobId: "j1" });
     expect(findOneMock).toHaveBeenCalledWith({ key: "k1", userId: "user-1" });
   });
 
-  it("reports a pending duplicate when the first request has not finished", async () => {
+  it("reports pending while a fresh reservation has no result yet", async () => {
     createMock.mockRejectedValue(dupError());
-    findOneMock.mockReturnValue(lean({}));
+    findOneMock.mockReturnValue(
+      lean({ createdAt: new Date(Date.now() - (PENDING_TIMEOUT_MS - 5_000)) }),
+    );
     const r = await idempotencyRepository.reserve("user-1", "k1");
-    expect(r).toEqual({
-      status: "duplicate",
-      tripId: undefined,
-      jobId: undefined,
-    });
+    expect(r).toEqual({ status: "pending" });
+  });
+
+  it("reports abandoned when a reservation got no result within the timeout", async () => {
+    createMock.mockRejectedValue(dupError());
+    findOneMock.mockReturnValue(
+      lean({ createdAt: new Date(Date.now() - (PENDING_TIMEOUT_MS + 5_000)) }),
+    );
+    const r = await idempotencyRepository.reserve("user-1", "k1");
+    expect(r).toEqual({ status: "abandoned" });
+  });
+
+  it("reports pending when the conflicting log vanished (TTL) before the read", async () => {
+    createMock.mockRejectedValue(dupError());
+    findOneMock.mockReturnValue(lean(null));
+    const r = await idempotencyRepository.reserve("user-1", "k1");
+    expect(r).toEqual({ status: "pending" });
   });
 
   it("rethrows errors that are not duplicate-key errors", async () => {

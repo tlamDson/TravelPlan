@@ -43,6 +43,7 @@ const makeRes = () => {
   const res: any = {};
   res.status = vi.fn().mockReturnValue(res);
   res.json = vi.fn().mockReturnValue(res);
+  res.set = vi.fn().mockReturnValue(res);
   return res as Response & { status: any; json: any };
 };
 
@@ -141,6 +142,9 @@ describe("generateTrip idempotency", () => {
       tripId: "t1",
       jobId: "j1",
     } as any);
+    vi.mocked(userRepository.findByClerkId).mockResolvedValue({
+      tier: "free",
+    } as any);
   });
 
   it("reserves the key before enqueueing, then stores the result", async () => {
@@ -170,7 +174,7 @@ describe("generateTrip idempotency", () => {
 
   it("returns the stored result and does not enqueue when the key is already taken", async () => {
     vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
-      status: "duplicate",
+      status: "completed",
       tripId: "t0",
       jobId: "j0",
     });
@@ -184,17 +188,67 @@ describe("generateTrip idempotency", () => {
     );
   });
 
-  it("answers 409 and does not enqueue while the first request is still in flight", async () => {
+  it("answers 409 with retry-later-same-key guidance while the first request is in flight", async () => {
     vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
-      status: "duplicate",
+      status: "pending",
     });
     const res = makeRes();
     await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
 
     expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.set).toHaveBeenCalledWith("Retry-After", "2");
+    const body = res.json.mock.calls[0][0];
+    expect(body).toMatchObject({ success: false, idempotent: true });
+    // A new key while the first request is still enqueueing would create a
+    // second trip, so the guidance must be to reuse the same key.
+    expect(body.message).toMatch(/same key/i);
+    expect(body.message).not.toMatch(/new key/i);
+  });
+
+  it("answers 409 without a retry instruction when an earlier same-key request failed partway", async () => {
+    vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
+      status: "abandoned",
+    });
+    const res = makeRes();
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
+
+    expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.set).not.toHaveBeenCalled();
+    const body = res.json.mock.calls[0][0];
+    expect(body).toMatchObject({ success: false, idempotent: true });
+    expect(body.message).toMatch(/check your trips/i);
+    expect(body.message).not.toMatch(/new key|retry/i);
+  });
+
+  it("looks up the user before reserving, so a lookup failure leaves no reservation behind", async () => {
+    vi.mocked(userRepository.findByClerkId).mockRejectedValue(
+      new Error("Mongo down"),
+    );
+    const res = makeRes();
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
+
+    expect(idempotencyRepository.reserve).not.toHaveBeenCalled();
+    expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+
+  it("passes the looked-up tier to the service, so it does no user I/O after the reservation", async () => {
+    vi.mocked(userRepository.findByClerkId).mockResolvedValue({
+      tier: "pro",
+    } as any);
+    vi.mocked(idempotencyRepository.reserve).mockResolvedValue({
+      status: "reserved",
+    });
+    const res = makeRes();
+    await generateTrip(makeReq({ preferences: validPreferences }, "k1"), res);
+
+    expect(plannerService.createTripGenerationJob).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user_1", userTier: "pro" }),
+    );
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ idempotent: true }),
+      expect.objectContaining({ tier: "pro" }),
     );
   });
 
