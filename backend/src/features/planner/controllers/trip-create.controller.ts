@@ -2,6 +2,7 @@ import { Response } from "express";
 import { plannerService } from "../services/planner.service";
 import { ClerkRequest } from "../../../types/express";
 import { TripPreferencesSchema } from "../schemas/trip-request.schema";
+import { TripRequestError } from "../errors";
 import { logger } from "../../../lib/logger";
 import { userQuotaService } from "../services/user-quota.service";
 import { userRepository } from "../../user/repositories/user.repository";
@@ -37,8 +38,8 @@ export const generateTrip = async (
     const validation = TripPreferencesSchema.safeParse(req.body.preferences);
 
     if (!validation.success) {
-      logger.error(
-        { errors: validation.error.issues, body: req.body },
+      logger.warn(
+        { paths: validation.error.issues.map((i) => i.path.join(".")) },
         "Trip validation failed",
       );
       res.status(400).json({
@@ -96,12 +97,16 @@ export const generateTrip = async (
         resetAt: quota.resetAt,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     const userId: string = req.auth?.()?.userId ?? "";
-    logger.error({ error, userId }, "Failed to generate trip");
-    res.status(400).json({
+    if (error instanceof TripRequestError) {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+    logger.error({ err: error, userId }, "Failed to generate trip");
+    res.status(500).json({
       success: false,
-      message: error.message || "Failed to start trip generation",
+      message: "Failed to start trip generation",
     });
   }
 };
