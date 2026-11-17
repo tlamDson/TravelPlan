@@ -84,7 +84,7 @@ describe("generateTrip error handling", () => {
 
     expect(logger.error).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledTimes(1);
-    const payload = vi.mocked(logger.warn).mock.calls[0][0] as any;
+    const payload = vi.mocked(logger.warn).mock.calls[0]![0] as any;
     expect(payload.body).toBeUndefined();
     expect(Array.isArray(payload.paths)).toBe(true);
     expect(payload.paths.length).toBeGreaterThan(0);
