@@ -2,6 +2,7 @@ import { Response } from "express";
 import { tripRepository } from "../repositories/trip.repository";
 import { ClerkRequest } from "../../../types/express";
 import { logger } from "../../../lib/logger";
+import { validateReorderIds } from "../services/reorder-validator";
 import type { IActivity, IActivitySubdocument } from "../models/Trip.types";
 
 /**
@@ -71,22 +72,19 @@ export const reorderActivities = async (
       day.activities.map((a) => [a._id!.toString(), a]),
     );
 
-    // Verify every supplied ID belongs to this day
-    for (const id of orderedActivityIds) {
-      if (!activityMap.has(id)) {
-        res
-          .status(400)
-          .json({ message: `Activity ${id} not found in day ${dayIndex}` });
-        return;
-      }
+    // Ids must be an exact permutation of the day's current activities
+    const currentIds = day.activities.map((a) => a._id!.toString());
+    const check = validateReorderIds(currentIds, orderedActivityIds);
+    if (!check.ok) {
+      res.status(400).json({ message: check.message });
+      return;
     }
 
     // Guard: if the supplied order matches the current order, skip the DB write
-    const currentIds = day.activities.map((a) => a._id!.toString());
     const isSameOrder = currentIds.every(
       (id, idx) => id === orderedActivityIds[idx],
     );
-    if (isSameOrder && currentIds.length === orderedActivityIds.length) {
+    if (isSameOrder) {
       res.json({ success: true, itinerary: trip.itinerary });
       return;
     }
