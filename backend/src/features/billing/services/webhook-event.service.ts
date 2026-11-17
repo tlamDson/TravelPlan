@@ -10,26 +10,9 @@ import {
 } from "../schemas/stripe-webhook.schema";
 import { syncSubscriptionEntitlement } from "./entitlement-sync.service";
 import { resolveSubscriptionOwner } from "./subscription-owner.service";
+import { entitlementForStatus } from "./subscription-entitlement";
 
 type Entitlement = { entitled: boolean; ended: boolean };
-
-/**
- * Subscription status → what it grants. `incomplete` is the brief state
- * before the first payment settles; the checkout events decide it then.
- */
-const ENTITLEMENT_BY_STATUS: Record<
-  SubscriptionPayload["status"],
-  Entitlement | null
-> = {
-  active: { entitled: true, ended: false },
-  trialing: { entitled: true, ended: false },
-  past_due: { entitled: false, ended: false },
-  unpaid: { entitled: false, ended: false },
-  paused: { entitled: false, ended: false },
-  canceled: { entitled: false, ended: true },
-  incomplete_expired: { entitled: false, ended: true },
-  incomplete: null,
-};
 
 const idOf = (ref: string | { id: string } | null | undefined) =>
   typeof ref === "string" ? ref : ref?.id;
@@ -103,11 +86,11 @@ async function handleSubscription(
     );
     return;
   }
-  const outcome = await syncSubscriptionEntitlement(userId, {
-    subscriptionId: subscription.id,
-    ...entitlement,
-    eventAt,
-  });
+  const outcome = await syncSubscriptionEntitlement(
+    userId,
+    { subscriptionId: subscription.id, ...entitlement, eventAt },
+    idOf(subscription.customer),
+  );
   logger.info(
     { userId, subId: subscription.id, status: subscription.status, outcome },
     "Entitlement from Stripe subscription webhook",
@@ -120,10 +103,8 @@ async function dispatch(event: Stripe.Event, eventAt: Date): Promise<void> {
     case "checkout.session.async_payment_succeeded":
       return handlePaidCheckout(event, eventAt);
     case "customer.subscription.updated":
-      return handleSubscription(
-        event,
-        eventAt,
-        (s) => ENTITLEMENT_BY_STATUS[s.status],
+      return handleSubscription(event, eventAt, (s) =>
+        entitlementForStatus(s.status),
       );
     case "customer.subscription.deleted":
       return handleSubscription(event, eventAt, () => ({

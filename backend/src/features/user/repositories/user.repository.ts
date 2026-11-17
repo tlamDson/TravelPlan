@@ -4,6 +4,7 @@ import User, { IStripeSubscriptionState, IUser } from "../models/User";
 
 export interface StripeBillingState {
   tier: "free" | "pro";
+  stripeCustomerId?: string;
   stripeSubscriptions?: IStripeSubscriptionState[];
   stripeBillingRev?: number;
 }
@@ -47,7 +48,7 @@ export class UserRepository {
     clerkUserId: string,
   ): Promise<StripeBillingState | null> {
     return User.findOne({ clerkUserId })
-      .select("tier stripeSubscriptions stripeBillingRev")
+      .select("tier stripeCustomerId stripeSubscriptions stripeBillingRev")
       .lean<StripeBillingState>();
   }
 
