@@ -79,9 +79,11 @@ describe("POST /api/trips", () => {
         .send({ preferences: validTripPreferences() });
 
     const responses = await Promise.all([send(), send()]);
-    const statuses = responses.map((r) => r.status).sort();
-    expect(statuses[1]).toBe(202);
-    expect([200, 409]).toContain(statuses[0]);
+    const statuses = responses.map((r) => r.status);
+    const winners = statuses.filter((s) => s === 202);
+    const loser = statuses.find((s) => s !== 202);
+    expect(winners).toHaveLength(1);
+    expect([200, 409]).toContain(loser);
 
     const list = await request(app).get("/api/trips").set(asUser("user-1"));
     expect(list.body.trips).toHaveLength(1);
