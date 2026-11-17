@@ -68,7 +68,7 @@ export class PlannerService {
       const user = await userRepository.findByClerkId(userId);
       const maxDays = user?.tier === "pro" ? 30 : 5;
       if (tripDays > maxDays) {
-        throw new Error(
+        throw new TripRequestError(
           `Your plan allows a maximum of ${maxDays} days per trip. Upgrade to Pro for up to 30 days.`,
         );
       }
