@@ -20,15 +20,19 @@ function sign(payload: string) {
   });
 }
 
-function checkoutCompletedEvent(userId: string) {
+function checkoutCompletedEvent(
+  userId: string,
+  paymentStatus: "paid" | "unpaid" = "paid",
+) {
   return JSON.stringify({
-    id: "evt_test_checkout",
+    id: `evt_test_checkout_${paymentStatus}`,
     object: "event",
     type: "checkout.session.completed",
     data: {
       object: {
         id: "cs_test_1",
         object: "checkout.session",
+        payment_status: paymentStatus,
         metadata: { userId },
       },
     },
@@ -44,6 +48,7 @@ function checkoutCompletedForCustomer(userId: string, customer: string) {
       object: {
         id: "cs_test_3",
         object: "checkout.session",
+        payment_status: "paid",
         customer,
         metadata: { userId },
       },
@@ -123,6 +128,21 @@ describe("POST /api/webhooks/stripe", () => {
 
     const user = await User.findOne({ clerkUserId: "user-stripe-1" });
     expect(user?.tier).toBe("pro");
+  });
+
+  it("keeps the user on free when checkout.session.completed arrives unpaid", async () => {
+    await seedUser("user-stripe-5", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-5", "unpaid");
+
+    const res = await request(app)
+      .post("/api/webhooks/stripe")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", sign(payload))
+      .send(payload);
+
+    expect(res.status).toBe(200);
+    const user = await User.findOne({ clerkUserId: "user-stripe-5" });
+    expect(user?.tier).toBe("free");
   });
 
   it("downgrades the user to free on customer.subscription.deleted", async () => {
