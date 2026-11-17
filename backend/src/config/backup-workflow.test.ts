@@ -38,8 +38,10 @@ describe("backup-mongo.yml", () => {
   });
 
   it("installs mongodb-database-tools from a pinned tgz with a checksum", () => {
-    expect(WORKFLOW).toMatch(
-      /fastdl\.mongodb\.org\/tools\/db\/mongodb-database-tools-ubuntu2404-x86_64-\d+\.\d+\.\d+\.tgz/,
+    expect(WORKFLOW).toMatch(/TOOLS_VERSION:\s*"\d+\.\d+\.\d+"/);
+    expect(WORKFLOW).toMatch(/fastdl\.mongodb\.org\/tools\/db\/\$TGZ/);
+    expect(WORKFLOW).toContain(
+      "mongodb-database-tools-ubuntu2404-x86_64-${TOOLS_VERSION}.tgz",
     );
     expect(WORKFLOW).toMatch(/sha256sum\s+-c/);
     expect(WORKFLOW).toMatch(/[0-9a-f]{64}/);
