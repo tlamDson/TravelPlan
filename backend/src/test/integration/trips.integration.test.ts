@@ -68,6 +68,45 @@ describe("POST /api/trips", () => {
     const list = await request(app).get("/api/trips").set(asUser("user-1"));
     expect(list.body.trips).toHaveLength(1);
   });
+
+  it("creates one trip when two requests with the same X-Idempotency-Key arrive in parallel", async () => {
+    const key = "22222222-2222-4222-8222-222222222222";
+    const send = () =>
+      request(app)
+        .post("/api/trips")
+        .set(asUser("user-1"))
+        .set("X-Idempotency-Key", key)
+        .send({ preferences: validTripPreferences() });
+
+    const responses = await Promise.all([send(), send()]);
+    const statuses = responses.map((r) => r.status).sort();
+    expect(statuses[1]).toBe(202);
+    expect([200, 409]).toContain(statuses[0]);
+
+    const list = await request(app).get("/api/trips").set(asUser("user-1"));
+    expect(list.body.trips).toHaveLength(1);
+  });
+
+  it("scopes a key to its user: another user reusing it still gets idempotency", async () => {
+    const key = "33333333-3333-4333-8333-333333333333";
+    const post = (userId: string) =>
+      request(app)
+        .post("/api/trips")
+        .set(asUser(userId))
+        .set("X-Idempotency-Key", key)
+        .send({ preferences: validTripPreferences() });
+
+    expect((await post("user-a")).status).toBe(202);
+    const firstB = await post("user-b");
+    expect(firstB.status).toBe(202);
+
+    const repeatB = await post("user-b");
+    expect(repeatB.status).toBe(200);
+    expect(repeatB.body.tripId).toBe(firstB.body.tripId);
+
+    const list = await request(app).get("/api/trips").set(asUser("user-b"));
+    expect(list.body.trips).toHaveLength(1);
+  });
 });
 
 describe("GET /api/trips/:tripId", () => {

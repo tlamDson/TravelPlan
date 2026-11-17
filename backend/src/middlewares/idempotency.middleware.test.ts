@@ -80,6 +80,21 @@ describe("idempotencyMiddleware", () => {
     expect(findOneMock).toHaveBeenCalledWith({ key: "k1", userId: "user-2" });
   });
 
+  it("calls next() for a reserved key whose job has not been stored yet", async () => {
+    findOneMock.mockReturnValue({
+      exec: vi.fn().mockResolvedValue({ key: "k1", userId: "user-1" }),
+    });
+    const next = vi.fn();
+    const res = fakeRes();
+    await idempotencyMiddleware(
+      fakeReq({ key: "k1", userId: "user-1" }),
+      res,
+      next,
+    );
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
   it("fails open (calls next()) when the DB lookup throws", async () => {
     findOneMock.mockReturnValue({
       exec: vi.fn().mockRejectedValue(new Error("Mongo down")),
