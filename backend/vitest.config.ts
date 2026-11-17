@@ -8,6 +8,10 @@ export default defineConfig({
     // file (vitest.integration.config.ts, `npm run test:integration`) — keep
     // them out of the plain unit run.
     exclude: ["**/node_modules/**", "src/**/*.integration.test.ts"],
+    // Tests that `await import()` heavy modules (stripe, Gemini SDK, models)
+    // exceed the 5 s default when the full suite runs under CPU load.
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     // Hermetic defaults for envalid's fail-fast required vars (config/env.ts),
     // so unit tests don't depend on a local .env file or CI-provided secrets.
     // Mirrors the dummy values ci-pr.yml sets for the "Unit Tests" step.
