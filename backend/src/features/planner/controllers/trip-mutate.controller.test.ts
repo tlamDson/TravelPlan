@@ -100,4 +100,30 @@ describe("updateTripById input validation", () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(tripRepository.update).not.toHaveBeenCalled();
   });
+
+  it("keeps plain-text punctuation as typed instead of storing HTML entities", async () => {
+    const res = makeRes();
+    await updateTripById(
+      makeReq({
+        title: `Tom & Jerry's "Big" Trip`,
+        description: "5 < 6 & 7 > 3",
+      }),
+      res,
+    );
+    expect(tripRepository.update).toHaveBeenCalledWith(VALID_ID, {
+      title: `Tom & Jerry's "Big" Trip`,
+      description: "5 < 6 & 7 > 3",
+    });
+  });
+
+  it("does not turn entity-encoded markup into live tags", async () => {
+    const res = makeRes();
+    await updateTripById(
+      makeReq({ title: "Hi &lt;script&gt;alert(1)&lt;/script&gt;there" }),
+      res,
+    );
+    expect(tripRepository.update).toHaveBeenCalledWith(VALID_ID, {
+      title: "Hi there",
+    });
+  });
 });

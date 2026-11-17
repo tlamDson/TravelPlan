@@ -4,8 +4,33 @@ import sanitizeHtml from "sanitize-html";
 export const TRIP_TITLE_MAX = 200;
 export const TRIP_DESCRIPTION_MAX = 2000;
 
-const stripHtml = (value: string): string =>
-  sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} }).trim();
+const ENTITIES: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+};
+
+/**
+ * sanitize-html returns HTML, so it escapes & < > " in text. These fields are
+ * plain text (React escapes them on render), so decode those four entities
+ * back or "Tom & Jerry" would be stored as "Tom &amp; Jerry". Decoding can
+ * reveal markup that was entity-encoded in the input, so repeat until stable.
+ */
+const stripHtml = (value: string): string => {
+  let current = value;
+  for (let i = 0; i < 3; i++) {
+    const next = sanitizeHtml(current, {
+      allowedTags: [],
+      allowedAttributes: {},
+    })
+      .replace(/&(?:amp|lt|gt|quot);/g, (m) => ENTITIES[m] ?? m)
+      .trim();
+    if (next === current) break;
+    current = next;
+  }
+  return current;
+};
 
 /** PATCH /api/trips/:tripId params. */
 export const tripIdParamSchema = z.object({
