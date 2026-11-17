@@ -1,6 +1,12 @@
 //Why have this file : this is because instead of writing database queries in the routes oor controllers you abstract them in a repository. If you change databases, you only have to change this one file and the rest of the app doesnt care how the user is found, as long as findByEmail and findByClerkId return the user. And controllers stay skinny because the just call userRepository.create(data) instaed of dealing with mongoose-specific queries.
 import { UpdateQuery } from "mongoose";
-import User, { IUser } from "../models/User";
+import User, { IStripeSubscriptionState, IUser } from "../models/User";
+
+export interface StripeBillingState {
+  tier: "free" | "pro";
+  stripeSubscriptions?: IStripeSubscriptionState[];
+  stripeBillingRev?: number;
+}
 
 export class UserRepository {
   //lok up a user by their email address
@@ -37,26 +43,32 @@ export class UserRepository {
     return User.findOneAndUpdate({ clerkUserId }, updateData, { new: true });
   }
 
-  /**
-   * Sets the tier from a Stripe event unless a newer event already did.
-   * Returns null when the user is missing or the event is stale.
-   */
-  async setTierFromStripe(
+  async findStripeBillingState(
     clerkUserId: string,
-    update: { tier: "free" | "pro"; stripeCustomerId?: string },
-    eventAt: Date,
-  ): Promise<IUser | null> {
-    return User.findOneAndUpdate(
-      {
-        clerkUserId,
-        $or: [
-          { stripeTierUpdatedAt: { $exists: false } },
-          { stripeTierUpdatedAt: { $lte: eventAt } },
-        ],
-      },
-      { $set: { ...update, stripeTierUpdatedAt: eventAt } },
-      { new: true },
+  ): Promise<StripeBillingState | null> {
+    return User.findOne({ clerkUserId })
+      .select("tier stripeSubscriptions stripeBillingRev")
+      .lean<StripeBillingState>();
+  }
+
+  /**
+   * Writes the Stripe billing state only if the revision is still the one
+   * that was read (`undefined` = never written); false on a lost race.
+   */
+  async saveStripeBillingState(
+    clerkUserId: string,
+    expectedRev: number | undefined,
+    update: {
+      tier: "free" | "pro";
+      stripeSubscriptions: IStripeSubscriptionState[];
+      stripeCustomerId?: string;
+    },
+  ): Promise<boolean> {
+    const result = await User.updateOne(
+      { clerkUserId, stripeBillingRev: expectedRev ?? { $exists: false } },
+      { $set: update, $inc: { stripeBillingRev: 1 } },
     );
+    return result.modifiedCount === 1;
   }
 
   async decrementCredit(clerkUserId: string): Promise<IUser | null> {

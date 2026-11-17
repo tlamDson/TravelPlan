@@ -27,22 +27,34 @@ describe("subscription-entitlement — applySubscriptionChange", () => {
 
   it("replaces a subscription's state with a newer one", () => {
     expect(
-      applySubscriptionChange([entry("sub_a", true, 0)], entry("sub_a", false, 5)),
+      applySubscriptionChange(
+        [entry("sub_a", true, 0)],
+        entry("sub_a", false, 5),
+      ),
     ).toEqual([entry("sub_a", false, 5)]);
   });
 
   it("ignores an older state of the same subscription (out-of-order delivery)", () => {
     expect(
-      applySubscriptionChange([entry("sub_a", false, 5)], entry("sub_a", true, 0)),
+      applySubscriptionChange(
+        [entry("sub_a", false, 5)],
+        entry("sub_a", true, 0),
+      ),
     ).toBeNull();
   });
 
   it("lets a revocation win over a grant of the same subscription in the same second", () => {
     expect(
-      applySubscriptionChange([entry("sub_a", false, 5)], entry("sub_a", true, 5)),
+      applySubscriptionChange(
+        [entry("sub_a", false, 5)],
+        entry("sub_a", true, 5),
+      ),
     ).toBeNull();
     expect(
-      applySubscriptionChange([entry("sub_a", true, 5)], entry("sub_a", false, 5)),
+      applySubscriptionChange(
+        [entry("sub_a", true, 5)],
+        entry("sub_a", false, 5),
+      ),
     ).toEqual([entry("sub_a", false, 5)]);
   });
 
@@ -63,7 +75,10 @@ describe("subscription-entitlement — applySubscriptionChange", () => {
 
   it("returns null when the state is unchanged (redelivery)", () => {
     expect(
-      applySubscriptionChange([entry("sub_a", true, 0)], entry("sub_a", true, 0)),
+      applySubscriptionChange(
+        [entry("sub_a", true, 0)],
+        entry("sub_a", true, 0),
+      ),
     ).toBeNull();
   });
 

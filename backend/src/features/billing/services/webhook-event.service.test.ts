@@ -32,9 +32,7 @@ describe("webhook-event.service — processStripeEvent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(stripeEventRepository.isProcessed).mockResolvedValue(false);
-    vi.mocked(stripeEventRepository.markProcessed).mockResolvedValue(
-      undefined,
-    );
+    vi.mocked(stripeEventRepository.markProcessed).mockResolvedValue(undefined);
     vi.mocked(syncSubscriptionEntitlement).mockResolvedValue("applied");
     vi.mocked(resolveSubscriptionOwner).mockResolvedValue("user_1");
   });
@@ -169,12 +167,11 @@ describe("webhook-event.service — processStripeEvent", () => {
       "evt_new",
       "checkout.session.completed",
     );
-    expect(
-      vi.mocked(syncSubscriptionEntitlement).mock.invocationCallOrder[0],
-    ).toBeLessThan(
-      vi.mocked(stripeEventRepository.markProcessed).mock
-        .invocationCallOrder[0],
-    );
+    const [syncOrder = Infinity] = vi.mocked(syncSubscriptionEntitlement).mock
+      .invocationCallOrder;
+    const [markOrder = -1] = vi.mocked(stripeEventRepository.markProcessed).mock
+      .invocationCallOrder;
+    expect(syncOrder).toBeLessThan(markOrder);
   });
 
   it("skips an event id that was already processed", async () => {

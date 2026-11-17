@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-/** A Stripe webhook event id that was already handled (redelivery guard). */
+/** A Stripe webhook event id whose handling finished (redelivery guard). */
 export interface IStripeEvent extends Document {
   eventId: string;
   type: string;

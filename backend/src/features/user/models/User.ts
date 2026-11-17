@@ -1,4 +1,12 @@
 import mongoose, { Schema, Document } from "mongoose";
+/** PRO entitlement of one Stripe subscription (see billing/subscription-entitlement). */
+export interface IStripeSubscriptionState {
+  subscriptionId: string;
+  entitled: boolean;
+  ended: boolean;
+  eventAt: Date;
+}
+
 //for type safety
 export interface IUser extends Document {
   clerkUserId: string;
@@ -10,7 +18,8 @@ export interface IUser extends Document {
   dateOfBirth: Date;
   tier: "free" | "pro";
   stripeCustomerId?: string;
-  stripeTierUpdatedAt?: Date;
+  stripeSubscriptions?: IStripeSubscriptionState[];
+  stripeBillingRev?: number;
   credits: number;
   quotaResetsAt?: Date;
   preferences: {
@@ -87,9 +96,21 @@ const UserSchema = new Schema<IUser>(
       index: true,
       sparse: true,
     },
-    // `created` time of the Stripe event that last set the tier; an older
-    // delivery arriving later must not overwrite a newer state.
-    stripeTierUpdatedAt: Date,
+    // One entry per Stripe subscription; the tier is PRO while any entry is
+    // entitled. Written only through a compare-and-set on stripeBillingRev.
+    stripeSubscriptions: {
+      type: [
+        {
+          _id: false,
+          subscriptionId: { type: String, required: true },
+          entitled: { type: Boolean, required: true },
+          ended: { type: Boolean, required: true },
+          eventAt: { type: Date, required: true },
+        },
+      ],
+      default: undefined,
+    },
+    stripeBillingRev: Number,
     quotaResetsAt: {
       type: Date,
       default: () => {

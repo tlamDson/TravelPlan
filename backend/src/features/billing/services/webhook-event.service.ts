@@ -1,36 +1,38 @@
 import type Stripe from "stripe";
 import type { ZodType } from "zod";
-import { userRepository } from "../../user/repositories/user.repository";
 import { logger } from "../../../lib/logger";
 import { stripeEventRepository } from "../repositories/stripe-event.repository";
 import {
   checkoutSessionSchema,
   stripeEventEnvelopeSchema,
   subscriptionSchema,
-  type CheckoutSessionPayload,
   type SubscriptionPayload,
 } from "../schemas/stripe-webhook.schema";
+import { syncSubscriptionEntitlement } from "./entitlement-sync.service";
 import { resolveSubscriptionOwner } from "./subscription-owner.service";
 
-type Tier = "pro" | "free";
+type Entitlement = { entitled: boolean; ended: boolean };
 
 /**
- * Subscription status → tier. `incomplete` is the brief state before the
- * first payment settles; the checkout events decide the tier then.
+ * Subscription status → what it grants. `incomplete` is the brief state
+ * before the first payment settles; the checkout events decide it then.
  */
-const TIER_BY_STATUS: Record<SubscriptionPayload["status"], Tier | null> = {
-  active: "pro",
-  trialing: "pro",
-  past_due: "free",
-  unpaid: "free",
-  paused: "free",
-  canceled: "free",
-  incomplete_expired: "free",
+const ENTITLEMENT_BY_STATUS: Record<
+  SubscriptionPayload["status"],
+  Entitlement | null
+> = {
+  active: { entitled: true, ended: false },
+  trialing: { entitled: true, ended: false },
+  past_due: { entitled: false, ended: false },
+  unpaid: { entitled: false, ended: false },
+  paused: { entitled: false, ended: false },
+  canceled: { entitled: false, ended: true },
+  incomplete_expired: { entitled: false, ended: true },
   incomplete: null,
 };
 
-const customerIdOf = (customer: CheckoutSessionPayload["customer"]) =>
-  typeof customer === "string" ? customer : customer?.id;
+const idOf = (ref: string | { id: string } | null | undefined) =>
+  typeof ref === "string" ? ref : ref?.id;
 
 function parsePayload<T>(schema: ZodType<T>, event: Stripe.Event): T | null {
   const parsed = schema.safeParse(event.data?.object);
@@ -63,27 +65,34 @@ async function handlePaidCheckout(
     );
     return;
   }
-  const customerId = customerIdOf(session.customer);
-  const user = await userRepository.setTierFromStripe(
+  const subscriptionId = idOf(session.subscription);
+  if (!subscriptionId) {
+    logger.warn(
+      { userId, sessionId: session.id },
+      "Paid checkout session names no subscription; tier unchanged",
+    );
+    return;
+  }
+  const outcome = await syncSubscriptionEntitlement(
     userId,
-    { tier: "pro", ...(customerId ? { stripeCustomerId: customerId } : {}) },
-    eventAt,
+    { subscriptionId, entitled: true, ended: false, eventAt },
+    idOf(session.customer),
   );
   logger.info(
-    { userId, sessionId: session.id, applied: user !== null },
-    "PRO upgrade from paid Stripe checkout",
+    { userId, sessionId: session.id, subscriptionId, outcome },
+    "PRO grant from paid Stripe checkout",
   );
 }
 
 async function handleSubscription(
   event: Stripe.Event,
   eventAt: Date,
-  tierFor: (s: SubscriptionPayload) => Tier | null,
+  entitlementOf: (s: SubscriptionPayload) => Entitlement | null,
 ): Promise<void> {
   const subscription = parsePayload(subscriptionSchema, event);
   if (!subscription) return;
-  const tier = tierFor(subscription);
-  if (!tier) return;
+  const entitlement = entitlementOf(subscription);
+  if (!entitlement) return;
   const userId = await resolveSubscriptionOwner(
     event.data.object as Stripe.Subscription,
   );
@@ -94,20 +103,14 @@ async function handleSubscription(
     );
     return;
   }
-  const user = await userRepository.setTierFromStripe(
-    userId,
-    { tier },
+  const outcome = await syncSubscriptionEntitlement(userId, {
+    subscriptionId: subscription.id,
+    ...entitlement,
     eventAt,
-  );
+  });
   logger.info(
-    {
-      userId,
-      subId: subscription.id,
-      status: subscription.status,
-      tier,
-      applied: user !== null,
-    },
-    "Tier from Stripe subscription webhook",
+    { userId, subId: subscription.id, status: subscription.status, outcome },
+    "Entitlement from Stripe subscription webhook",
   );
 }
 
@@ -120,20 +123,23 @@ async function dispatch(event: Stripe.Event, eventAt: Date): Promise<void> {
       return handleSubscription(
         event,
         eventAt,
-        (s) => TIER_BY_STATUS[s.status],
+        (s) => ENTITLEMENT_BY_STATUS[s.status],
       );
     case "customer.subscription.deleted":
-      return handleSubscription(event, eventAt, () => "free");
+      return handleSubscription(event, eventAt, () => ({
+        entitled: false,
+        ended: true,
+      }));
     default:
       logger.info({ type: event.type }, "Unhandled Stripe webhook event type");
   }
 }
 
 /**
- * Applies one verified Stripe event at most once. The event id is claimed
- * atomically before handling and released if handling throws, so Stripe's
- * retry of a failed event is processed. Tier writes carry the event's
- * `created` time, so an older delivery never overwrites a newer state.
+ * Applies one verified Stripe event. Its id is recorded only after handling
+ * succeeded, so a crash mid-handling leaves it for Stripe's retry; handling
+ * is idempotent (per-subscription state with event-time ordering), so a
+ * concurrent duplicate delivery that slips past the check is harmless.
  */
 export async function processStripeEvent(
   event: Stripe.Event,
@@ -147,25 +153,14 @@ export async function processStripeEvent(
     return "invalid";
   }
   const { id, type, created } = envelope.data;
-  if (!(await stripeEventRepository.claim(id, type))) {
+  if (await stripeEventRepository.isProcessed(id)) {
     logger.info(
       { eventId: id, type },
       "Duplicate Stripe webhook event skipped",
     );
     return "duplicate";
   }
-  try {
-    await dispatch(event, new Date(created * 1000));
-  } catch (err) {
-    await stripeEventRepository
-      .release(id)
-      .catch((releaseErr: unknown) =>
-        logger.error(
-          { err: releaseErr, eventId: id },
-          "Failed to release Stripe event claim",
-        ),
-      );
-    throw err;
-  }
+  await dispatch(event, new Date(created * 1000));
+  await stripeEventRepository.markProcessed(id, type);
   return "processed";
 }

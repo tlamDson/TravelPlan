@@ -11,7 +11,7 @@ export const stripeEventEnvelopeSchema = z.object({
   created: z.number().int().positive(),
 });
 
-const customerSchema = z
+const expandableIdSchema = z
   .union([z.string(), z.object({ id: z.string() })])
   .nullish();
 
@@ -20,7 +20,8 @@ const metadataSchema = z.record(z.string(), z.string()).nullish();
 export const checkoutSessionSchema = z.object({
   id: z.string().min(1),
   payment_status: z.enum(["paid", "unpaid", "no_payment_required"]),
-  customer: customerSchema,
+  customer: expandableIdSchema,
+  subscription: expandableIdSchema,
   metadata: metadataSchema,
 });
 
@@ -36,7 +37,7 @@ export const subscriptionSchema = z.object({
     "incomplete",
     "incomplete_expired",
   ]),
-  customer: customerSchema,
+  customer: expandableIdSchema,
   metadata: metadataSchema,
 });
 

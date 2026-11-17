@@ -1,28 +1,23 @@
 import StripeEvent from "../models/StripeEvent";
 
 export const stripeEventRepository = {
+  async isProcessed(eventId: string): Promise<boolean> {
+    return (await StripeEvent.exists({ eventId })) !== null;
+  },
+
   /**
-   * Atomically claims an event id: true for the first caller, false when
-   * the id is already claimed (redelivery or a concurrent duplicate). The
-   * unique index on eventId makes the upsert race-safe.
+   * Records an event id after its handling succeeded. Idempotent: a
+   * concurrent duplicate that also finished is not an error.
    */
-  async claim(eventId: string, type: string): Promise<boolean> {
+  async markProcessed(eventId: string, type: string): Promise<void> {
     try {
-      const result = await StripeEvent.updateOne(
+      await StripeEvent.updateOne(
         { eventId },
         { $setOnInsert: { eventId, type } },
         { upsert: true },
       );
-      return result.upsertedCount === 1;
     } catch (err) {
-      // Two concurrent upserts of one id: the loser gets a duplicate key.
-      if ((err as { code?: number }).code === 11000) return false;
-      throw err;
+      if ((err as { code?: number }).code !== 11000) throw err;
     }
-  },
-
-  /** Drops a claim so Stripe's retry of a failed event is processed. */
-  async release(eventId: string): Promise<void> {
-    await StripeEvent.deleteOne({ eventId });
   },
 };
