@@ -19,7 +19,7 @@ const configSource = readFileSync(
 );
 
 function timeoutOf(key: "testTimeout" | "hookTimeout"): number {
-  const match = new RegExp(`${key}:\s*([\d_]+)`).exec(configSource);
+  const match = new RegExp(String.raw`${key}:\s*([\d_]+)`).exec(configSource);
   return match ? Number(match[1]!.replace(/_/g, "")) : 0;
 }
 
