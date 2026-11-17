@@ -25,6 +25,16 @@ vi.mock("rate-limit-redis", () => {
   return { default: FakeStore };
 });
 
+// Signed-in identity comes from a test header instead of a real Clerk token.
+vi.mock("@clerk/express", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@clerk/express")>()),
+  clerkMiddleware: () => (req: any, _res: any, next: any) => {
+    const userId = req.headers["x-test-user-id"];
+    req.auth = () => ({ userId: typeof userId === "string" ? userId : null });
+    next();
+  },
+}));
+
 vi.mock("../lib/queue", () => ({
   redisConnection: { call: vi.fn() },
   createQueue: vi.fn(() => ({ add: vi.fn(), on: vi.fn() })),
@@ -58,5 +68,39 @@ describe("generalLimiter behind a reverse proxy", () => {
     expect(remaining(second)).toBe(GENERAL_RATE_LIMIT_MAX - 2);
     // A different client must start a fresh budget, not share the first one.
     expect(remaining(other)).toBe(GENERAL_RATE_LIMIT_MAX - 1);
+  });
+
+  it("keys signed-in users by user id, not IP: same IP, different users get separate buckets", async () => {
+    const ip = "203.0.113.50";
+    const a1 = await request(app)
+      .get("/")
+      .set("X-Forwarded-For", ip)
+      .set("x-test-user-id", "user_a");
+    const a2 = await request(app)
+      .get("/")
+      .set("X-Forwarded-For", ip)
+      .set("x-test-user-id", "user_a");
+    const b1 = await request(app)
+      .get("/")
+      .set("X-Forwarded-For", ip)
+      .set("x-test-user-id", "user_b");
+
+    expect(remaining(a1)).toBe(GENERAL_RATE_LIMIT_MAX - 1);
+    expect(remaining(a2)).toBe(GENERAL_RATE_LIMIT_MAX - 2);
+    expect(remaining(b1)).toBe(GENERAL_RATE_LIMIT_MAX - 1);
+  });
+
+  it("keeps one signed-in user in one bucket across different IPs", async () => {
+    const first = await request(app)
+      .get("/")
+      .set("X-Forwarded-For", "192.0.2.1")
+      .set("x-test-user-id", "user_roamer");
+    const second = await request(app)
+      .get("/")
+      .set("X-Forwarded-For", "192.0.2.2")
+      .set("x-test-user-id", "user_roamer");
+
+    expect(remaining(first)).toBe(GENERAL_RATE_LIMIT_MAX - 1);
+    expect(remaining(second)).toBe(GENERAL_RATE_LIMIT_MAX - 2);
   });
 });
