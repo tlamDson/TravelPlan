@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type Stripe from "stripe";
 
 // STRIPE_SECRET_KEY is set to a dummy value globally in vitest.config.ts —
 // override it per-test via vi.stubEnv so we can exercise the "not
@@ -44,7 +45,8 @@ describe("stripe.service — createCheckoutSession", () => {
 
     await createCheckoutSession("user_abc");
 
-    const params = create.mock.calls[0][0]!;
+    const params = create.mock
+      .calls[0]![0] as unknown as Stripe.Checkout.SessionCreateParams;
     expect(params.metadata).toEqual({ userId: "user_abc" });
     expect(params.subscription_data?.metadata).toEqual({ userId: "user_abc" });
   });
