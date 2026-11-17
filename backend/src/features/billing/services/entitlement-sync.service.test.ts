@@ -1,7 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { syncSubscriptionEntitlement } from "./entitlement-sync.service";
 import { userRepository } from "../../user/repositories/user.repository";
+import {
+  fetchCustomerEntitlements,
+  fetchSubscriptionEntitlement,
+} from "./stripe-subscriptions.service";
 
+vi.mock("./stripe-subscriptions.service", () => ({
+  fetchCustomerEntitlements: vi.fn(),
+  fetchSubscriptionEntitlement: vi.fn(),
+}));
 vi.mock("../../user/repositories/user.repository", () => ({
   userRepository: {
     findStripeBillingState: vi.fn(),
@@ -45,18 +53,140 @@ describe("entitlement-sync.service — syncSubscriptionEntitlement", () => {
     );
   });
 
-  it("downgrades a pre-existing PRO user with no recorded subscriptions when theirs ends", async () => {
+  it("downgrades a pre-existing PRO user with no recorded subscriptions and no customer id when theirs ends", async () => {
     vi.mocked(userRepository.findStripeBillingState).mockResolvedValue({
       tier: "pro",
     });
 
     await syncSubscriptionEntitlement("u1", endA);
 
+    expect(fetchCustomerEntitlements).not.toHaveBeenCalled();
     expect(userRepository.saveStripeBillingState).toHaveBeenCalledWith(
       "u1",
       undefined,
       { tier: "free", stripeSubscriptions: [endA] },
     );
+  });
+
+  it("seeds a pre-existing PRO user's subscriptions from Stripe, so another subscription ending keeps the paid one", async () => {
+    const legacy = {
+      subscriptionId: "sub_legacy",
+      entitled: true,
+      ended: false,
+      eventAt: at(3600),
+    };
+    vi.mocked(userRepository.findStripeBillingState).mockResolvedValue({
+      tier: "pro",
+      stripeCustomerId: "cus_old",
+    });
+    vi.mocked(fetchCustomerEntitlements).mockResolvedValue([legacy]);
+
+    await syncSubscriptionEntitlement("u1", endA);
+
+    expect(fetchCustomerEntitlements).toHaveBeenCalledWith(
+      "cus_old",
+      expect.any(Date),
+    );
+    expect(userRepository.saveStripeBillingState).toHaveBeenCalledWith(
+      "u1",
+      undefined,
+      { tier: "pro", stripeSubscriptions: [legacy, endA] },
+    );
+  });
+
+  it("prefers the event's customer id when seeding a pre-existing PRO user", async () => {
+    vi.mocked(userRepository.findStripeBillingState).mockResolvedValue({
+      tier: "pro",
+      stripeCustomerId: "cus_old",
+    });
+    vi.mocked(fetchCustomerEntitlements).mockResolvedValue([]);
+
+    await syncSubscriptionEntitlement("u1", grantA, "cus_evt");
+
+    expect(fetchCustomerEntitlements).toHaveBeenCalledWith(
+      "cus_evt",
+      expect.any(Date),
+    );
+  });
+
+  it("saves the Stripe seed even when the event itself is older than it", async () => {
+    const live = { ...grantA, eventAt: at(3600) };
+    vi.mocked(userRepository.findStripeBillingState).mockResolvedValue({
+      tier: "pro",
+      stripeCustomerId: "cus_old",
+    });
+    vi.mocked(fetchCustomerEntitlements).mockResolvedValue([live]);
+
+    const outcome = await syncSubscriptionEntitlement("u1", {
+      ...grantA,
+      entitled: false,
+    });
+
+    expect(outcome).toBe("applied");
+    expect(userRepository.saveStripeBillingState).toHaveBeenCalledWith(
+      "u1",
+      undefined,
+      { tier: "pro", stripeSubscriptions: [live] },
+    );
+  });
+
+  it("does not ask Stripe once the user has recorded subscriptions", async () => {
+    vi.mocked(userRepository.findStripeBillingState).mockResolvedValue({
+      tier: "pro",
+      stripeCustomerId: "cus_old",
+      stripeSubscriptions: [grantA],
+      stripeBillingRev: 1,
+    });
+
+    await syncSubscriptionEntitlement("u1", endA);
+
+    expect(fetchCustomerEntitlements).not.toHaveBeenCalled();
+    expect(fetchSubscriptionEntitlement).not.toHaveBeenCalled();
+  });
+
+  it("settles a same-second recovery with the subscription's live status", async () => {
+    const pastDue = { ...grantA, entitled: false, eventAt: at(5) };
+    const recovered = { ...grantA, eventAt: at(5) };
+    vi.mocked(userRepository.findStripeBillingState).mockResolvedValue({
+      tier: "free",
+      stripeSubscriptions: [pastDue],
+      stripeBillingRev: 4,
+    });
+    vi.mocked(fetchSubscriptionEntitlement).mockResolvedValue({
+      entitled: true,
+      ended: false,
+    });
+
+    const outcome = await syncSubscriptionEntitlement("u1", recovered);
+
+    expect(outcome).toBe("applied");
+    expect(fetchSubscriptionEntitlement).toHaveBeenCalledWith("sub_a");
+    expect(userRepository.saveStripeBillingState).toHaveBeenCalledWith(
+      "u1",
+      4,
+      { tier: "pro", stripeSubscriptions: [recovered] },
+    );
+  });
+
+  it("keeps the revocation when the live status confirms it on a same-second tie", async () => {
+    const pastDue = { ...grantA, entitled: false, eventAt: at(5) };
+    vi.mocked(userRepository.findStripeBillingState).mockResolvedValue({
+      tier: "free",
+      stripeSubscriptions: [pastDue],
+      stripeBillingRev: 4,
+    });
+    vi.mocked(fetchSubscriptionEntitlement).mockResolvedValue({
+      entitled: false,
+      ended: false,
+    });
+
+    const outcome = await syncSubscriptionEntitlement("u1", {
+      ...grantA,
+      eventAt: at(5),
+    });
+
+    expect(outcome).toBe("unchanged");
+    expect(userRepository.saveStripeBillingState).not.toHaveBeenCalled();
   });
 
   it("keeps PRO when an older subscription ends while a newer one is active", async () => {

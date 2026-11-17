@@ -92,6 +92,7 @@ describe("webhook-event.service — processStripeEvent", () => {
       expect(syncSubscriptionEntitlement).toHaveBeenCalledWith(
         "user_1",
         change(false, false),
+        "cus_test_1",
       );
     },
   );
@@ -106,6 +107,7 @@ describe("webhook-event.service — processStripeEvent", () => {
       expect(syncSubscriptionEntitlement).toHaveBeenCalledWith(
         "user_1",
         change(false, true),
+        "cus_test_1",
       );
     },
   );
@@ -120,6 +122,7 @@ describe("webhook-event.service — processStripeEvent", () => {
       expect(syncSubscriptionEntitlement).toHaveBeenCalledWith(
         "user_1",
         change(true, false),
+        "cus_test_1",
       );
     },
   );
@@ -142,6 +145,7 @@ describe("webhook-event.service — processStripeEvent", () => {
     expect(syncSubscriptionEntitlement).toHaveBeenCalledWith(
       "user_1",
       change(false, true, new Date((DEFAULT_CREATED + 60) * 1000)),
+      "cus_test_1",
     );
   });
 

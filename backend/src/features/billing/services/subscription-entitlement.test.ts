@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   applySubscriptionChange,
+  entitlementForStatus,
+  isConflictingTie,
   tierOf,
   type SubscriptionEntitlement,
 } from "./subscription-entitlement";
@@ -102,5 +104,56 @@ describe("subscription-entitlement — tierOf", () => {
   it("is free when no subscription is entitled", () => {
     expect(tierOf([entry("sub_a", false, 5)])).toBe("free");
     expect(tierOf([])).toBe("free");
+  });
+});
+
+describe("subscription-entitlement — same-second conflicts", () => {
+  it("flags a same-second change that flips a live subscription's entitlement", () => {
+    const stored = [entry("sub_a", false, 5)];
+    expect(isConflictingTie(stored, entry("sub_a", true, 5))).toBe(true);
+    expect(isConflictingTie(stored, entry("sub_a", true, 6))).toBe(false);
+    expect(isConflictingTie(stored, entry("sub_a", false, 5))).toBe(false);
+    expect(isConflictingTie(stored, entry("sub_b", true, 5))).toBe(false);
+    expect(
+      isConflictingTie(
+        [entry("sub_a", false, 5, true)],
+        entry("sub_a", true, 5),
+      ),
+    ).toBe(false);
+  });
+
+  it("applies a same-second recovery once the live status confirmed it", () => {
+    expect(
+      applySubscriptionChange(
+        [entry("sub_a", false, 5)],
+        entry("sub_a", true, 5),
+        { tieConfirmed: true },
+      ),
+    ).toEqual([entry("sub_a", true, 5)]);
+  });
+
+  it("still never re-grants an ended subscription, even when the tie is confirmed", () => {
+    expect(
+      applySubscriptionChange(
+        [entry("sub_a", false, 5, true)],
+        entry("sub_a", true, 5),
+        { tieConfirmed: true },
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("subscription-entitlement — entitlementForStatus", () => {
+  it.each([
+    ["active", { entitled: true, ended: false }],
+    ["trialing", { entitled: true, ended: false }],
+    ["past_due", { entitled: false, ended: false }],
+    ["unpaid", { entitled: false, ended: false }],
+    ["paused", { entitled: false, ended: false }],
+    ["canceled", { entitled: false, ended: true }],
+    ["incomplete_expired", { entitled: false, ended: true }],
+    ["incomplete", null],
+  ] as const)("maps %s", (status, expected) => {
+    expect(entitlementForStatus(status)).toEqual(expected);
   });
 });

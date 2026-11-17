@@ -143,12 +143,16 @@ describe("webhook.controller — handleStripeWebhook", () => {
     await handleStripeWebhook(signedReq(), res);
 
     expect(resolveSubscriptionOwner).toHaveBeenCalledWith(subscription);
-    expect(syncSubscriptionEntitlement).toHaveBeenCalledWith("u1", {
-      subscriptionId: "sub_1",
-      entitled: false,
-      ended: true,
-      eventAt: new Date(CREATED * 1000),
-    });
+    expect(syncSubscriptionEntitlement).toHaveBeenCalledWith(
+      "u1",
+      {
+        subscriptionId: "sub_1",
+        entitled: false,
+        ended: true,
+        eventAt: new Date(CREATED * 1000),
+      },
+      "cus_9",
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 

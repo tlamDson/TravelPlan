@@ -1,9 +1,20 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import Stripe from "stripe";
 import { createApp } from "../../app";
 import { seedUser } from "../integration-fixtures";
 import User from "../../features/user/models/User";
+import {
+  fetchCustomerEntitlements,
+  fetchSubscriptionEntitlement,
+} from "../../features/billing/services/stripe-subscriptions.service";
+
+// The only Stripe API reads in the webhook path (seeding pre-existing PRO
+// users, settling same-second ties); no network in integration tests.
+vi.mock("../../features/billing/services/stripe-subscriptions.service", () => ({
+  fetchCustomerEntitlements: vi.fn(),
+  fetchSubscriptionEntitlement: vi.fn(),
+}));
 
 const app = createApp();
 
@@ -87,6 +98,37 @@ function subscriptionDeletedForCustomer(
       },
     },
   });
+}
+
+function subscriptionUpdatedForCustomer(
+  customer: string,
+  status: Stripe.Subscription.Status,
+  created: number,
+  subscription: string,
+) {
+  return JSON.stringify({
+    id: `evt_test_sub_updated_${subscription}_${status}_${created}`,
+    object: "event",
+    created,
+    type: "customer.subscription.updated",
+    data: {
+      object: {
+        id: subscription,
+        object: "subscription",
+        status,
+        customer,
+        metadata: {},
+      },
+    },
+  });
+}
+
+function postSigned(payload: string) {
+  return request(app)
+    .post("/api/webhooks/stripe")
+    .set("Content-Type", "application/json")
+    .set("stripe-signature", sign(payload))
+    .send(payload);
 }
 
 function subscriptionDeletedEvent(userId: string) {
@@ -272,6 +314,63 @@ describe("POST /api/webhooks/stripe", () => {
     }
 
     const user = await User.findOne({ clerkUserId: "user-stripe-9" });
+    expect(user?.tier).toBe("pro");
+  });
+
+  it("keeps a pre-existing PRO user on PRO when another of their subscriptions is deleted", async () => {
+    await seedUser("user-stripe-10", { tier: "pro" });
+    await User.updateOne(
+      { clerkUserId: "user-stripe-10" },
+      { stripeCustomerId: "cus_test_10" },
+    );
+    vi.mocked(fetchCustomerEntitlements).mockResolvedValue([
+      {
+        subscriptionId: "sub_legacy_10",
+        entitled: true,
+        ended: false,
+        eventAt: new Date(),
+      },
+    ]);
+
+    const res = await postSigned(
+      subscriptionDeletedForCustomer("cus_test_10", T0, "sub_other_10"),
+    );
+
+    expect(res.status).toBe(200);
+    const user = await User.findOne({ clerkUserId: "user-stripe-10" });
+    expect(user?.tier).toBe("pro");
+  });
+
+  it("restores PRO when a subscription recovers from past_due in the same second", async () => {
+    await seedUser("user-stripe-11", { tier: "free" });
+    vi.mocked(fetchSubscriptionEntitlement).mockResolvedValue({
+      entitled: true,
+      ended: false,
+    });
+    const checkout = checkoutCompletedForCustomer(
+      "user-stripe-11",
+      "cus_test_11",
+      "sub_test_11",
+    );
+    for (const payload of [
+      checkout,
+      subscriptionUpdatedForCustomer(
+        "cus_test_11",
+        "past_due",
+        T0 + 60,
+        "sub_test_11",
+      ),
+      subscriptionUpdatedForCustomer(
+        "cus_test_11",
+        "active",
+        T0 + 60,
+        "sub_test_11",
+      ),
+    ]) {
+      expect((await postSigned(payload)).status).toBe(200);
+    }
+
+    const user = await User.findOne({ clerkUserId: "user-stripe-11" });
     expect(user?.tier).toBe("pro");
   });
 
