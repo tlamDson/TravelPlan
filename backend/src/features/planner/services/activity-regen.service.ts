@@ -37,6 +37,19 @@ function hasValidCoordinates(activity: any): boolean {
 }
 
 /**
+ * Removes the distance fields. `delete` is a no-op on Mongoose subdocuments
+ * (fields are prototype accessors), so unset through `.set()` when available.
+ */
+function clearDistance(activity: any): void {
+  if (typeof activity.set === "function") {
+    activity.set("distanceFromPrevious", undefined);
+    activity.set("requiresTransport", undefined);
+  }
+  delete activity.distanceFromPrevious;
+  delete activity.requiresTransport;
+}
+
+/**
  * Recalculates distanceFromPrevious and requiresTransport for every activity
  * in a day after an insertion/replacement. Mutates the array in-place.
  */
@@ -46,9 +59,7 @@ export function recalcDayDistances(
 ): void {
   // First activity has no "previous" — clear any stale distance from a prior position
   if (activities.length > 0) {
-    const first = activities[0] as any;
-    delete first.distanceFromPrevious;
-    delete first.requiresTransport;
+    clearDistance(activities[0]);
   }
 
   for (let i = 1; i < activities.length; i++) {
@@ -65,8 +76,7 @@ export function recalcDayDistances(
       curr.requiresTransport = result.requiresTransport;
     } else {
       // Clear stale distance data if coordinates are missing
-      delete curr.distanceFromPrevious;
-      delete curr.requiresTransport;
+      clearDistance(curr);
     }
   }
 }
