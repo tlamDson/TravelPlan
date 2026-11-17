@@ -41,9 +41,7 @@ describe("subscription-owner.service — resolveSubscriptionOwner", () => {
 
     const owner = await resolveSubscriptionOwner(sub({ customer: "cus_2" }));
 
-    expect(userRepository.findByStripeCustomerId).toHaveBeenCalledWith(
-      "cus_2",
-    );
+    expect(userRepository.findByStripeCustomerId).toHaveBeenCalledWith("cus_2");
     expect(owner).toBe("user_db");
     expect(listSessions).not.toHaveBeenCalled();
   });
@@ -57,9 +55,7 @@ describe("subscription-owner.service — resolveSubscriptionOwner", () => {
       sub({ customer: { id: "cus_3" } as Stripe.Customer }),
     );
 
-    expect(userRepository.findByStripeCustomerId).toHaveBeenCalledWith(
-      "cus_3",
-    );
+    expect(userRepository.findByStripeCustomerId).toHaveBeenCalledWith("cus_3");
   });
 
   it("falls back to the customer's checkout session metadata for subscribers that predate the stored customer id", async () => {

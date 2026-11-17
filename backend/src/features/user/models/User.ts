@@ -9,6 +9,7 @@ export interface IUser extends Document {
   gender: string;
   dateOfBirth: Date;
   tier: "free" | "pro";
+  stripeCustomerId?: string;
   credits: number;
   quotaResetsAt?: Date;
   preferences: {
@@ -77,6 +78,13 @@ const UserSchema = new Schema<IUser>(
       type: Number,
       default: 0,
       min: 0,
+    },
+    // Set on checkout.session.completed; lets customer.subscription.deleted
+    // find the user when the subscription carries no metadata.userId.
+    stripeCustomerId: {
+      type: String,
+      index: true,
+      sparse: true,
     },
     quotaResetsAt: {
       type: Date,
