@@ -20,6 +20,7 @@
     "seed:eval-corpus": "tsx scripts/seed-eval-corpus.ts",
     "seed:experiments": "tsx scripts/seed-experiments.ts",
     "ensure:vector-index": "tsx scripts/ensure-vector-index.ts",
+    "migrate:idempotency-index": "tsx scripts/migrate-idempotency-index.ts",
     "check:services": "tsx scripts/check-services.ts",
     "seed:job-metrics": "tsx scripts/seed-job-metrics.ts",
     "seed:real-trip-jobs": "tsx scripts/seed-real-trip-jobs.ts",

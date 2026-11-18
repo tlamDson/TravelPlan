@@ -18,7 +18,7 @@ function isNotPending(this: IIdempotencyLog): boolean {
 
 const IdempotencyLogSchema = new Schema<IIdempotencyLog>(
   {
-    key: { type: String, required: true, unique: true, index: true },
+    key: { type: String, required: true },
     userId: { type: String, required: true, index: true },
     status: { type: String, enum: ["pending", "completed"] },
     reservationToken: { type: String },
@@ -28,6 +28,10 @@ const IdempotencyLogSchema = new Schema<IIdempotencyLog>(
   },
   { timestamps: true },
 );
+
+// A key is unique per user, never across users. The legacy key-only unique
+// index is removed by scripts/migrate-idempotency-index.ts, not on boot.
+IdempotencyLogSchema.index({ userId: 1, key: 1 }, { unique: true });
 
 // Auto-delete after 24h
 IdempotencyLogSchema.index(
