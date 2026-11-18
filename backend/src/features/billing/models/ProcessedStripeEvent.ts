@@ -1,36 +1,26 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export type ProcessedStripeEventStatus = "processing" | "done";
-
+/**
+ * A Stripe event whose handler already succeeded. Written only after success,
+ * so a failed delivery leaves no record and Stripe's retry is processed again.
+ */
 export interface IProcessedStripeEvent extends Document {
   eventId: string;
-  /** `processing` = a delivery holds the claim; `done` = side effect applied. */
-  status: ProcessedStripeEventStatus;
-  /** Lease end while `processing`; an expired lease may be taken over. */
-  lockedUntil: Date;
-  createdAt: Date;
+  /** When the handler succeeded; the TTL counts from here. */
+  processedAt: Date;
 }
 
 /** Stripe retries a failed delivery for up to 3 days; keep ids well past that. */
 export const PROCESSED_STRIPE_EVENT_TTL_SECONDS = 60 * 60 * 24 * 30;
 
-const ProcessedStripeEventSchema = new Schema<IProcessedStripeEvent>(
-  {
-    eventId: { type: String, required: true },
-    status: {
-      type: String,
-      enum: ["processing", "done"],
-      required: true,
-      default: "processing",
-    },
-    lockedUntil: { type: Date, required: true },
-  },
-  { timestamps: { createdAt: true, updatedAt: false } },
-);
+const ProcessedStripeEventSchema = new Schema<IProcessedStripeEvent>({
+  eventId: { type: String, required: true },
+  processedAt: { type: Date, required: true },
+});
 
 ProcessedStripeEventSchema.index({ eventId: 1 }, { unique: true });
 ProcessedStripeEventSchema.index(
-  { createdAt: 1 },
+  { processedAt: 1 },
   { expireAfterSeconds: PROCESSED_STRIPE_EVENT_TTL_SECONDS },
 );
 

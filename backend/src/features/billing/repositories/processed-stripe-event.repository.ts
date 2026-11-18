@@ -1,50 +1,26 @@
 import ProcessedStripeEvent from "../models/ProcessedStripeEvent";
 
 const DUPLICATE_KEY_ERROR = 11000;
-/** Longer than any handler run; a crashed worker's claim expires after this. */
-const CLAIM_LEASE_MS = 60_000;
-
-export type ClaimResult = "claimed" | "duplicate" | "in_flight";
 
 export class ProcessedStripeEventRepository {
+  async isProcessed(eventId: string): Promise<boolean> {
+    return (await ProcessedStripeEvent.exists({ eventId })) !== null;
+  }
+
   /**
-   * Atomically claim an event for processing. The unique index on `eventId`
-   * guarantees only one of several simultaneous callers gets "claimed".
+   * Record a successfully handled event. Idempotent: a repeat keeps the first
+   * processedAt, and a concurrent upsert losing the unique-index race is fine.
    */
-  async claim(eventId: string): Promise<ClaimResult> {
-    const lockedUntil = new Date(Date.now() + CLAIM_LEASE_MS);
+  async markProcessed(eventId: string): Promise<void> {
     try {
-      await ProcessedStripeEvent.create({
-        eventId,
-        status: "processing",
-        lockedUntil,
-      });
-      return "claimed";
+      await ProcessedStripeEvent.updateOne(
+        { eventId },
+        { $setOnInsert: { eventId, processedAt: new Date() } },
+        { upsert: true },
+      );
     } catch (err: any) {
       if (err?.code !== DUPLICATE_KEY_ERROR) throw err;
     }
-
-    // Take over only a claim whose lease expired (the worker crashed).
-    const takenOver = await ProcessedStripeEvent.findOneAndUpdate(
-      { eventId, status: "processing", lockedUntil: { $lt: new Date() } },
-      { lockedUntil },
-    );
-    if (takenOver) return "claimed";
-
-    const existing = await ProcessedStripeEvent.findOne({ eventId });
-    // Released between the failed insert and now: let the caller retry.
-    if (!existing) return "in_flight";
-    return existing.status === "done" ? "duplicate" : "in_flight";
-  }
-
-  /** Handler succeeded: keep the id so replays are ignored until the TTL. */
-  async complete(eventId: string): Promise<void> {
-    await ProcessedStripeEvent.updateOne({ eventId }, { status: "done" });
-  }
-
-  /** Handler failed: free the id so Stripe's retry is processed again. */
-  async release(eventId: string): Promise<void> {
-    await ProcessedStripeEvent.deleteOne({ eventId, status: "processing" });
   }
 }
 

@@ -22,7 +22,7 @@ describe("processedStripeEventRepository (real Mongo)", () => {
 
     const docs = await ProcessedStripeEvent.find({ eventId: "evt_race" });
     expect(docs).toHaveLength(1);
-    expect(docs[0].processedAt).toBeInstanceOf(Date);
-    expect(docs[0].processedAt.getTime()).toBe(first?.processedAt.getTime());
+    expect(docs[0]?.processedAt).toBeInstanceOf(Date);
+    expect(docs[0]?.processedAt.getTime()).toBe(first?.processedAt.getTime());
   });
 });
