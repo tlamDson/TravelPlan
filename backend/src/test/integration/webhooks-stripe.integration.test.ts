@@ -29,6 +29,7 @@ function checkoutCompletedEvent(userId: string) {
       object: {
         id: "cs_test_1",
         object: "checkout.session",
+        payment_status: "paid",
         metadata: { userId },
       },
     },
@@ -45,6 +46,7 @@ function checkoutCompletedForCustomer(userId: string, customer: string) {
         id: "cs_test_3",
         object: "checkout.session",
         customer,
+        payment_status: "paid",
         metadata: { userId },
       },
     },
