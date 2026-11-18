@@ -59,17 +59,18 @@ export function HeroSection() {
       <div className="container mx-auto px-4 relative z-20">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-            Plan Your Perfect Journey with{" "}
-            <span className="text-primary">AI</span>
+            {t("landing.hero.title")}{" "}
+            <span className="text-primary">
+              {t("landing.hero.titleHighlight")}
+            </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Intelligent travel planning powered by AI. Create itineraries,
-            discover hidden gems, and manage your budget—all in one place.
+            {t("landing.hero.subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/signup">
               <Button size="lg">
-                Get Started Free
+                {t("landing.cta.getStarted")}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
