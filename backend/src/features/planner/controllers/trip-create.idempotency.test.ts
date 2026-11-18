@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 type Doc = Record<string, unknown>;
 const store = new Map<string, Doc>();
@@ -32,10 +32,10 @@ vi.mock("../../user/models/IdempotencyLog", () => {
       }),
       deleteOne: vi.fn(async (filter: Doc) => {
         const doc = store.get(filter.key as string);
-        if (doc && (!filter.status || doc.status === filter.status)) {
-          store.delete(filter.key as string);
-        }
-        return { deletedCount: 1 };
+        const matches =
+          doc && Object.entries(filter).every(([k, v]) => doc[k] === v);
+        if (matches) store.delete(filter.key as string);
+        return { deletedCount: matches ? 1 : 0 };
       }),
     },
   };
@@ -244,5 +244,93 @@ describe("generateTrip idempotency reservation", () => {
 
     expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(503);
+  });
+  describe("when cleaning up a reservation fails", () => {
+    const model = async () =>
+      (await import("../../user/models/IdempotencyLog")).default as any;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("retries the release so a same-key retry can enqueue", async () => {
+      const IdempotencyLog = await model();
+      IdempotencyLog.deleteOne.mockRejectedValueOnce(new Error("mongo blip"));
+      vi.mocked(plannerService.createTripGenerationJob)
+        .mockRejectedValueOnce(new Error("connect ECONNREFUSED"))
+        .mockResolvedValueOnce({ tripId: "trip-2", jobId: "job-2" } as any);
+
+      await generateTrip(makeReq(), makeRes());
+      expect(store.has(KEY)).toBe(true);
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(store.has(KEY)).toBe(false);
+
+      const retry = makeRes();
+      await generateTrip(makeReq(), retry);
+      expect(retry.status).toHaveBeenCalledWith(202);
+    });
+
+    it("removes its own reservation when the reservation write errored but landed", async () => {
+      const IdempotencyLog = await model();
+      IdempotencyLog.create.mockImplementationOnce(async (doc: Doc) => {
+        store.set(doc.key as string, { ...doc });
+        throw new Error("socket timeout after write");
+      });
+      vi.mocked(plannerService.createTripGenerationJob).mockResolvedValue({
+        tripId: "trip-1",
+        jobId: "job-1",
+      } as any);
+
+      const first = makeRes();
+      await generateTrip(makeReq(), first);
+      expect(first.status).toHaveBeenCalledWith(503);
+      expect(store.has(KEY)).toBe(false);
+
+      const retry = makeRes();
+      await generateTrip(makeReq(), retry);
+      expect(retry.status).toHaveBeenCalledWith(202);
+      expect(plannerService.createTripGenerationJob).toHaveBeenCalledTimes(1);
+    });
+
+    it("never removes a reservation held by another request", async () => {
+      store.set(KEY, {
+        key: KEY,
+        userId: "user_1",
+        status: "pending",
+        reservationToken: "other-request",
+      });
+      const IdempotencyLog = await model();
+      IdempotencyLog.create.mockRejectedValueOnce(new Error("socket timeout"));
+
+      const res = makeRes();
+      await generateTrip(makeReq(), res);
+      await vi.advanceTimersByTimeAsync(300_000);
+
+      expect(res.status).toHaveBeenCalledWith(503);
+      expect(store.get(KEY)).toMatchObject({
+        reservationToken: "other-request",
+      });
+      expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
+    });
+
+    it("retries completing the reservation so a retry gets the stored job", async () => {
+      const IdempotencyLog = await model();
+      IdempotencyLog.updateOne.mockRejectedValueOnce(new Error("mongo blip"));
+      vi.mocked(plannerService.createTripGenerationJob).mockResolvedValue({
+        tripId: "trip-1",
+        jobId: "job-1",
+      } as any);
+
+      await generateTrip(makeReq(), makeRes());
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      const retry = makeRes();
+      await generateTrip(makeReq(), retry);
+      expect(retry.status).toHaveBeenCalledWith(200);
+      expect(plannerService.createTripGenerationJob).toHaveBeenCalledTimes(1);
+    });
   });
 });
