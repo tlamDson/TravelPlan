@@ -16,9 +16,18 @@ export const idempotencyLogRepository = {
    * Atomically claim `key` (the unique index decides the winner). A duplicate
    * returns the stored record instead of throwing.
    */
-  async reserve(key: string, userId: string): Promise<Reservation> {
+  async reserve(
+    key: string,
+    userId: string,
+    reservationToken: string,
+  ): Promise<Reservation> {
     try {
-      await IdempotencyLog.create({ key, userId, status: "pending" });
+      await IdempotencyLog.create({
+        key,
+        userId,
+        status: "pending",
+        reservationToken,
+      });
       return { reserved: true };
     } catch (err) {
       if ((err as { code?: number }).code !== DUPLICATE_KEY) throw err;
@@ -47,8 +56,20 @@ export const idempotencyLogRepository = {
     );
   },
 
-  /** Drop a still-pending reservation so a retry can enqueue. */
-  async release(key: string, userId: string): Promise<void> {
-    await IdempotencyLog.deleteOne({ key, userId, status: "pending" });
+  /**
+   * Drop a still-pending reservation so a retry can enqueue. The token makes
+   * sure only the request that wrote the reservation can remove it.
+   */
+  async release(
+    key: string,
+    userId: string,
+    reservationToken: string,
+  ): Promise<void> {
+    await IdempotencyLog.deleteOne({
+      key,
+      userId,
+      status: "pending",
+      reservationToken,
+    });
   },
 };

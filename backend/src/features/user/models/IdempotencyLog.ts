@@ -5,6 +5,8 @@ export interface IIdempotencyLog extends Document {
   userId: string;
   /** Absent on records written before reservations existed = completed. */
   status?: "pending" | "completed";
+  /** Identifies the request that wrote a reservation, so only it releases it. */
+  reservationToken?: string;
   tripId?: string;
   jobId?: string;
   createdAt: Date;
@@ -19,6 +21,7 @@ const IdempotencyLogSchema = new Schema<IIdempotencyLog>(
     key: { type: String, required: true, unique: true, index: true },
     userId: { type: String, required: true, index: true },
     status: { type: String, enum: ["pending", "completed"] },
+    reservationToken: { type: String },
     // Unknown until the job is enqueued, so only required once completed.
     tripId: { type: String, required: isNotPending },
     jobId: { type: String, required: isNotPending },

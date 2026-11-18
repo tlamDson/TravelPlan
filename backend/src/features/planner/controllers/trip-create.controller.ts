@@ -7,6 +7,8 @@ import { logger } from "../../../lib/logger";
 import { userQuotaService } from "../services/user-quota.service";
 import { userRepository } from "../../user/repositories/user.repository";
 import { idempotencyLogRepository } from "../../user/repositories/idempotency-log.repository";
+import { retryInBackground } from "../../../lib/retry-in-background";
+import { randomUUID } from "node:crypto";
 
 /**
  * POST /api/trips - Generate new trip
@@ -58,11 +60,27 @@ export const generateTrip = async (
     const user = await userRepository.findByClerkId(userId);
 
     // Reserve the key first so a concurrent duplicate can never enqueue twice.
+    const reservationToken = randomUUID();
+    const releaseReservation = (key: string) =>
+      retryInBackground(
+        () => idempotencyLogRepository.release(key, userId, reservationToken),
+        "Release idempotency reservation",
+      );
+    const completeReservation = (
+      key: string,
+      ids: { tripId: string; jobId: string },
+    ) =>
+      retryInBackground(
+        () =>
+          idempotencyLogRepository.complete(key, userId, ids.tripId, ids.jobId),
+        "Complete idempotency reservation",
+      );
     if (idempotencyKey) {
       try {
         const reservation = await idempotencyLogRepository.reserve(
           idempotencyKey,
           userId,
+          reservationToken,
         );
         if (!reservation.reserved) {
           const { existing } = reservation;
@@ -87,6 +105,9 @@ export const generateTrip = async (
         // Fail closed: without a reservation a concurrent duplicate could
         // enqueue a second job, so never enqueue on an unknown outcome.
         logger.error({ err }, "Idempotency reservation failed");
+        // The write may still have landed; remove it (only if it is ours) so
+        // a retry is not answered 409 until the TTL.
+        await releaseReservation(idempotencyKey);
         res.status(503).json({
           success: false,
           message: "Could not reserve the idempotency key, retry later",
@@ -108,28 +129,17 @@ export const generateTrip = async (
       if (idempotencyKey) {
         // A job that is already queued must keep the key: releasing it would
         // let a retry enqueue a second job.
-        const settle =
-          error instanceof JobEnqueuedError
-            ? idempotencyLogRepository.complete(
-                idempotencyKey,
-                userId,
-                error.tripId,
-                error.jobId,
-              )
-            : idempotencyLogRepository.release(idempotencyKey, userId);
-        await settle.catch((err) =>
-          logger.warn({ err }, "Failed to settle idempotency reservation"),
-        );
+        if (error instanceof JobEnqueuedError) {
+          await completeReservation(idempotencyKey, error);
+        } else {
+          await releaseReservation(idempotencyKey);
+        }
       }
       throw error;
     }
 
     if (idempotencyKey) {
-      await idempotencyLogRepository
-        .complete(idempotencyKey, userId, result.tripId, result.jobId)
-        .catch((err) =>
-          logger.error({ err }, "Failed to complete idempotency reservation"),
-        );
+      await completeReservation(idempotencyKey, result);
     }
 
     res.status(202).json({
