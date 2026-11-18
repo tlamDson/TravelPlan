@@ -4,6 +4,7 @@ import { env } from "../../../config/env";
 import { userRepository } from "../../user/repositories/user.repository";
 import { logger } from "../../../lib/logger";
 import { getStripe } from "../services/stripe.service";
+import { processedStripeEventRepository } from "../repositories/processed-stripe-event.repository";
 import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
 
 export const handleStripeWebhook = async (
@@ -45,6 +46,15 @@ export const handleStripeWebhook = async (
   }
 
   try {
+    if (await processedStripeEventRepository.has(event.id)) {
+      logger.info(
+        { eventId: event.id, type: event.type },
+        "Duplicate Stripe webhook event ignored",
+      );
+      res.json({ received: true });
+      return;
+    }
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -96,6 +106,9 @@ export const handleStripeWebhook = async (
           "Unhandled Stripe webhook event type",
         );
     }
+
+    // Record only after the handler succeeded, so a failed one is retried.
+    await processedStripeEventRepository.record(event.id);
 
     res.json({ received: true });
   } catch (err: any) {
