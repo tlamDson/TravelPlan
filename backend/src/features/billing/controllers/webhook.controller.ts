@@ -6,6 +6,10 @@ import { logger } from "../../../lib/logger";
 import { getStripe } from "../services/stripe.service";
 import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
 
+const isPaymentSettled = (session: Stripe.Checkout.Session): boolean =>
+  session.payment_status === "paid" ||
+  session.payment_status === "no_payment_required";
+
 export const handleStripeWebhook = async (
   req: Request,
   res: Response,
@@ -46,8 +50,23 @@ export const handleStripeWebhook = async (
 
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
+        // `completed` also fires for delayed payment methods before the money
+        // has landed; only grant PRO once the payment is settled. Never
+        // downgrade here: an unsettled session just leaves the tier alone.
+        if (!isPaymentSettled(session)) {
+          logger.info(
+            {
+              sessionId: session.id,
+              type: event.type,
+              paymentStatus: session.payment_status,
+            },
+            "Checkout session not paid yet; PRO not granted",
+          );
+          break;
+        }
         // The ID of the user should be passed during checkout session creation
         const userId = session.metadata?.userId;
 
@@ -70,6 +89,14 @@ export const handleStripeWebhook = async (
             "Checkout session completed but missing userId in metadata",
           );
         }
+        break;
+      }
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        logger.warn(
+          { sessionId: session.id },
+          "Checkout async payment failed; PRO not granted",
+        );
         break;
       }
       case "customer.subscription.deleted": {
