@@ -1,4 +1,4 @@
-"""The root README quotes only runs.csv numbers in its results table and charts."""
+"""The root README quotes only runs.csv numbers in its results table and has no Mermaid."""
 
 import csv
 import re
@@ -9,14 +9,40 @@ import pytest
 
 from abkit.runs import RUNS_CSV_PATH
 
-README = Path(__file__).resolve().parents[3] / "README.md"
+ROOT = Path(__file__).resolve().parents[3]
+README = ROOT / "README.md"
+ARCHITECTURE_SVG = ROOT / ".github" / "readme" / "architecture.svg"
+RESULTS_HEADING = "## Results at a glance"
+RESULTS_HEADER = ["What was tested", "Result", "Why it matters"]
 
 # A number, optionally with a "k" (thousands) suffix; "log1p" or "A/A" hold no number.
 NUMBER = re.compile(r"(?<![A-Za-z0-9_.])-?\d[\d,]*(?:\.\d+)?k?(?![A-Za-z0-9_])")
-METRIC = re.compile(r"`([a-z0-9_\-]+)`")
-MERMAID = re.compile(r"```mermaid\n(.*?)```", re.S)
-Y_RANGE = re.compile(r"-?\d+(?:\.\d+)?\s*-->\s*-?\d+(?:\.\d+)?")
-PERCENT_UNITS = {"proportion", "share", "fraction"}
+# Each results row names its runs.csv metrics in an HTML comment GitHub does not render.
+SOURCE = re.compile(r"<!--\s*source:\s*([a-z0-9_,\s\-]+?)\s*-->")
+IMAGE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)\)")
+SVG_TEXT = re.compile(r"<text\b[^>]*>(.*?)</text>", re.S)
+SVG_LABELS = (
+    "Traveler",
+    "React web app",
+    "Vercel",
+    "Express API",
+    "Redis",
+    "BullMQ",
+    "MongoDB",
+    "PlaceCache",
+    "Clerk",
+    "Gemini",
+    "Google Places",
+    "Mapbox",
+    "DRAFT",
+    "QUEUED",
+    "PROCESSING",
+    "COMPLETED",
+    "FAILED",
+    "abkit",
+    "runs.csv",
+    "CI gates",
+)
 
 
 def _runs():
@@ -60,84 +86,87 @@ def _section(text, heading):
     return text[start : end if end != -1 else len(text)]
 
 
-def _table_rows(section):
+def _table_lines(section):
     return [
         line
         for line in section.splitlines()
         if line.startswith("|") and not set(line) <= set("|-: ")
-    ][1:]  # drop the header row
+    ]
 
 
-def _results_rows():
+def _cells(line):
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def _results_section():
+    return _section(README.read_text(encoding="utf-8"), RESULTS_HEADING)
+
+
+def test_readme_has_no_mermaid_block():
     text = README.read_text(encoding="utf-8")
-    return _table_rows(_section(text, "## Results in numbers"))
+    assert "```mermaid" not in text
+    assert "xychart" not in text
 
 
-def _charts():
-    text = README.read_text(encoding="utf-8")
-    return [b for b in MERMAID.findall(text) if b.lstrip().startswith("xychart-beta")]
-
-
-def test_readme_opens_with_badges_demo_and_an_architecture_flowchart():
+def test_readme_shows_the_architecture_svg_right_under_the_pitch():
     text = README.read_text(encoding="utf-8")
     head = text.split("\n## ")[0]
     assert "https://plancare-web-omega.vercel.app" in head
-    assert head.count("![") >= 2  # CI and license badges
-    first_block = MERMAID.search(text).group(1)
-    assert first_block.lstrip().startswith("flowchart")
-    for part in ("DRAFT", "QUEUED", "PROCESSING", "COMPLETED", "FAILED", "BullMQ", "abkit"):
-        assert part in first_block, part
-    for part in ("Gemini", "Mapbox", "Google Places", "Clerk", "MongoDB", "Vercel"):
-        assert part in first_block, part
+    images = IMAGE.findall(head)
+    assert len(images) >= 3  # CI and license badges, then the diagram
+    alt, src = images[-1]
+    assert src == ".github/readme/architecture.svg"
+    assert len(alt.split()) >= 5, alt  # a real description, not "diagram"
+    assert head.rstrip().endswith(f"![{alt}]({src})")  # last thing before "What it does"
+
+
+def test_architecture_svg_holds_the_whole_system_in_plain_text_labels():
+    svg = ARCHITECTURE_SVG.read_text(encoding="utf-8")
+    width = re.search(r'<svg\b[^>]*\bwidth="(\d+(?:\.\d+)?)"', svg)
+    assert width and float(width.group(1)) <= 900
+    assert re.search(r'<svg\b[^>]*\bviewBox="0 0 \d+ \d+"', svg)
+    labels = " ".join(re.sub(r"<[^>]+>", "", t) for t in SVG_TEXT.findall(svg))
+    for part in SVG_LABELS:
+        assert part in labels, part
+
+
+def test_architecture_svg_reads_on_light_and_dark_themes_without_external_assets():
+    svg = ARCHITECTURE_SVG.read_text(encoding="utf-8")
+    first_shape = re.search(r"<(rect|path|circle|ellipse|line|polygon|text)\b[^>]*>", svg)
+    background = first_shape.group(0)
+    assert background.startswith("<rect"), background  # drawn first, under everything
+    assert re.search(r'\bfill="(#fff|#ffffff|white)"', background, re.I), background
+    assert re.search(r'\brx="\d+', background), background
+    lowered = svg.lower().replace('xmlns="http://www.w3.org/2000/svg"', "")
+    for banned in ("<script", "<foreignobject", "<image", "@import", "@font-face", "http"):
+        assert banned not in lowered, banned
+
+
+def test_results_table_has_the_three_plain_columns():
+    header = _table_lines(_results_section())[0]
+    assert _cells(header) == RESULTS_HEADER
 
 
 def test_every_results_row_cites_runs_csv_and_quotes_only_its_numbers():
     runs = _runs()
-    rows = _results_rows()
+    rows = _table_lines(_results_section())[1:]
     assert len(rows) >= 5
     for row in rows:
-        metrics = METRIC.findall(row)
-        assert metrics, row
+        assert len(_cells(row)) == len(RESULTS_HEADER), row
+        source = SOURCE.search(row)
+        assert source, row
+        metrics = [m.strip() for m in source.group(1).split(",")]
         assert all(m in runs for m in metrics), row
-        quoted = row.split("`")[0]  # the cells before the source column
+        quoted = SOURCE.sub("", row)
         assert NUMBER.findall(quoted), row
         assert unsourced_numbers(quoted, _candidates(runs[m] for m in metrics)) == [], row
         if any(runs[m]["simulated"] == "true" for m in metrics):
             assert "simulated" in quoted.lower(), row
 
 
-def test_results_section_has_no_number_outside_the_checked_table_and_charts():
-    text = README.read_text(encoding="utf-8")
-    results = MERMAID.sub("", _section(text, "## Results in numbers"))
-    prose = "\n".join(line for line in results.splitlines() if not line.startswith("|"))
+def test_results_section_has_no_number_outside_the_checked_table():
+    prose = "\n".join(line for line in _results_section().splitlines() if not line.startswith("|"))
     assert NUMBER.findall(prose) == []
-
-
-def test_three_charts_plot_runs_csv_values():
-    runs = _runs()
-    charts = _charts()
-    assert len(charts) == 3
-    for chart in charts:
-        source = re.search(r"^\s*%% source: (.+)$", chart, re.M)
-        assert source, chart
-        metrics = [m.strip() for m in source.group(1).split(",")]
-        assert all(m in runs for m in metrics), metrics
-        bars = re.search(r"^\s*bar \[(.+)\]$", chart, re.M).group(1).split(",")
-        assert len(bars) == len(metrics)
-        for token, metric in zip(bars, metrics, strict=True):
-            row = runs[metric]
-            expected = float(row["value"]) * (100 if row["unit"] in PERCENT_UNITS else 1)
-            value, quantum = _parse(token.strip())
-            assert abs(value - expected) <= 0.5 * 10.0**quantum + 1e-9, (metric, token)
-        labels = [
-            Y_RANGE.sub("", line)
-            for line in chart.splitlines()
-            if not re.match(r"\s*(bar \[|%%)", line)
-        ]
-        candidates = _candidates(runs[m] for m in metrics)
-        assert unsourced_numbers("\n".join(labels), candidates) == [], chart
-        if any(runs[m]["simulated"] == "true" for m in metrics):
-            assert "simulated" in chart.lower(), chart
 
 
 def test_the_check_rejects_an_invented_number():
