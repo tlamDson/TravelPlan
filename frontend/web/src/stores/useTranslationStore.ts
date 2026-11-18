@@ -550,6 +550,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.resetsInOne": "Resets in {count} day.",
     "sidebar.resetsInOther": "Resets in {count} days.",
     "common.close": "Close",
+    "common.toggleTheme": "Toggle theme",
     "settings.autoLoadLabel": "Auto-load long trip days",
     "settings.autoLoadDesc":
       "If enabled, we load upcoming chunks automatically. This may take longer, and you can return later.",
@@ -1176,6 +1177,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.resetsInOne": "Réinitialisation dans {count} jour.",
     "sidebar.resetsInOther": "Réinitialisation dans {count} jours.",
     "common.close": "Fermer",
+    "common.toggleTheme": "Changer de thème",
     "settings.autoLoadLabel": "Chargement automatique des longs voyages",
     "settings.autoLoadDesc":
       "Si activé, nous chargeons automatiquement les jours suivants. Cela peut prendre plus de temps, et vous pourrez revenir plus tard.",
@@ -1798,6 +1800,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.resetsInOne": "Đặt lại sau {count} ngày.",
     "sidebar.resetsInOther": "Đặt lại sau {count} ngày.",
     "common.close": "Đóng",
+    "common.toggleTheme": "Chuyển đổi giao diện",
     "settings.autoLoadLabel": "Tự động tải các ngày của chuyến đi dài",
     "settings.autoLoadDesc":
       "Nếu bật, chúng tôi sẽ tự động tải các ngày tiếp theo. Việc này có thể mất thêm thời gian, bạn có thể quay lại sau.",
