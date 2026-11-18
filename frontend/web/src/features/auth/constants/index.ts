@@ -7,12 +7,12 @@
 // Resend cooldown in seconds
 export const RESEND_COOLDOWN = 60;
 
-// Sign up page benefits list
+// Sign up page benefits list (translation keys, see auth-translations.ts)
 export const SIGN_UP_BENEFITS = [
-  "AI-powered itinerary generation",
-  "Real-time budget tracking",
-  "Interactive maps with route planning",
-  "Export and share your plans",
+  "auth.signUp.benefit.itinerary",
+  "auth.signUp.benefit.budget",
+  "auth.signUp.benefit.maps",
+  "auth.signUp.benefit.share",
 ];
 
 // Map Clerk error codes to user-friendly messages

@@ -38,15 +38,27 @@ describe("SignUpPage i18n", () => {
   afterEach(() => useTranslationStore.setState(INITIAL_STATE, true));
 
   it.each([
-    ["French", "Créez votre compte", "Confirmer le mot de passe", "Suivi du budget en temps réel"],
-    ["Vietnamese", "Tạo tài khoản của bạn", "Xác nhận mật khẩu", "Theo dõi ngân sách theo thời gian thực"],
+    [
+      "French",
+      "Créez votre compte",
+      "Confirmer le mot de passe",
+      "Suivi du budget en temps réel",
+    ],
+    [
+      "Vietnamese",
+      "Tạo tài khoản của bạn",
+      "Xác nhận mật khẩu",
+      "Theo dõi ngân sách theo thời gian thực",
+    ],
   ] as const)(
     "renders no English copy in %s",
     (language, heading, confirm, benefit) => {
       useTranslationStore.setState({ language });
       renderWithProviders(<SignUpPage />, { route: "/signup" });
 
-      expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: heading }),
+      ).toBeInTheDocument();
       expect(screen.getByText(confirm)).toBeInTheDocument();
       expect(screen.getByText(benefit)).toBeInTheDocument();
       for (const copy of ENGLISH_COPY) {

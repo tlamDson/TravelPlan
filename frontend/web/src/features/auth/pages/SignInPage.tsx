@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { toast } from "sonner";
 import { toastT, toastTOr } from "@/lib/toast-i18n";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 
 // Google Icon SVG with brand colors
 const GoogleIcon = () => (
@@ -54,6 +55,7 @@ export default function SignInPage() {
   const { signIn, isLoaded, setActive } = useSignIn();
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
+  const t = useTranslationStore((state) => state.t);
 
   const {
     register,
@@ -136,9 +138,9 @@ export default function SignInPage() {
           </div>
 
           <div className="mb-6">
-            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <h1 className="text-2xl font-bold">{t("auth.signIn.title")}</h1>
             <p className="text-muted-foreground mt-2">
-              Sign in to your account to continue planning your adventures.
+              {t("auth.signIn.subtitle")}
             </p>
           </div>
 
@@ -150,7 +152,7 @@ export default function SignInPage() {
             disabled={!isLoaded}
           >
             <GoogleIcon />
-            <span className="ml-3">Continue with Google</span>
+            <span className="ml-3">{t("auth.continueWithGoogle")}</span>
           </Button>
 
           <div className="relative mb-6">
@@ -159,14 +161,14 @@ export default function SignInPage() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="bg-background px-2 text-muted-foreground">
-                Or sign in with email
+                {t("auth.signIn.orEmail")}
               </span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -184,7 +186,7 @@ export default function SignInPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("auth.password")}</Label>
                 <button
                   type="button"
                   className="text-sm text-primary hover:underline"
@@ -192,7 +194,7 @@ export default function SignInPage() {
                     toast.info(toastT("toast.auth.resetComingSoon"))
                   }
                 >
-                  Forgot password?
+                  {t("auth.signIn.forgotPassword")}
                 </button>
               </div>
               <div className="relative">
@@ -208,7 +210,11 @@ export default function SignInPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={
+                    showPassword
+                      ? t("auth.hidePassword")
+                      : t("auth.showPassword")
+                  }
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -232,21 +238,21 @@ export default function SignInPage() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  {t("auth.signIn.submitting")}
                 </>
               ) : (
-                "Sign in"
+                t("auth.signIn.submit")
               )}
             </Button>
           </form>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            {t("auth.signIn.noAccount")}{" "}
             <Link
               to="/signup"
               className="text-primary hover:underline font-medium"
             >
-              Sign up
+              {t("auth.signIn.signUpLink")}
             </Link>
           </p>
         </div>
@@ -259,10 +265,11 @@ export default function SignInPage() {
             <div className="mb-8">
               <Plane className="h-24 w-24 text-primary mx-auto" />
             </div>
-            <h2 className="text-3xl font-bold mb-4">Start Your Adventure</h2>
+            <h2 className="text-3xl font-bold mb-4">
+              {t("auth.signIn.panelTitle")}
+            </h2>
             <p className="text-muted-foreground max-w-sm mx-auto">
-              Plan your next trip with AI-powered recommendations and smart
-              budgeting tools.
+              {t("auth.signIn.panelBody")}
             </p>
           </div>
         </div>

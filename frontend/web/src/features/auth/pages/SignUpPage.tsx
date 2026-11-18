@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { toast } from "sonner";
 import { toastT, toastTOr } from "@/lib/toast-i18n";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 
 // Feature-specific imports
 import {
@@ -44,6 +45,7 @@ export default function SignUpPage() {
   const { signUp, isLoaded, setActive } = useSignUp();
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
+  const t = useTranslationStore((state) => state.t);
 
   // Redirect if already signed in
   useEffect(() => {
@@ -249,9 +251,9 @@ export default function SignUpPage() {
           </div>
 
           <div className="mb-6">
-            <h1 className="text-2xl font-bold">Create your account</h1>
+            <h1 className="text-2xl font-bold">{t("auth.signUp.title")}</h1>
             <p className="text-muted-foreground mt-2">
-              Get started with your free account today.
+              {t("auth.signUp.subtitle")}
             </p>
           </div>
 
@@ -263,7 +265,7 @@ export default function SignUpPage() {
             disabled={!isLoaded}
           >
             <GoogleIcon />
-            <span className="ml-3">Continue with Google</span>
+            <span className="ml-3">{t("auth.continueWithGoogle")}</span>
           </Button>
 
           {/* Divider */}
@@ -273,7 +275,7 @@ export default function SignUpPage() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="bg-background px-2 text-muted-foreground">
-                Or sign up with email
+                {t("auth.signUp.orEmail")}
               </span>
             </div>
           </div>
@@ -289,24 +291,24 @@ export default function SignUpPage() {
 
           {/* Terms */}
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            By signing up, you agree to our{" "}
+            {t("auth.signUp.agreePrefix")}{" "}
             <Link to="/terms" className="text-primary hover:underline">
-              Terms
+              {t("auth.signUp.terms")}
             </Link>{" "}
-            and{" "}
+            {t("auth.signUp.and")}{" "}
             <Link to="/privacy" className="text-primary hover:underline">
-              Privacy Policy
+              {t("auth.signUp.privacy")}
             </Link>
           </p>
 
           {/* Sign In Link */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("auth.signUp.haveAccount")}{" "}
             <Link
               to="/signin"
               className="text-primary hover:underline font-medium"
             >
-              Sign in
+              {t("auth.signUp.signInLink")}
             </Link>
           </p>
         </div>

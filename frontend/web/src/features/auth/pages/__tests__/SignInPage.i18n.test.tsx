@@ -51,7 +51,9 @@ describe("SignInPage i18n", () => {
       useTranslationStore.setState({ language });
       renderWithProviders(<SignInPage />, { route: "/signin" });
 
-      expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: heading }),
+      ).toBeInTheDocument();
       expect(screen.getByText(forgot)).toBeInTheDocument();
       expect(screen.getByText(google)).toBeInTheDocument();
       for (const copy of ENGLISH_COPY) {
