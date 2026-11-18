@@ -11,9 +11,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useThemeStore } from "@/stores/useThemeStore";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 
 export function ThemeToggle() {
   const { setTheme } = useThemeStore();
+  const label = useTranslationStore((state) => state.t("common.toggleTheme"));
 
   return (
     <DropdownMenu>
@@ -21,7 +23,7 @@ export function ThemeToggle() {
         <Button variant="ghost" size="icon">
           <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
+          <span className="sr-only">{label}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

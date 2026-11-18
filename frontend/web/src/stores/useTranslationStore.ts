@@ -551,6 +551,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.resetsInOne": "Resets in {count} day.",
     "sidebar.resetsInOther": "Resets in {count} days.",
     "common.close": "Close",
+    "common.toggleTheme": "Toggle theme",
     "notFound.title": "Page Not Found",
     "notFound.message":
       "Oops! The page you're looking for doesn't exist or has been moved.",
@@ -1184,6 +1185,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.resetsInOne": "Réinitialisation dans {count} jour.",
     "sidebar.resetsInOther": "Réinitialisation dans {count} jours.",
     "common.close": "Fermer",
+    "common.toggleTheme": "Changer de thème",
     "notFound.title": "Page introuvable",
     "notFound.message":
       "Oups ! La page que vous cherchez n'existe pas ou a été déplacée.",
@@ -1813,6 +1815,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.resetsInOne": "Đặt lại sau {count} ngày.",
     "sidebar.resetsInOther": "Đặt lại sau {count} ngày.",
     "common.close": "Đóng",
+    "common.toggleTheme": "Chuyển đổi giao diện",
     "notFound.title": "Không tìm thấy trang",
     "notFound.message":
       "Rất tiếc! Trang bạn đang tìm không tồn tại hoặc đã được chuyển đi.",
