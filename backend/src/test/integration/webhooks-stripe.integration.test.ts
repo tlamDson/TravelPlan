@@ -246,9 +246,10 @@ describe("POST /api/webhooks/stripe", () => {
   it("does not reapply an applied update when marking the event done failed and Stripe retries", async () => {
     await seedUser("user-stripe-6", { tier: "free" });
     const payload = checkoutCompletedEvent("user-stripe-6");
-    vi.spyOn(processedStripeEventRepository, "complete").mockRejectedValueOnce(
-      new Error("write lost"),
-    );
+    vi.spyOn(
+      processedStripeEventRepository,
+      "markProcessed",
+    ).mockRejectedValueOnce(new Error("write lost"));
 
     expect((await postEvent(payload)).status).toBe(500);
     await User.updateOne({ clerkUserId: "user-stripe-6" }, { tier: "free" });
@@ -260,22 +261,38 @@ describe("POST /api/webhooks/stripe", () => {
     expect(user?.tier).toBe("free");
   });
 
-  it("does not reapply an applied update when a delivery takes over an expired claim", async () => {
+  it("does not reapply an applied update when its processed record is gone", async () => {
     await seedUser("user-stripe-7", { tier: "free" });
     const payload = checkoutCompletedEvent("user-stripe-7");
     expect((await postEvent(payload)).status).toBe(200);
-    // The first worker's claim outlived its lease (slow handler, lost
-    // completion): a later delivery may take it over.
-    await ProcessedStripeEvent.updateOne(
-      { eventId: "evt_test_checkout" },
-      { status: "processing", lockedUntil: new Date(Date.now() - 1000) },
-    );
+    await ProcessedStripeEvent.deleteMany({ eventId: "evt_test_checkout" });
     await User.updateOne({ clerkUserId: "user-stripe-7" }, { tier: "free" });
 
-    const takeover = await postEvent(payload);
+    const replay = await postEvent(payload);
 
-    expect(takeover.status).toBe(200);
+    expect(replay.status).toBe(200);
     const user = await User.findOne({ clerkUserId: "user-stripe-7" });
     expect(user?.tier).toBe("free");
+  });
+
+  it("acks overlapping deliveries of one event with 200 and applies it once", async () => {
+    await seedUser("user-stripe-8", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-8");
+
+    const results = await Promise.all(
+      Array.from({ length: 4 }, () => postEvent(payload)),
+    );
+
+    expect(results.map((r) => r.status)).toEqual([200, 200, 200, 200]);
+    const user = await User.findOne({ clerkUserId: "user-stripe-8" })
+      .select("+appliedStripeEventIds")
+      .lean();
+    expect(user?.tier).toBe("pro");
+    expect(user?.appliedStripeEventIds).toEqual(["evt_test_checkout"]);
+    expect(
+      await ProcessedStripeEvent.countDocuments({
+        eventId: "evt_test_checkout",
+      }),
+    ).toBe(1);
   });
 });

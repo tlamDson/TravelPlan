@@ -7,32 +7,22 @@ describe("processedStripeEventRepository (real Mongo)", () => {
     await ProcessedStripeEvent.init();
   });
 
-  it("lets exactly one of several simultaneous claims win", async () => {
-    const results = await Promise.all(
-      Array.from({ length: 5 }, () => repo.claim("evt_race")),
-    );
-
-    expect(results.filter((r) => r === "claimed")).toHaveLength(1);
-    expect(results.filter((r) => r === "in_flight")).toHaveLength(4);
+  it("is not processed until marked, then is", async () => {
+    expect(await repo.isProcessed("evt_a")).toBe(false);
+    await repo.markProcessed("evt_a");
+    expect(await repo.isProcessed("evt_a")).toBe(true);
   });
 
-  it("reports duplicate once completed and claimable again once released", async () => {
-    expect(await repo.claim("evt_a")).toBe("claimed");
-    await repo.complete("evt_a");
-    expect(await repo.claim("evt_a")).toBe("duplicate");
-
-    expect(await repo.claim("evt_b")).toBe("claimed");
-    await repo.release("evt_b");
-    expect(await repo.claim("evt_b")).toBe("claimed");
-  });
-
-  it("lets a new delivery take over a claim whose lease expired (crashed worker)", async () => {
-    expect(await repo.claim("evt_crash")).toBe("claimed");
-    await ProcessedStripeEvent.updateOne(
-      { eventId: "evt_crash" },
-      { lockedUntil: new Date(Date.now() - 1000) },
+  it("stores one record and keeps the first processedAt when marked repeatedly or concurrently", async () => {
+    await Promise.all(
+      Array.from({ length: 5 }, () => repo.markProcessed("evt_race")),
     );
+    const first = await ProcessedStripeEvent.findOne({ eventId: "evt_race" });
+    await repo.markProcessed("evt_race");
 
-    expect(await repo.claim("evt_crash")).toBe("claimed");
+    const docs = await ProcessedStripeEvent.find({ eventId: "evt_race" });
+    expect(docs).toHaveLength(1);
+    expect(docs[0].processedAt).toBeInstanceOf(Date);
+    expect(docs[0].processedAt.getTime()).toBe(first?.processedAt.getTime());
   });
 });

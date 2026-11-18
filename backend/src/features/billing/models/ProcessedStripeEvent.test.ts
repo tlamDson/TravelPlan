@@ -19,4 +19,17 @@ describe("ProcessedStripeEvent model", () => {
       THIRTY_DAYS_SECONDS,
     );
   });
+
+  it("starts the TTL when processing succeeded (processedAt), not when a delivery arrived", () => {
+    const ttl = indexes.find(
+      ([, opts]) => typeof opts?.expireAfterSeconds === "number",
+    );
+    expect(Object.keys(ttl?.[0] ?? {})).toEqual(["processedAt"]);
+    expect(ProcessedStripeEvent.schema.path("processedAt")).toBeDefined();
+  });
+
+  it("holds no in-flight claim state that a stale worker could erase", () => {
+    expect(ProcessedStripeEvent.schema.path("status")).toBeUndefined();
+    expect(ProcessedStripeEvent.schema.path("lockedUntil")).toBeUndefined();
+  });
 });

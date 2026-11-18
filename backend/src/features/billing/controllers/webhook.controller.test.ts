@@ -19,26 +19,13 @@ vi.mock("../../user/repositories/user.repository", () => ({
 
 vi.mock("../repositories/processed-stripe-event.repository", () => {
   const done = new Set<string>();
-  const inFlight = new Set<string>();
   return {
     processedStripeEventRepository: {
-      claim: vi.fn(async (id: string) => {
-        if (done.has(id)) return "duplicate";
-        if (inFlight.has(id)) return "in_flight";
-        inFlight.add(id);
-        return "claimed";
-      }),
-      complete: vi.fn(async (id: string) => {
-        inFlight.delete(id);
+      isProcessed: vi.fn(async (id: string) => done.has(id)),
+      markProcessed: vi.fn(async (id: string) => {
         done.add(id);
       }),
-      release: vi.fn(async (id: string) => {
-        inFlight.delete(id);
-      }),
-      __reset: () => {
-        done.clear();
-        inFlight.clear();
-      },
+      __reset: () => done.clear(),
     },
   };
 });
@@ -282,15 +269,12 @@ describe("webhook.controller — handleStripeWebhook", () => {
       expect(second.status).not.toHaveBeenCalled();
     });
 
-    it("claims the id before the handler runs and completes it only after the handler succeeded", async () => {
+    it("records the id only after the handler succeeded", async () => {
       mockStripeEvent(checkoutEvent);
       vi.mocked(userRepository.applyStripeEvent).mockImplementationOnce(
         async () => {
-          expect(processedStripeEventRepository.claim).toHaveBeenCalledWith(
-            "evt_dup_1",
-          );
           expect(
-            processedStripeEventRepository.complete,
+            processedStripeEventRepository.markProcessed,
           ).not.toHaveBeenCalled();
           return null;
         },
@@ -298,12 +282,12 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
       await handleStripeWebhook(signedReq(), makeRes());
 
-      expect(processedStripeEventRepository.complete).toHaveBeenCalledWith(
+      expect(processedStripeEventRepository.markProcessed).toHaveBeenCalledWith(
         "evt_dup_1",
       );
     });
 
-    it("applies the side effect once when two deliveries overlap, and tells Stripe to retry the loser (409)", async () => {
+    it("acks an overlapping repeat with 200 and routes both through the per-event user guard", async () => {
       mockStripeEvent(checkoutEvent);
       let openGate!: () => void;
       const gate = new Promise<void>((resolve) => {
@@ -326,13 +310,16 @@ describe("webhook.controller — handleStripeWebhook", () => {
       openGate();
       await firstDone;
 
-      expect(userRepository.applyStripeEvent).toHaveBeenCalledTimes(1);
-      expect(second.status).toHaveBeenCalledWith(409);
-      expect(second.json).not.toHaveBeenCalledWith({ received: true });
+      expect(second.status).not.toHaveBeenCalled();
+      expect(second.json).toHaveBeenCalledWith({ received: true });
       expect(first.json).toHaveBeenCalledWith({ received: true });
+      for (const call of vi.mocked(userRepository.applyStripeEvent).mock
+        .calls) {
+        expect(call[1]).toBe("evt_dup_1");
+      }
     });
 
-    it("releases the claim when the handler fails, so Stripe's retry is processed again", async () => {
+    it("records nothing when the handler fails, so Stripe's retry is processed again", async () => {
       mockStripeEvent(checkoutEvent);
       vi.mocked(userRepository.applyStripeEvent).mockRejectedValueOnce(
         new Error("db down"),
@@ -342,16 +329,15 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
       await handleStripeWebhook(signedReq(), failed);
       expect(failed.status).toHaveBeenCalledWith(500);
-      expect(processedStripeEventRepository.release).toHaveBeenCalledWith(
-        "evt_dup_1",
-      );
-      expect(processedStripeEventRepository.complete).not.toHaveBeenCalled();
+      expect(
+        processedStripeEventRepository.markProcessed,
+      ).not.toHaveBeenCalled();
 
       await handleStripeWebhook(signedReq(), retried);
 
       expect(userRepository.applyStripeEvent).toHaveBeenCalledTimes(2);
       expect(retried.json).toHaveBeenCalledWith({ received: true });
-      expect(processedStripeEventRepository.complete).toHaveBeenCalledWith(
+      expect(processedStripeEventRepository.markProcessed).toHaveBeenCalledWith(
         "evt_dup_1",
       );
     });
