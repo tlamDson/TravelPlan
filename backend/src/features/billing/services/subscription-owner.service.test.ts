@@ -24,14 +24,40 @@ describe("subscription-owner.service — resolveSubscriptionOwner", () => {
     listSessions.mockResolvedValue({ data: [] });
   });
 
-  it("uses subscription.metadata.userId when present, without any lookup", async () => {
+  it("prefers the user stored under the customer id over metadata.userId", async () => {
+    vi.mocked(userRepository.findByStripeCustomerId).mockResolvedValue({
+      clerkUserId: "user_db",
+    } as any);
+
+    const owner = await resolveSubscriptionOwner(
+      sub({ metadata: { userId: "user_meta" }, customer: "cus_1" }),
+    );
+
+    expect(owner).toBe("user_db");
+    expect(listSessions).not.toHaveBeenCalled();
+  });
+
+  it("uses metadata.userId when no user is stored under the customer id", async () => {
+    vi.mocked(userRepository.findByStripeCustomerId).mockResolvedValue(null);
+
     const owner = await resolveSubscriptionOwner(
       sub({ metadata: { userId: "user_meta" }, customer: "cus_1" }),
     );
 
     expect(owner).toBe("user_meta");
-    expect(userRepository.findByStripeCustomerId).not.toHaveBeenCalled();
     expect(listSessions).not.toHaveBeenCalled();
+  });
+
+  it("uses metadata.userId without lookups when the subscription has no customer", async () => {
+    const owner = await resolveSubscriptionOwner(
+      sub({
+        metadata: { userId: "user_meta" },
+        customer: undefined as unknown as string,
+      }),
+    );
+
+    expect(owner).toBe("user_meta");
+    expect(userRepository.findByStripeCustomerId).not.toHaveBeenCalled();
   });
 
   it("falls back to the user stored under the Stripe customer id", async () => {

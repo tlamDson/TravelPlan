@@ -5,7 +5,7 @@ import { userRepository } from "../../user/repositories/user.repository";
 import { logger } from "../../../lib/logger";
 import { getStripe } from "../services/stripe.service";
 import { processedStripeEventRepository } from "../repositories/processed-stripe-event.repository";
-import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
+import { syncSubscriptionTier } from "../services/subscription-sync.service";
 
 const isPaymentSettled = (session: Stripe.Checkout.Session): boolean =>
   session.payment_status === "paid" ||
@@ -126,26 +126,10 @@ export const handleStripeWebhook = async (
         );
         break;
       }
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const userId = await resolveSubscriptionOwner(subscription);
-
-        if (userId) {
-          await userRepository.applyStripeEvent(userId, event.id, {
-            tier: "free",
-          });
-          logger.info(
-            { userId, subId: subscription.id },
-            "User downgraded to FREE via Stripe webhook (subscription deleted)",
-          );
-        } else {
-          logger.warn(
-            { subId: subscription.id },
-            "Subscription deleted but no user matches its metadata or customer",
-          );
-        }
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        await syncSubscriptionTier(event);
         break;
-      }
       default:
         logger.info(
           { type: event.type },

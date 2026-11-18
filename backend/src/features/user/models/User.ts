@@ -1,4 +1,11 @@
 import mongoose, { Schema, Document } from "mongoose";
+export interface IStripeSubscriptionState {
+  customerId?: string;
+  status: string;
+  /** event.created (unix seconds) of the last event applied to it. */
+  eventCreated: number;
+}
+
 //for type safety
 export interface IUser extends Document {
   clerkUserId: string;
@@ -12,6 +19,10 @@ export interface IUser extends Document {
   stripeCustomerId?: string;
   /** Recent Stripe event ids already applied to this user (bounded). */
   appliedStripeEventIds?: string[];
+  /** Last applied state per Stripe subscription id (see applyStripeSubscriptionEvent). */
+  stripeSubscriptions?: Map<string, IStripeSubscriptionState>;
+  /** Bumped by every Stripe billing write; guards read-then-write tier sync. */
+  stripeBillingRevision?: number;
   credits: number;
   quotaResetsAt?: Date;
   preferences: {
@@ -92,6 +103,26 @@ const UserSchema = new Schema<IUser>(
     // replayed Stripe event can never apply twice (see applyStripeEvent).
     appliedStripeEventIds: {
       type: [String],
+      default: undefined,
+      select: false,
+    },
+    // Keyed by subscription id so a user with several subscriptions (or
+    // Stripe customers) stays PRO while any of them is active.
+    stripeSubscriptions: {
+      type: Map,
+      of: new Schema(
+        {
+          customerId: String,
+          status: { type: String, required: true },
+          eventCreated: { type: Number, required: true },
+        },
+        { _id: false },
+      ),
+      default: undefined,
+      select: false,
+    },
+    stripeBillingRevision: {
+      type: Number,
       default: undefined,
       select: false,
     },

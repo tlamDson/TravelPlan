@@ -7,6 +7,15 @@ import User from "../../features/user/models/User";
 import ProcessedStripeEvent from "../../features/billing/models/ProcessedStripeEvent";
 import { processedStripeEventRepository } from "../../features/billing/repositories/processed-stripe-event.repository";
 
+// A downgrade asks Stripe live for the user's other subscriptions; tests
+// never call the Stripe API, so that lookup reports none.
+vi.mock(
+  "../../features/billing/services/customer-subscriptions.service",
+  () => ({
+    listOtherSubscriptionStatuses: vi.fn(async () => []),
+  }),
+);
+
 const app = createApp();
 
 // Pure crypto helper — no network call, no real Stripe API key needed.
