@@ -14,7 +14,7 @@ vi.mock("../services/subscription-owner.service", () => ({
   resolveSubscriptionOwner: vi.fn(),
 }));
 vi.mock("../../user/repositories/user.repository", () => ({
-  userRepository: { updateByClerkId: vi.fn() },
+  userRepository: { applyStripeEvent: vi.fn() },
 }));
 
 vi.mock("../repositories/processed-stripe-event.repository", () => {
@@ -45,7 +45,11 @@ vi.mock("../repositories/processed-stripe-event.repository", () => {
 
 function mockStripeEvent(event: unknown) {
   vi.mocked(getStripe).mockReturnValue({
-    webhooks: { constructEvent: vi.fn().mockReturnValue(event) },
+    webhooks: {
+      constructEvent: vi
+        .fn()
+        .mockReturnValue({ id: "evt_default", ...(event as object) }),
+    },
   } as unknown as Stripe);
 }
 
@@ -106,10 +110,14 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.updateByClerkId).toHaveBeenCalledWith("u1", {
-      tier: "pro",
-      stripeCustomerId: "cus_9",
-    });
+    expect(userRepository.applyStripeEvent).toHaveBeenCalledWith(
+      "u1",
+      "evt_default",
+      {
+        tier: "pro",
+        stripeCustomerId: "cus_9",
+      },
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -133,10 +141,14 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.updateByClerkId).toHaveBeenCalledWith("u1", {
-      tier: "pro",
-      stripeCustomerId: "cus_9",
-    });
+    expect(userRepository.applyStripeEvent).toHaveBeenCalledWith(
+      "u1",
+      "evt_default",
+      {
+        tier: "pro",
+        stripeCustomerId: "cus_9",
+      },
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -146,7 +158,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
+    expect(userRepository.applyStripeEvent).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -158,10 +170,14 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.updateByClerkId).toHaveBeenCalledWith("u1", {
-      tier: "pro",
-      stripeCustomerId: "cus_9",
-    });
+    expect(userRepository.applyStripeEvent).toHaveBeenCalledWith(
+      "u1",
+      "evt_default",
+      {
+        tier: "pro",
+        stripeCustomerId: "cus_9",
+      },
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -173,7 +189,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
+    expect(userRepository.applyStripeEvent).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -185,7 +201,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
+    expect(userRepository.applyStripeEvent).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -201,9 +217,13 @@ describe("webhook.controller — handleStripeWebhook", () => {
     await handleStripeWebhook(signedReq(), res);
 
     expect(resolveSubscriptionOwner).toHaveBeenCalledWith(subscription);
-    expect(userRepository.updateByClerkId).toHaveBeenCalledWith("u1", {
-      tier: "free",
-    });
+    expect(userRepository.applyStripeEvent).toHaveBeenCalledWith(
+      "u1",
+      "evt_default",
+      {
+        tier: "free",
+      },
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -217,7 +237,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     await handleStripeWebhook(signedReq(), res);
 
-    expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
+    expect(userRepository.applyStripeEvent).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -232,7 +252,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
     await handleStripeWebhook(signedReq(), res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
+    expect(userRepository.applyStripeEvent).not.toHaveBeenCalled();
   });
   describe("event.id de-duplication", () => {
     const checkoutEvent = {
@@ -256,7 +276,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
       await handleStripeWebhook(signedReq(), first);
       await handleStripeWebhook(signedReq(), second);
 
-      expect(userRepository.updateByClerkId).toHaveBeenCalledTimes(1);
+      expect(userRepository.applyStripeEvent).toHaveBeenCalledTimes(1);
       expect(first.json).toHaveBeenCalledWith({ received: true });
       expect(second.json).toHaveBeenCalledWith({ received: true });
       expect(second.status).not.toHaveBeenCalled();
@@ -264,7 +284,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     it("claims the id before the handler runs and completes it only after the handler succeeded", async () => {
       mockStripeEvent(checkoutEvent);
-      vi.mocked(userRepository.updateByClerkId).mockImplementationOnce(
+      vi.mocked(userRepository.applyStripeEvent).mockImplementationOnce(
         async () => {
           expect(processedStripeEventRepository.claim).toHaveBeenCalledWith(
             "evt_dup_1",
@@ -289,7 +309,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
       const gate = new Promise<void>((resolve) => {
         openGate = resolve;
       });
-      vi.mocked(userRepository.updateByClerkId).mockImplementationOnce(
+      vi.mocked(userRepository.applyStripeEvent).mockImplementationOnce(
         async () => {
           await gate;
           return null;
@@ -300,13 +320,13 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
       const firstDone = handleStripeWebhook(signedReq(), first);
       await vi.waitFor(() =>
-        expect(userRepository.updateByClerkId).toHaveBeenCalledTimes(1),
+        expect(userRepository.applyStripeEvent).toHaveBeenCalledTimes(1),
       );
       await handleStripeWebhook(signedReq(), second);
       openGate();
       await firstDone;
 
-      expect(userRepository.updateByClerkId).toHaveBeenCalledTimes(1);
+      expect(userRepository.applyStripeEvent).toHaveBeenCalledTimes(1);
       expect(second.status).toHaveBeenCalledWith(409);
       expect(second.json).not.toHaveBeenCalledWith({ received: true });
       expect(first.json).toHaveBeenCalledWith({ received: true });
@@ -314,7 +334,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     it("releases the claim when the handler fails, so Stripe's retry is processed again", async () => {
       mockStripeEvent(checkoutEvent);
-      vi.mocked(userRepository.updateByClerkId).mockRejectedValueOnce(
+      vi.mocked(userRepository.applyStripeEvent).mockRejectedValueOnce(
         new Error("db down"),
       );
       const failed = makeRes();
@@ -329,7 +349,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
       await handleStripeWebhook(signedReq(), retried);
 
-      expect(userRepository.updateByClerkId).toHaveBeenCalledTimes(2);
+      expect(userRepository.applyStripeEvent).toHaveBeenCalledTimes(2);
       expect(retried.json).toHaveBeenCalledWith({ received: true });
       expect(processedStripeEventRepository.complete).toHaveBeenCalledWith(
         "evt_dup_1",
@@ -342,7 +362,7 @@ describe("webhook.controller — handleStripeWebhook", () => {
       mockStripeEvent({ ...checkoutEvent, id: "evt_dup_2" });
       await handleStripeWebhook(signedReq(), makeRes());
 
-      expect(userRepository.updateByClerkId).toHaveBeenCalledTimes(2);
+      expect(userRepository.applyStripeEvent).toHaveBeenCalledTimes(2);
     });
   });
 });

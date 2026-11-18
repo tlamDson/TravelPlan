@@ -1,9 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import request from "supertest";
 import Stripe from "stripe";
 import { createApp } from "../../app";
 import { seedUser } from "../integration-fixtures";
 import User from "../../features/user/models/User";
+import ProcessedStripeEvent from "../../features/billing/models/ProcessedStripeEvent";
+import { processedStripeEventRepository } from "../../features/billing/repositories/processed-stripe-event.repository";
 
 const app = createApp();
 
@@ -85,6 +87,10 @@ function subscriptionDeletedEvent(userId: string) {
 }
 
 describe("POST /api/webhooks/stripe", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("rejects a request with no stripe-signature header", async () => {
     const res = await request(app)
       .post("/api/webhooks/stripe")
@@ -227,6 +233,49 @@ describe("POST /api/webhooks/stripe", () => {
     expect(replay.status).toBe(200);
     expect(replay.body.received).toBe(true);
     const user = await User.findOne({ clerkUserId: "user-stripe-5" });
+    expect(user?.tier).toBe("free");
+  });
+
+  const postEvent = (payload: string) =>
+    request(app)
+      .post("/api/webhooks/stripe")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", sign(payload))
+      .send(payload);
+
+  it("does not reapply an applied update when marking the event done failed and Stripe retries", async () => {
+    await seedUser("user-stripe-6", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-6");
+    vi.spyOn(processedStripeEventRepository, "complete").mockRejectedValueOnce(
+      new Error("write lost"),
+    );
+
+    expect((await postEvent(payload)).status).toBe(500);
+    await User.updateOne({ clerkUserId: "user-stripe-6" }, { tier: "free" });
+
+    const retry = await postEvent(payload);
+
+    expect(retry.status).toBe(200);
+    const user = await User.findOne({ clerkUserId: "user-stripe-6" });
+    expect(user?.tier).toBe("free");
+  });
+
+  it("does not reapply an applied update when a delivery takes over an expired claim", async () => {
+    await seedUser("user-stripe-7", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-7");
+    expect((await postEvent(payload)).status).toBe(200);
+    // The first worker's claim outlived its lease (slow handler, lost
+    // completion): a later delivery may take it over.
+    await ProcessedStripeEvent.updateOne(
+      { eventId: "evt_test_checkout" },
+      { status: "processing", lockedUntil: new Date(Date.now() - 1000) },
+    );
+    await User.updateOne({ clerkUserId: "user-stripe-7" }, { tier: "free" });
+
+    const takeover = await postEvent(payload);
+
+    expect(takeover.status).toBe(200);
+    const user = await User.findOne({ clerkUserId: "user-stripe-7" });
     expect(user?.tier).toBe("free");
   });
 });
