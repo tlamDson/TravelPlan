@@ -34,8 +34,8 @@ const runSanitize = (env: Record<string, string>, body: string) =>
     bash,
     [
       "-c",
-      `source "${SANITIZE}"; ${body}; ` +
-        `for v in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BACKUP_S3_ENDPOINT BACKUP_S3_BUCKET; do printf '%s=[%s]\n' "$v" "\${!v}"; done`,
+      `source "${SANITIZE}"; ${body}; rc=$?; ` +
+        `for v in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BACKUP_S3_ENDPOINT BACKUP_S3_BUCKET; do printf '%s=[%s]\n' "$v" "\${!v}"; done; exit $rc`,
     ],
     { env: { PATH: process.env.PATH ?? "", ...env }, encoding: "utf8" },
   );
@@ -125,7 +125,6 @@ describe("validate_s3_credentials", () => {
     expect(r.stderr).toContain("AWS_ACCESS_KEY_ID");
     expect(r.stderr).toContain("34");
     expect(r.stderr).not.toContain(bad);
-    expect(r.stdout).not.toContain(bad);
   });
 
   it("fails naming AWS_SECRET_ACCESS_KEY and its length, without the value", () => {

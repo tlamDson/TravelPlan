@@ -24,11 +24,17 @@ if [ -z "${MONGO_URI:-}" ]; then
   exit 1
 fi
 
+# shellcheck source=sanitize-s3-env.sh
+source "$(dirname "${BASH_SOURCE[0]}")/sanitize-s3-env.sh"
+sanitize_s3_env
+
 if [ -z "${BACKUP_S3_ENDPOINT:-}" ] || [ -z "${BACKUP_S3_BUCKET:-}" ] || \
    [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
   echo "⏭  Backup storage not configured (BACKUP_S3_ENDPOINT/BACKUP_S3_BUCKET/AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY) — skipping, not failing."
   exit 0
 fi
+
+validate_s3_credentials || exit 1
 
 bash "$(dirname "${BASH_SOURCE[0]}")/require-mongodump.sh"
 
