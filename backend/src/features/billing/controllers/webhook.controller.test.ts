@@ -81,7 +81,12 @@ describe("webhook.controller — handleStripeWebhook", () => {
     mockStripeEvent({
       type: "checkout.session.completed",
       data: {
-        object: { id: "cs_1", customer: "cus_9", metadata: { userId: "u1" } },
+        object: {
+          id: "cs_1",
+          customer: "cus_9",
+          payment_status: "paid",
+          metadata: { userId: "u1" },
+        },
       },
     });
     const res = makeRes();
@@ -92,6 +97,82 @@ describe("webhook.controller — handleStripeWebhook", () => {
       tier: "pro",
       stripeCustomerId: "cus_9",
     });
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  const sessionEvent = (type: string, payment_status?: string) => ({
+    type,
+    data: {
+      object: {
+        id: "cs_2",
+        customer: "cus_9",
+        payment_status,
+        metadata: { userId: "u1" },
+      },
+    },
+  });
+
+  it("upgrades on checkout.session.completed when no payment is required", async () => {
+    mockStripeEvent(
+      sessionEvent("checkout.session.completed", "no_payment_required"),
+    );
+    const res = makeRes();
+
+    await handleStripeWebhook(signedReq(), res);
+
+    expect(userRepository.updateByClerkId).toHaveBeenCalledWith("u1", {
+      tier: "pro",
+      stripeCustomerId: "cus_9",
+    });
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it("does not upgrade on checkout.session.completed while payment is unpaid, and still acks", async () => {
+    mockStripeEvent(sessionEvent("checkout.session.completed", "unpaid"));
+    const res = makeRes();
+
+    await handleStripeWebhook(signedReq(), res);
+
+    expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it("upgrades on checkout.session.async_payment_succeeded when paid", async () => {
+    mockStripeEvent(
+      sessionEvent("checkout.session.async_payment_succeeded", "paid"),
+    );
+    const res = makeRes();
+
+    await handleStripeWebhook(signedReq(), res);
+
+    expect(userRepository.updateByClerkId).toHaveBeenCalledWith("u1", {
+      tier: "pro",
+      stripeCustomerId: "cus_9",
+    });
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it("does not upgrade on checkout.session.async_payment_succeeded if the session is still unpaid", async () => {
+    mockStripeEvent(
+      sessionEvent("checkout.session.async_payment_succeeded", "unpaid"),
+    );
+    const res = makeRes();
+
+    await handleStripeWebhook(signedReq(), res);
+
+    expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+  });
+
+  it("does not upgrade or downgrade on checkout.session.async_payment_failed, and still acks", async () => {
+    mockStripeEvent(
+      sessionEvent("checkout.session.async_payment_failed", "unpaid"),
+    );
+    const res = makeRes();
+
+    await handleStripeWebhook(signedReq(), res);
+
+    expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
