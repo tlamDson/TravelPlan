@@ -33,6 +33,7 @@ function subEvent(
 }
 
 const applyMock = () => vi.mocked(userRepository.applyStripeSubscriptionEvent);
+const firstUpdate = () => applyMock().mock.calls[0]![2];
 
 describe("subscription-sync.service — syncSubscriptionTier", () => {
   beforeEach(() => {
@@ -99,13 +100,13 @@ describe("subscription-sync.service — syncSubscriptionTier", () => {
       subEvent("customer.subscription.updated", { status: "past_due" }),
     );
 
-    expect(applyMock().mock.calls[0][2].tier).toBe("pro");
+    expect(firstUpdate().tier).toBe("pro");
   });
 
   it("treats customer.subscription.deleted as cancelled even without a status", async () => {
     await syncSubscriptionTier(subEvent("customer.subscription.deleted", {}));
 
-    expect(applyMock().mock.calls[0][2]).toMatchObject({
+    expect(firstUpdate()).toMatchObject({
       status: "canceled",
       tier: "free",
     });
@@ -116,7 +117,7 @@ describe("subscription-sync.service — syncSubscriptionTier", () => {
       subEvent("customer.subscription.updated", { status: "incomplete" }),
     );
 
-    const update = applyMock().mock.calls[0][2];
+    const update = firstUpdate();
     expect(update.status).toBe("incomplete");
     expect(update.tier).toBeUndefined();
   });
@@ -133,7 +134,7 @@ describe("subscription-sync.service — syncSubscriptionTier", () => {
       subEvent("customer.subscription.deleted", { status: "canceled" }),
     );
 
-    expect(applyMock().mock.calls[0][2].tier).toBe("pro");
+    expect(firstUpdate().tier).toBe("pro");
   });
 
   it("ignores the event's own earlier record when checking other subscriptions", async () => {
@@ -148,7 +149,7 @@ describe("subscription-sync.service — syncSubscriptionTier", () => {
       subEvent("customer.subscription.deleted", { status: "canceled" }),
     );
 
-    expect(applyMock().mock.calls[0][2].tier).toBe("free");
+    expect(firstUpdate().tier).toBe("free");
   });
 
   it("downgrades once every subscription of the user is inactive", async () => {
@@ -163,7 +164,7 @@ describe("subscription-sync.service — syncSubscriptionTier", () => {
       subEvent("customer.subscription.updated", { status: "unpaid" }),
     );
 
-    expect(applyMock().mock.calls[0][2].tier).toBe("free");
+    expect(firstUpdate().tier).toBe("free");
   });
 
   it("does not write an event older than the last one applied to that subscription", async () => {
@@ -224,7 +225,7 @@ describe("subscription-sync.service — syncSubscriptionTier", () => {
       }),
     );
 
-    expect(applyMock().mock.calls[0][2].customerId).toBe("cus_x");
+    expect(firstUpdate().customerId).toBe("cus_x");
   });
 
   it("does nothing when no user owns the subscription", async () => {
