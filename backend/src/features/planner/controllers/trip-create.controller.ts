@@ -6,7 +6,7 @@ import { TripRequestError } from "../errors";
 import { logger } from "../../../lib/logger";
 import { userQuotaService } from "../services/user-quota.service";
 import { userRepository } from "../../user/repositories/user.repository";
-import IdempotencyLog from "../../user/models/IdempotencyLog";
+import { idempotencyLogRepository } from "../../user/repositories/idempotency-log.repository";
 
 /**
  * POST /api/trips - Generate new trip
@@ -57,26 +57,66 @@ export const generateTrip = async (
 
     const user = await userRepository.findByClerkId(userId);
 
-    // Create job (with CFO validation)
-    const result = await plannerService.createTripGenerationJob({
-      userId,
-      preferences,
-      language,
-      title,
-    });
-
-    // Persist idempotency log so duplicate requests return the same result
+    // Reserve the key first so a concurrent duplicate can never enqueue twice.
+    let reserved = false;
     if (idempotencyKey) {
       try {
-        await IdempotencyLog.create({
-          key: idempotencyKey,
+        const reservation = await idempotencyLogRepository.reserve(
+          idempotencyKey,
           userId,
-          tripId: result.tripId,
-          jobId: result.jobId,
-        });
-      } catch {
-        // Unique constraint violation = race condition â€” safe to ignore
+        );
+        if (!reservation.reserved) {
+          const { existing } = reservation;
+          if (existing && existing.status !== "pending" && existing.tripId) {
+            res.status(200).json({
+              success: true,
+              message: "Trip generation already started (idempotent)",
+              tripId: existing.tripId,
+              jobId: existing.jobId,
+              idempotent: true,
+            });
+          } else {
+            res.status(409).json({
+              success: false,
+              message:
+                "A request with this idempotency key is already in progress",
+            });
+          }
+          return;
+        }
+        reserved = true;
+      } catch (err) {
+        // Non-fatal, like the middleware check: proceed without idempotency.
+        logger.warn({ err }, "Idempotency reservation failed — proceeding");
       }
+    }
+
+    // Create job (with CFO validation)
+    let result;
+    try {
+      result = await plannerService.createTripGenerationJob({
+        userId,
+        preferences,
+        language,
+        title,
+      });
+    } catch (error) {
+      if (reserved && idempotencyKey) {
+        await idempotencyLogRepository
+          .release(idempotencyKey, userId)
+          .catch((err) =>
+            logger.warn({ err }, "Failed to release idempotency reservation"),
+          );
+      }
+      throw error;
+    }
+
+    if (reserved && idempotencyKey) {
+      await idempotencyLogRepository
+        .complete(idempotencyKey, userId, result.tripId, result.jobId)
+        .catch((err) =>
+          logger.error({ err }, "Failed to complete idempotency reservation"),
+        );
     }
 
     res.status(202).json({
