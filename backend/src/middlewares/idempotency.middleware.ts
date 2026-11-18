@@ -8,8 +8,8 @@ import { logger } from "../lib/logger";
  *
  * Reads the X-Idempotency-Key header. If a matching log exists for this
  * user, short-circuits with the cached tripId/jobId (200). Otherwise the
- * request continues normally and the controller is responsible for saving the
- * log after a successful enqueue.
+ * request continues normally and the controller reserves the key before it
+ * enqueues. A reservation that is still pending answers 409.
  */
 export async function idempotencyMiddleware(
   req: ClerkRequest,
@@ -30,6 +30,13 @@ export async function idempotencyMiddleware(
 
   try {
     const existing = await IdempotencyLog.findOne({ key, userId }).exec();
+    if (existing?.status === "pending") {
+      res.status(409).json({
+        success: false,
+        message: "A request with this idempotency key is already in progress",
+      });
+      return;
+    }
     if (existing) {
       logger.info(
         { key, userId, tripId: existing.tripId },

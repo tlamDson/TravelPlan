@@ -68,6 +68,23 @@ describe("POST /api/trips", () => {
     const list = await request(app).get("/api/trips").set(asUser("user-1"));
     expect(list.body.trips).toHaveLength(1);
   });
+
+  it("creates one trip when two concurrent requests share an X-Idempotency-Key", async () => {
+    const key = "22222222-2222-4222-8222-222222222222";
+    const post = () =>
+      request(app)
+        .post("/api/trips")
+        .set(asUser("user-1"))
+        .set("X-Idempotency-Key", key)
+        .send({ preferences: validTripPreferences() });
+
+    const results = await Promise.all([post(), post()]);
+
+    const accepted = results.filter((r) => r.status === 202);
+    expect(accepted).toHaveLength(1);
+    const list = await request(app).get("/api/trips").set(asUser("user-1"));
+    expect(list.body.trips).toHaveLength(1);
+  });
 });
 
 describe("GET /api/trips/:tripId", () => {

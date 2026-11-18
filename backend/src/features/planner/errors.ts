@@ -8,3 +8,19 @@ export class TripRequestError extends Error {
     this.name = "TripRequestError";
   }
 }
+
+/**
+ * The job is already on the queue but a later step failed. Callers must not
+ * treat the request as retryable-from-scratch: a retry would enqueue twice.
+ */
+export class JobEnqueuedError extends Error {
+  readonly tripId: string;
+  readonly jobId: string;
+
+  constructor(message: string, ids: { tripId: string; jobId: string }) {
+    super(message);
+    this.name = "JobEnqueuedError";
+    this.tripId = ids.tripId;
+    this.jobId = ids.jobId;
+  }
+}

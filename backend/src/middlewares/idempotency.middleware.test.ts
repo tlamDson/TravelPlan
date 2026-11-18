@@ -68,6 +68,21 @@ describe("idempotencyMiddleware", () => {
     expect(findOneMock).toHaveBeenCalledWith({ key: "k1", userId: "user-1" });
   });
 
+  it("answers 409 while the reservation is still pending, without calling next()", async () => {
+    findOneMock.mockReturnValue({
+      exec: vi.fn().mockResolvedValue({ status: "pending" }),
+    });
+    const next = vi.fn();
+    const res = fakeRes();
+    await idempotencyMiddleware(
+      fakeReq({ key: "k1", userId: "user-1" }),
+      res,
+      next,
+    );
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(409);
+  });
+
   it("does not leak a cached result across different userIds for the same key", async () => {
     findOneMock.mockReturnValue({ exec: vi.fn().mockResolvedValue(null) });
     const next = vi.fn();

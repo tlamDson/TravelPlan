@@ -2,11 +2,13 @@ import { Response } from "express";
 import { plannerService } from "../services/planner.service";
 import { ClerkRequest } from "../../../types/express";
 import { TripPreferencesSchema } from "../schemas/trip-request.schema";
-import { TripRequestError } from "../errors";
+import { TripRequestError, JobEnqueuedError } from "../errors";
 import { logger } from "../../../lib/logger";
 import { userQuotaService } from "../services/user-quota.service";
 import { userRepository } from "../../user/repositories/user.repository";
-import IdempotencyLog from "../../user/models/IdempotencyLog";
+import { idempotencyLogRepository } from "../../user/repositories/idempotency-log.repository";
+import { retryInBackground } from "../../../lib/retry-in-background";
+import { randomUUID } from "node:crypto";
 
 /**
  * POST /api/trips - Generate new trip
@@ -57,26 +59,87 @@ export const generateTrip = async (
 
     const user = await userRepository.findByClerkId(userId);
 
-    // Create job (with CFO validation)
-    const result = await plannerService.createTripGenerationJob({
-      userId,
-      preferences,
-      language,
-      title,
-    });
-
-    // Persist idempotency log so duplicate requests return the same result
+    // Reserve the key first so a concurrent duplicate can never enqueue twice.
+    const reservationToken = randomUUID();
+    const releaseReservation = (key: string) =>
+      retryInBackground(
+        () => idempotencyLogRepository.release(key, userId, reservationToken),
+        "Release idempotency reservation",
+      );
+    const completeReservation = (
+      key: string,
+      ids: { tripId: string; jobId: string },
+    ) =>
+      retryInBackground(
+        () =>
+          idempotencyLogRepository.complete(key, userId, ids.tripId, ids.jobId),
+        "Complete idempotency reservation",
+      );
     if (idempotencyKey) {
       try {
-        await IdempotencyLog.create({
-          key: idempotencyKey,
+        const reservation = await idempotencyLogRepository.reserve(
+          idempotencyKey,
           userId,
-          tripId: result.tripId,
-          jobId: result.jobId,
+          reservationToken,
+        );
+        if (!reservation.reserved) {
+          const { existing } = reservation;
+          if (existing && existing.status !== "pending" && existing.tripId) {
+            res.status(200).json({
+              success: true,
+              message: "Trip generation already started (idempotent)",
+              tripId: existing.tripId,
+              jobId: existing.jobId,
+              idempotent: true,
+            });
+          } else {
+            res.status(409).json({
+              success: false,
+              message:
+                "A request with this idempotency key is already in progress",
+            });
+          }
+          return;
+        }
+      } catch (err) {
+        // Fail closed: without a reservation a concurrent duplicate could
+        // enqueue a second job, so never enqueue on an unknown outcome.
+        logger.error({ err }, "Idempotency reservation failed");
+        // The write may still have landed; remove it (only if it is ours) so
+        // a retry is not answered 409 until the TTL.
+        await releaseReservation(idempotencyKey);
+        res.status(503).json({
+          success: false,
+          message: "Could not reserve the idempotency key, retry later",
         });
-      } catch {
-        // Unique constraint violation = race condition — safe to ignore
+        return;
       }
+    }
+
+    // Create job (with CFO validation)
+    let result;
+    try {
+      result = await plannerService.createTripGenerationJob({
+        userId,
+        preferences,
+        language,
+        title,
+      });
+    } catch (error) {
+      if (idempotencyKey) {
+        // A job that is already queued must keep the key: releasing it would
+        // let a retry enqueue a second job.
+        if (error instanceof JobEnqueuedError) {
+          await completeReservation(idempotencyKey, error);
+        } else {
+          await releaseReservation(idempotencyKey);
+        }
+      }
+      throw error;
+    }
+
+    if (idempotencyKey) {
+      await completeReservation(idempotencyKey, result);
     }
 
     res.status(202).json({
