@@ -38,7 +38,7 @@ flowchart TD
 
 - **Plans a trip from a short wizard:** pick a destination, dates, budget and interests; the itinerary is generated in the background while the page shows live progress.
 - **Only suggests places that exist:** every place the AI proposes is checked against Google Places and Mapbox, then grouped by neighborhood so each day stays walkable.
-- **Lets you work with the result:** view each day on a map, edit stops, and sync the trip to your calendar.
+- **Lets you work with the result:** view each day on a map, reorder stops, and regenerate any single stop you do not like.
 
 ## Results in numbers
 
@@ -52,16 +52,6 @@ Every number in this table and in the charts below is a row of [`analytics/runs/
 | GitHub Actions adoption vs PR merge time, staggered DiD, 292 repos | **-17.6%**, 95% CI -0.69 to 0.30 log1p hours: no detectable effect | `did_att_pct_main`, `did_att_ci95_low_main`, `did_att_ci95_high_main` |
 | Budgeted uplift targeting, 10% Criteo sample (418,831 test users)  | T-learner + LP **+5.3%** conversions vs top-k; X-learner -12.0%    | `m8_lp_gain_over_topk_t_b10`, `m8_lp_gain_over_topk_x_b10`            |
 | 7-day forecast of simulated daily active users (MAPE)              | seasonal-naive **8.9%** vs ARIMA **3.4%**                          | `forecast_mape_dau_seasonal_naive`, `forecast_mape_dau_arima`         |
-
-### Engineering
-
-From the owner's record of the project's history (not measurements in `runs.csv`):
-
-| Result                     | Number                                                  |
-| -------------------------- | ------------------------------------------------------- |
-| Backend unit-test coverage | 0% → **61.6%**                                          |
-| Automated tests            | **494** unit + **107** integration                      |
-| PRs that shipped a defect  | over 10% of the first 200+ PRs → under 1 in the last 50 |
 
 ```mermaid
 xychart-beta

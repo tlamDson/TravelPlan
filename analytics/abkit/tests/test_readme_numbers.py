@@ -18,10 +18,6 @@ MERMAID = re.compile(r"```mermaid\n(.*?)```", re.S)
 Y_RANGE = re.compile(r"-?\d+(?:\.\d+)?\s*-->\s*-?\d+(?:\.\d+)?")
 PERCENT_UNITS = {"proportion", "share", "fraction"}
 
-# Engineering numbers are not measurements in runs.csv: they come from the repo owner's
-# record of the project's history and sit in their own table, labelled as such.
-ENGINEERING_NUMBERS = {0.0, 61.6, 494.0, 107.0, 10.0, 200.0, 1.0, 50.0}
-
 
 def _runs():
     with RUNS_CSV_PATH.open(newline="", encoding="utf-8") as fh:
@@ -74,9 +70,7 @@ def _table_rows(section):
 
 def _results_rows():
     text = README.read_text(encoding="utf-8")
-    results = _section(text, "## Results in numbers")
-    measured = results.split("### Engineering")[0]
-    return _table_rows(measured)
+    return _table_rows(_section(text, "## Results in numbers"))
 
 
 def _charts():
@@ -112,14 +106,11 @@ def test_every_results_row_cites_runs_csv_and_quotes_only_its_numbers():
             assert "simulated" in quoted.lower(), row
 
 
-def test_engineering_table_quotes_only_the_owner_reported_numbers():
+def test_results_section_has_no_number_outside_the_checked_table_and_charts():
     text = README.read_text(encoding="utf-8")
-    engineering = _section(text, "## Results in numbers").split("### Engineering")[1]
-    rows = _table_rows(engineering)
-    assert len(rows) >= 2
-    tokens = [t for row in rows for t in NUMBER.findall(row)]
-    assert tokens
-    assert {_parse(t)[0] for t in tokens} <= ENGINEERING_NUMBERS
+    results = MERMAID.sub("", _section(text, "## Results in numbers"))
+    prose = "\n".join(line for line in results.splitlines() if not line.startswith("|"))
+    assert NUMBER.findall(prose) == []
 
 
 def test_three_charts_plot_runs_csv_values():
