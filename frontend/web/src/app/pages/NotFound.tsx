@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 
 // Animated SVG cloud with a floating plane
 function AnimatedCloudPlane() {
@@ -64,6 +65,7 @@ function AnimatedCloudPlane() {
 }
 
 export default function NotFound() {
+  const { t } = useTranslationStore();
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-blue-50 dark:to-slate-900">
       <motion.div
@@ -87,7 +89,7 @@ export default function NotFound() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.7 }}
         >
-          Page Not Found
+          {t("notFound.title")}
         </motion.h2>
         <motion.p
           className="text-muted-foreground max-w-md mx-auto mb-8"
@@ -95,21 +97,21 @@ export default function NotFound() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.7 }}
         >
-          Oops! The page you're looking for doesn't exist or has been moved.
+          {t("notFound.message")}
           <br />
-          Let's get you back on track.
+          {t("notFound.backOnTrack")}
         </motion.p>
         <div className="flex items-center justify-center gap-4 w-full">
           <Button variant="outline" asChild className="w-32">
             <Link to="/">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Home
+              {t("notFound.goHome")}
             </Link>
           </Button>
           <Button asChild className="w-32">
             <Link to="/dashboard">
               <Home className="h-4 w-4 mr-2" />
-              Dashboard
+              {t("notFound.dashboard")}
             </Link>
           </Button>
         </div>
