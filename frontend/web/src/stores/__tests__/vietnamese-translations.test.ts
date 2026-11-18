@@ -103,6 +103,8 @@ const PROPER_NOUNS = new Set([
   "Z",
   "Nhật",
   "Bản",
+  "Canada",
+  "Úc",
   "Kyoto",
   "Tokyo",
   "Bangkok",

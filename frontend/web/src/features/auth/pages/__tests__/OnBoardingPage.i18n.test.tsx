@@ -32,7 +32,6 @@ const STEP_2_ENGLISH = [
 const STEP_3_ENGLISH = [
   "Plan your first trip",
   "Where would you like to go? (optional)",
-  "Destination",
   "Number of travelers",
   "Complete Setup",
 ];
