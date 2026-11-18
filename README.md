@@ -7,32 +7,7 @@ An AI travel planner that turns a destination and a few preferences into a day-b
 
 **Live demo:** [plancare-web-omega.vercel.app](https://plancare-web-omega.vercel.app)
 
-```mermaid
-flowchart TD
-    subgraph Lifecycle["Trip lifecycle"]
-        direction LR
-        DRAFT --> QUEUED --> PROCESSING --> COMPLETED
-        PROCESSING --> FAILED
-    end
-    subgraph Analytics["Analytics (Python)"]
-        Abkit["abkit: A/B tests,<br/>causal inference, forecasts"] --> Runs["runs.csv"]
-        Abkit --> Gates["CI gates: golden datasets,<br/>planted-bug mutants"]
-    end
-
-    User([Traveler]) --> Web["React web app<br/>Vercel"]
-    Web -->|"REST, Clerk session"| API["Express API"]
-    Web -. sign-in .-> Clerk["Clerk auth"]
-    API -. verify session .-> Clerk
-    API -->|"enqueue job, return jobId"| Redis[("Redis<br/>BullMQ queues")]
-    Redis --> Worker["BullMQ workers"]
-    API --> Mongo[("MongoDB<br/>trips, PlaceCache")]
-    Worker --> Mongo
-    Worker -->|"place ideas"| Gemini["Gemini"]
-    Worker -->|"verify places"| Places["Google Places"]
-    Worker -->|"geocode, routes"| Mapbox["Mapbox"]
-    Worker -->|"updates status"| Lifecycle
-    Mongo -->|"product events, hashed IDs"| Abkit
-```
+![Architecture: a traveler uses the React web app on Vercel, which calls the Express API; the API queues jobs on Redis and BullMQ workers build the itinerary with Gemini, Google Places and Mapbox, saving trips to MongoDB; Clerk handles sign-in; each trip moves from DRAFT to COMPLETED or FAILED; product events feed abkit, runs.csv and the CI gates](.github/readme/architecture.svg)
 
 ## What it does
 
@@ -40,45 +15,18 @@ flowchart TD
 - **Only suggests places that exist:** every place the AI proposes is checked against Google Places and Mapbox, then grouped by neighborhood so each day stays walkable.
 - **Lets you work with the result:** view each day on a map, reorder stops, and regenerate any single stop you do not like.
 
-## Results in numbers
+## Results at a glance
 
-Every number in this table and in the charts below is a row of [`analytics/runs/runs.csv`](analytics/runs/runs.csv) (a test checks them). Simulated users are labelled as simulated and are never counted as real users.
+Every number below comes from [`analytics/runs/runs.csv`](analytics/runs/runs.csv), and a test checks each one against it. Simulated users are labelled as simulated and are never counted as real users.
 
-| Result                                                             | Number                                                             | Source (`runs.csv`)                                                   |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| False positives when peeking daily, 10,000 simulated A/A tests     | mSPRT **0.17%** vs daily t-test **21.6%**                          | `fpr_msprt_daily_peek`, `fpr_ttest_daily_peek`                        |
-| Treatment-effect bias, 100 biased resamples of the Hillstrom RCT   | naive **3.7 pp** → doubly robust (AIPW) **-0.015 pp**              | `hillstrom_ate_bias_naive_diff`, `hillstrom_ate_bias_aipw`            |
-| Planted bugs blocked by the golden-dataset CI gate                 | **10 of 10** mutants                                               | `golden_gate_mutants_blocked`                                         |
-| GitHub Actions adoption vs PR merge time, staggered DiD, 292 repos | **-17.6%**, 95% CI -0.69 to 0.30 log1p hours: no detectable effect | `did_att_pct_main`, `did_att_ci95_low_main`, `did_att_ci95_high_main` |
-| Budgeted uplift targeting, 10% Criteo sample (418,831 test users)  | T-learner + LP **+5.3%** conversions vs top-k; X-learner -12.0%    | `m8_lp_gain_over_topk_t_b10`, `m8_lp_gain_over_topk_x_b10`            |
-| 7-day forecast of simulated daily active users (MAPE)              | seasonal-naive **8.9%** vs ARIMA **3.4%**                          | `forecast_mape_dau_seasonal_naive`, `forecast_mape_dau_arima`         |
-
-```mermaid
-xychart-beta
-    %% source: fpr_ttest_daily_peek, fpr_msprt_daily_peek
-    title "False positives when peeking daily (10,000 simulated A/A tests)"
-    x-axis ["t-test read daily", "mSPRT"]
-    y-axis "False positive rate (%)" 0 --> 25
-    bar [21.6, 0.17]
-```
-
-```mermaid
-xychart-beta
-    %% source: forecast_mape_dau_seasonal_naive, forecast_mape_dau_arima
-    title "7-day forecast error on simulated daily active users"
-    x-axis ["Seasonal naive", "ARIMA"]
-    y-axis "MAPE (%)" 0 --> 10
-    bar [8.9, 3.4]
-```
-
-```mermaid
-xychart-beta
-    %% source: m8_incremental_conversions_per_100k_topk_t_b10, m8_incremental_conversions_per_100k_lp_t_b10, m8_incremental_conversions_per_100k_topk_x_b10, m8_incremental_conversions_per_100k_lp_x_b10
-    title "Uplift targeting at a 10% budget (Criteo, 5 seeds)"
-    x-axis ["Top-k (T)", "T-learner + LP", "Top-k (X)", "X-learner + LP"]
-    y-axis "Incremental conversions per 100k users" 0 --> 50
-    bar [39.8, 41.9, 40.6, 35.8]
-```
+| What was tested                                                                                                   | Result                                                                                         | Why it matters                                                                                                                                                       |
+| ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Peeking at an A/B test every day, in 10,000 simulated tests where nothing really changed                          | 21.6% false alarms with a t-test vs 0.17% with mSPRT                                           | Teams can check a dashboard daily without being fooled by noise. <!-- source: fpr_ttest_daily_peek, fpr_msprt_daily_peek -->                                         |
+| Measuring an email campaign's effect from 100 deliberately biased samples of a real experiment (Hillstrom)        | Error of 3.7 pp with a naive comparison vs -0.015 pp with a doubly robust (AIPW) estimate      | The true effect can still be recovered when the data is not a fair random split. <!-- source: hillstrom_ate_bias_naive_diff, hillstrom_ate_bias_aipw -->             |
+| Planting bugs in the statistics code to see if CI catches them                                                    | 10 of 10 planted bugs blocked                                                                  | A broken statistics change cannot merge unnoticed. <!-- source: golden_gate_mutants_blocked -->                                                                      |
+| Whether adopting GitHub Actions changed pull-request merge time, across 292 repositories                          | -17.6% estimate, but the 95% range includes no change: no detectable effect                    | The toolkit reports an honest "no effect" instead of overclaiming a win. <!-- source: did_att_pct_main, did_att_ci95_low_main, did_att_ci95_high_main -->            |
+| Choosing which users get an offer on a fixed 10% budget, among 418,831 test users of a public ad dataset (Criteo) | +5.3% more conversions than picking the top-scored users (T-learner); -12.0% with an X-learner | The same budget buys more results with the right model, and the check catches the wrong one. <!-- source: m8_lp_gain_over_topk_t_b10, m8_lp_gain_over_topk_x_b10 --> |
+| Forecasting the next 7 days of simulated daily active users                                                       | 8.9% average error with a seasonal-naive baseline vs 3.4% with ARIMA                           | Better forecasts mean fewer surprises when planning capacity. <!-- source: forecast_mape_dau_seasonal_naive, forecast_mape_dau_arima -->                             |
 
 ## What I built
 
