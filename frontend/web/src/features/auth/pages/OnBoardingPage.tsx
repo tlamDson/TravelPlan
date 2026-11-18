@@ -11,6 +11,7 @@ import { useUser } from "@clerk/clerk-react";
 import { Check, ChevronLeft, ChevronRight, Loader2, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 import { toastT } from "@/lib/toast-i18n";
 import {
   DEFAULT_USER_PREFERENCES,
@@ -32,6 +33,7 @@ import {
 const TOTAL_STEPS = 3;
 
 export default function OnBoardingPage() {
+  const t = useTranslationStore((state) => state.t);
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -145,7 +147,7 @@ export default function OnBoardingPage() {
           <span className="font-bold text-xl">TravelPlan</span>
         </div>
         <Button variant="ghost" onClick={handleSkip}>
-          Skip for now
+          {t("onboarding.skip")}
         </Button>
       </header>
 
@@ -207,12 +209,12 @@ export default function OnBoardingPage() {
           <div className="flex justify-between mt-8">
             <Button variant="ghost" onClick={handleBack} disabled={step === 1}>
               <ChevronLeft className="h-4 w-4 mr-2" />
-              Back
+              {t("onboarding.back")}
             </Button>
 
             {step < TOTAL_STEPS ? (
               <Button onClick={handleNext}>
-                Next
+                {t("onboarding.next")}
                 <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
@@ -220,10 +222,10 @@ export default function OnBoardingPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Setting up...
+                    {t("onboarding.settingUp")}
                   </>
                 ) : (
-                  "Complete Setup"
+                  t("onboarding.complete")
                 )}
               </Button>
             )}

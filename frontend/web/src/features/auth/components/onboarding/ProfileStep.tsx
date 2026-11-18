@@ -6,6 +6,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 import { CURRENCIES } from "../../constants/onboarding";
 
 interface ProfileStepProps {
@@ -21,28 +22,29 @@ export function ProfileStep({
   onNameChange,
   onCurrencyChange,
 }: ProfileStepProps) {
+  const t = useTranslationStore((state) => state.t);
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Let's set up your profile</h2>
+        <h2 className="text-2xl font-bold mb-2">{t("onboarding.profile.title")}</h2>
         <p className="text-muted-foreground">
-          Choose how your name appears publicly when sharing trips.
+          {t("onboarding.profile.subtitle")}
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="displayName">Public nickname / username</Label>
+          <Label htmlFor="displayName">{t("onboarding.profile.nickname")}</Label>
           <Input
             id="displayName"
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
-            placeholder="e.g., nomad.minh"
+            placeholder={t("onboarding.profile.nicknamePlaceholder")}
           />
         </div>
 
         <div className="space-y-2">
-          <Label>Preferred currency</Label>
+          <Label>{t("onboarding.profile.currency")}</Label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {CURRENCIES.map((c) => (
               <button
@@ -59,7 +61,7 @@ export function ProfileStep({
                 <span className="font-medium">
                   {c.symbol} {c.code}
                 </span>
-                <p className="text-xs text-muted-foreground">{c.name}</p>
+                <p className="text-xs text-muted-foreground">{t(`onboarding.currency.${c.code}`)}</p>
               </button>
             ))}
           </div>
