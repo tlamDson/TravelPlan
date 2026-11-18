@@ -3,7 +3,7 @@
 An AI travel planner that turns a destination and a few preferences into a day-by-day itinerary of real, verified places, plus `abkit`, the A/B testing and causal-inference toolkit used to measure it.
 
 [![CI](https://github.com/tlamDson/TravelPlan/actions/workflows/ci-main.yml/badge.svg?branch=main)](https://github.com/tlamDson/TravelPlan/actions/workflows/ci-main.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Live demo:** [plancare-web-omega.vercel.app](https://plancare-web-omega.vercel.app)
 
@@ -116,4 +116,4 @@ Environment variables, Redis/TLS, deployment, scripts and troubleshooting: [DEVE
 
 ## License
 
-MIT.
+MIT — see [LICENSE](LICENSE).
