@@ -21,6 +21,8 @@ export interface IUser extends Document {
   appliedStripeEventIds?: string[];
   /** Last applied state per Stripe subscription id (see applyStripeSubscriptionEvent). */
   stripeSubscriptions?: Map<string, IStripeSubscriptionState>;
+  /** Bumped by every Stripe billing write; guards read-then-write tier sync. */
+  stripeBillingRevision?: number;
   credits: number;
   quotaResetsAt?: Date;
   preferences: {
@@ -116,6 +118,11 @@ const UserSchema = new Schema<IUser>(
         },
         { _id: false },
       ),
+      default: undefined,
+      select: false,
+    },
+    stripeBillingRevision: {
+      type: Number,
       default: undefined,
       select: false,
     },

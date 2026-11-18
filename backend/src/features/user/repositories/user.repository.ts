@@ -7,9 +7,16 @@ const APPLIED_STRIPE_EVENT_HISTORY = 50;
 /** Stripe ids are [A-Za-z0-9_]; anything else must never become a Mongo path. */
 const STRIPE_ID = /^[A-Za-z0-9_]+$/;
 
+/** A missing revision counts as 0 (users written before it existed). */
+const revisionFilter = (revision: number) =>
+  revision === 0 ? { $in: [null, 0] } : revision;
+
 export interface StripeBillingState {
   tier: IUser["tier"];
+  stripeCustomerId?: string;
   subscriptions: Record<string, IStripeSubscriptionState>;
+  appliedEventIds: string[];
+  revision: number;
 }
 
 export interface StripeSubscriptionUpdate extends IStripeSubscriptionState {
@@ -67,6 +74,7 @@ export class UserRepository {
       { clerkUserId, appliedStripeEventIds: { $ne: eventId } },
       {
         $set: updateData,
+        $inc: { stripeBillingRevision: 1 },
         $push: {
           appliedStripeEventIds: {
             $each: [eventId],
@@ -82,24 +90,44 @@ export class UserRepository {
     clerkUserId: string,
   ): Promise<StripeBillingState | null> {
     const user = await User.findOne({ clerkUserId })
-      .select({ tier: 1, stripeSubscriptions: 1 })
+      .select({
+        tier: 1,
+        stripeCustomerId: 1,
+        stripeSubscriptions: 1,
+        appliedStripeEventIds: 1,
+        stripeBillingRevision: 1,
+      })
       .lean<{
         tier: IUser["tier"];
+        stripeCustomerId?: string;
         stripeSubscriptions?: Record<string, IStripeSubscriptionState>;
+        appliedStripeEventIds?: string[];
+        stripeBillingRevision?: number;
       }>();
     if (!user) return null;
-    return { tier: user.tier, subscriptions: user.stripeSubscriptions ?? {} };
+    return {
+      tier: user.tier,
+      ...(user.stripeCustomerId
+        ? { stripeCustomerId: user.stripeCustomerId }
+        : {}),
+      subscriptions: user.stripeSubscriptions ?? {},
+      appliedEventIds: user.appliedStripeEventIds ?? [],
+      revision: user.stripeBillingRevision ?? 0,
+    };
   }
 
   /**
    * Record a subscription's status (and the tier, when given) for one Stripe
-   * event, atomically and at most once per event id. Skipped (returns null)
-   * when an event at least as new was already applied to that subscription.
+   * event, atomically and at most once per event id. Returns null — nothing
+   * written — when the event was already applied, an event at least as new
+   * was already applied to that subscription, or another billing write
+   * happened since `expectedRevision` was read (the caller re-reads).
    */
   async applyStripeSubscriptionEvent(
     clerkUserId: string,
     eventId: string,
     update: StripeSubscriptionUpdate,
+    expectedRevision: number,
   ): Promise<IUser | null> {
     const { subscriptionId, tier, ...entry } = update;
     if (!STRIPE_ID.test(subscriptionId)) {
@@ -110,10 +138,12 @@ export class UserRepository {
       {
         clerkUserId,
         appliedStripeEventIds: { $ne: eventId },
+        stripeBillingRevision: revisionFilter(expectedRevision),
         $nor: [{ [`${path}.eventCreated`]: { $gte: entry.eventCreated } }],
       },
       {
         $set: { [path]: entry, ...(tier ? { tier } : {}) },
+        $inc: { stripeBillingRevision: 1 },
         $push: {
           appliedStripeEventIds: {
             $each: [eventId],
