@@ -7,8 +7,7 @@ export interface StoredIdempotency {
 }
 
 export type Reservation =
-  | { reserved: true }
-  | { reserved: false; existing: StoredIdempotency | null };
+  { reserved: true } | { reserved: false; existing: StoredIdempotency | null };
 
 const DUPLICATE_KEY = 11000;
 
@@ -23,10 +22,16 @@ export const idempotencyLogRepository = {
       return { reserved: true };
     } catch (err) {
       if ((err as { code?: number }).code !== DUPLICATE_KEY) throw err;
-      const existing = await IdempotencyLog.findOne({ key, userId })
-        .lean()
-        .exec();
-      return { reserved: false, existing };
+      // The key is taken. If the lookup fails we still must not enqueue, so
+      // report "taken, contents unknown" rather than throwing.
+      try {
+        const existing = await IdempotencyLog.findOne({ key, userId })
+          .lean()
+          .exec();
+        return { reserved: false, existing };
+      } catch {
+        return { reserved: false, existing: null };
+      }
     }
   },
 

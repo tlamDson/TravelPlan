@@ -2,7 +2,7 @@ import { Response } from "express";
 import { plannerService } from "../services/planner.service";
 import { ClerkRequest } from "../../../types/express";
 import { TripPreferencesSchema } from "../schemas/trip-request.schema";
-import { TripRequestError } from "../errors";
+import { TripRequestError, JobEnqueuedError } from "../errors";
 import { logger } from "../../../lib/logger";
 import { userQuotaService } from "../services/user-quota.service";
 import { userRepository } from "../../user/repositories/user.repository";
@@ -87,7 +87,7 @@ export const generateTrip = async (
         reserved = true;
       } catch (err) {
         // Non-fatal, like the middleware check: proceed without idempotency.
-        logger.warn({ err }, "Idempotency reservation failed — proceeding");
+        logger.warn({ err }, "Idempotency reservation failed ï¿½ proceeding");
       }
     }
 
@@ -102,11 +102,20 @@ export const generateTrip = async (
       });
     } catch (error) {
       if (reserved && idempotencyKey) {
-        await idempotencyLogRepository
-          .release(idempotencyKey, userId)
-          .catch((err) =>
-            logger.warn({ err }, "Failed to release idempotency reservation"),
-          );
+        // A job that is already queued must keep the key: releasing it would
+        // let a retry enqueue a second job.
+        const settle =
+          error instanceof JobEnqueuedError
+            ? idempotencyLogRepository.complete(
+                idempotencyKey,
+                userId,
+                error.tripId,
+                error.jobId,
+              )
+            : idempotencyLogRepository.release(idempotencyKey, userId);
+        await settle.catch((err) =>
+          logger.warn({ err }, "Failed to settle idempotency reservation"),
+        );
       }
       throw error;
     }

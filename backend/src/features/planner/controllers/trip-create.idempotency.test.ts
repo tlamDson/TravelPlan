@@ -54,6 +54,7 @@ vi.mock("../../../lib/logger", () => ({
 }));
 
 import { generateTrip } from "./trip-create.controller";
+import { JobEnqueuedError } from "../errors";
 import { plannerService } from "../services/planner.service";
 import { userQuotaService } from "../services/user-quota.service";
 import { userRepository } from "../../user/repositories/user.repository";
@@ -192,5 +193,43 @@ describe("generateTrip idempotency reservation", () => {
 
     expect(store.size).toBe(0);
     expect(plannerService.createTripGenerationJob).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not enqueue when the duplicate lookup fails", async () => {
+    store.set(KEY, { key: KEY, userId: "user_1", status: "pending" });
+    const IdempotencyLog = (await import("../../user/models/IdempotencyLog"))
+      .default as any;
+    IdempotencyLog.findOne.mockImplementationOnce(() => {
+      throw new Error("mongo unavailable");
+    });
+    const res = makeRes();
+
+    await generateTrip(makeReq(), res);
+
+    expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
+    expect(res.status.mock.calls[0][0]).toBeGreaterThanOrEqual(409);
+  });
+
+  it("keeps the reservation, completed with the ids, when a failure follows the enqueue", async () => {
+    vi.mocked(plannerService.createTripGenerationJob).mockRejectedValue(
+      new JobEnqueuedError("lock write failed", {
+        tripId: "trip-1",
+        jobId: "job-1",
+      }),
+    );
+    const res = makeRes();
+
+    await generateTrip(makeReq(), res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(store.get(KEY)).toMatchObject({
+      tripId: "trip-1",
+      jobId: "job-1",
+      status: "completed",
+    });
+    const retry = makeRes();
+    await generateTrip(makeReq(), retry);
+    expect(plannerService.createTripGenerationJob).toHaveBeenCalledTimes(1);
+    expect(retry.status).toHaveBeenCalledWith(200);
   });
 });

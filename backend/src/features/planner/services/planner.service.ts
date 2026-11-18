@@ -5,7 +5,7 @@ import { userRepository } from "../../user/repositories/user.repository";
 import { budgetValidatorService } from "./budget-validator.service";
 import { TripPreferences } from "../schemas/trip-request.schema";
 import { tripQueue, TRIP_JOB_OPTIONS } from "../trip.queue";
-import { TripRequestError } from "../errors";
+import { TripRequestError, JobEnqueuedError } from "../errors";
 import {
   getJobStatusForUser,
   retryTripJobForUser,
@@ -30,6 +30,7 @@ export class PlannerService {
     params: GenerateTripParams,
   ): Promise<{ jobId: string; tripId: string }> {
     const { userId, preferences } = params;
+    let enqueued: { tripId: string; jobId: string } | undefined;
 
     try {
       const startDate = new Date(preferences.startDate);
@@ -119,6 +120,7 @@ export class PlannerService {
         },
       );
 
+      enqueued = { tripId: trip._id.toString(), jobId: job.id as string };
       await tripRepository.acquireLock(trip._id, job.id as string);
 
       logger.info(
@@ -142,6 +144,9 @@ export class PlannerService {
         { error: error.message, stack: error.stack, userId },
         "Failed to create trip generation job",
       );
+      if (enqueued) {
+        throw new JobEnqueuedError(error.message, enqueued);
+      }
       throw error;
     }
   }

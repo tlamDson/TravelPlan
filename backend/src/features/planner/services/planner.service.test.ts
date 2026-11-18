@@ -15,7 +15,8 @@ vi.mock("../../../lib/logger", () => ({
 }));
 
 import { plannerService } from "./planner.service";
-import { TripRequestError } from "../errors";
+import { TripRequestError, JobEnqueuedError } from "../errors";
+import { tripQueue } from "../trip.queue";
 import { tripRepository } from "../repositories/trip.repository";
 import { userRepository } from "../../user/repositories/user.repository";
 
@@ -78,13 +79,48 @@ describe("createTripGenerationJob rejections are TripRequestError", () => {
   });
 
   it("does not wrap an infrastructure failure as TripRequestError", async () => {
-    vi.mocked(tripRepository.create).mockRejectedValue(
-      new Error("mongo down"),
-    );
+    vi.mocked(tripRepository.create).mockRejectedValue(new Error("mongo down"));
     const err = await plannerService
       .createTripGenerationJob({ userId: "u1", preferences: prefs() })
       .catch((e) => e);
     expect(err).toBeInstanceOf(Error);
     expect(err).not.toBeInstanceOf(TripRequestError);
+  });
+});
+
+describe("createTripGenerationJob failure after the job is enqueued", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(userRepository.findByClerkId).mockResolvedValue({
+      tier: "free",
+    } as any);
+    vi.mocked(tripRepository.create).mockResolvedValue({
+      _id: { toString: () => "trip-1" },
+    } as any);
+    vi.mocked(tripQueue.add).mockResolvedValue({ id: "job-1" } as any);
+  });
+
+  it("throws JobEnqueuedError carrying tripId and jobId when acquireLock fails", async () => {
+    vi.mocked(tripRepository.acquireLock).mockRejectedValue(
+      new Error("lock write failed"),
+    );
+
+    const err = await plannerService
+      .createTripGenerationJob({ userId: "u1", preferences: prefs() })
+      .catch((e) => e);
+
+    expect(err).toBeInstanceOf(JobEnqueuedError);
+    expect(err).toMatchObject({ tripId: "trip-1", jobId: "job-1" });
+  });
+
+  it("keeps the original error when enqueueing itself fails", async () => {
+    vi.mocked(tripQueue.add).mockRejectedValue(new Error("ECONNREFUSED"));
+
+    const err = await plannerService
+      .createTripGenerationJob({ userId: "u1", preferences: prefs() })
+      .catch((e) => e);
+
+    expect(err).not.toBeInstanceOf(JobEnqueuedError);
+    expect(err.message).toBe("ECONNREFUSED");
   });
 });
