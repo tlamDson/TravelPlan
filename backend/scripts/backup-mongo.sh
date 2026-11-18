@@ -26,7 +26,7 @@ fi
 
 # shellcheck source=sanitize-s3-env.sh
 source "$(dirname "${BASH_SOURCE[0]}")/sanitize-s3-env.sh"
-sanitize_s3_env
+sanitize_s3_env || exit 1
 
 if [ -z "${BACKUP_S3_ENDPOINT:-}" ] || [ -z "${BACKUP_S3_BUCKET:-}" ] || \
    [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then

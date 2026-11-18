@@ -23,23 +23,41 @@ _s3_clean() {
   printf -v "$2" '%s' "$v"
 }
 
+# A variable that is unset or empty is "not configured" (GitHub passes a
+# missing secret as ""). One that is set but empty after cleaning (e.g. `""` or
+# a bare newline) is a broken secret: fail instead of silently skipping.
 sanitize_s3_env() {
-  local name value
+  local name value bad=0
   for name in "${S3_ENV_VARS[@]}"; do
     value="${!name:-}"
     [ -z "$value" ] && continue
     _s3_clean "$value" value
+    if [ -z "$value" ]; then
+      echo "❌ ${name} is set but has length 0 after removing whitespace and quotes (value not shown)." >&2
+      bad=1
+      continue
+    fi
     export "$name=$value"
   done
+  return "$bad"
+}
+
+# True when the endpoint's host is r2.cloudflarestorage.com or a subdomain.
+# Only the host part of the URL counts: path, query, fragment, userinfo and
+# port are ignored.
+_s3_endpoint_is_r2() {
+  local rest="${1#*://}" host
+  rest="${rest%%[/?#]*}"
+  rest="${rest##*@}"
+  host="${rest%%:*}"
+  host="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
+  [ "$host" = "r2.cloudflarestorage.com" ] || [[ "$host" == *.r2.cloudflarestorage.com ]]
 }
 
 # R2 access key ids are 32 characters and secrets 64. Reports the variable and
 # its length only.
 validate_s3_credentials() {
-  case "${BACKUP_S3_ENDPOINT:-}" in
-    *r2.cloudflarestorage.com*) ;;
-    *) return 0 ;;
-  esac
+  _s3_endpoint_is_r2 "${BACKUP_S3_ENDPOINT:-}" || return 0
   local bad=0
   if [ "${#AWS_ACCESS_KEY_ID}" -ne 32 ]; then
     echo "❌ AWS_ACCESS_KEY_ID has length ${#AWS_ACCESS_KEY_ID}, expected 32 for an R2 endpoint (value not shown)." >&2
