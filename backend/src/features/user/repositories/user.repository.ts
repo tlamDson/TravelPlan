@@ -82,7 +82,7 @@ export class UserRepository {
     clerkUserId: string,
   ): Promise<StripeBillingState | null> {
     const user = await User.findOne({ clerkUserId })
-      .select("tier +stripeSubscriptions")
+      .select({ tier: 1, stripeSubscriptions: 1 })
       .lean<{
         tier: IUser["tier"];
         stripeSubscriptions?: Record<string, IStripeSubscriptionState>;
