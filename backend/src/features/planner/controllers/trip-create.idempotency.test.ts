@@ -232,4 +232,17 @@ describe("generateTrip idempotency reservation", () => {
     expect(plannerService.createTripGenerationJob).toHaveBeenCalledTimes(1);
     expect(retry.status).toHaveBeenCalledWith(200);
   });
+  it("does not enqueue when the reservation write fails", async () => {
+    const IdempotencyLog = (await import("../../user/models/IdempotencyLog"))
+      .default as any;
+    IdempotencyLog.create.mockRejectedValueOnce(
+      new Error("MongoServerSelectionError: connection timed out"),
+    );
+    const res = makeRes();
+
+    await generateTrip(makeReq(), res);
+
+    expect(plannerService.createTripGenerationJob).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(503);
+  });
 });
