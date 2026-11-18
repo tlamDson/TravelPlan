@@ -176,6 +176,7 @@ describe("validate_s3_credentials", () => {
     "https://notr2.cloudflarestorage.com",
     "https://r2.cloudflarestorage.com@evil.test",
     "https://evil-r2.cloudflarestorage.com",
+    "https://r2.cloudflarestorage.com.evil.test.",
   ])("does not treat %s as an R2 endpoint", (endpoint) => {
     const r = validate({
       ...baseEnv,
@@ -190,6 +191,10 @@ describe("validate_s3_credentials", () => {
     "HTTPS://ACCT.R2.CLOUDFLARESTORAGE.COM",
     "https://r2.cloudflarestorage.com",
     "https://user:pw@acct.r2.cloudflarestorage.com/path?x=1",
+    "https://acct.r2.cloudflarestorage.com.",
+    "https://acct.r2.cloudflarestorage.com./bucket",
+    "https://acct.r2.cloudflarestorage.com.:443",
+    "https://r2.cloudflarestorage.com.",
   ])("still enforces lengths for the R2 endpoint %s", (endpoint) => {
     const r = validate({
       ...baseEnv,
