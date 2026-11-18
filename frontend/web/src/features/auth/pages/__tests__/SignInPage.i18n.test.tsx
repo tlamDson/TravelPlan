@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 import SignInPage from "../SignInPage";
@@ -61,4 +61,22 @@ describe("SignInPage i18n", () => {
       }
     },
   );
+});
+
+describe("SignInPage validation i18n", () => {
+  afterEach(() => useTranslationStore.setState(INITIAL_STATE, true));
+
+  it("shows validation errors in Vietnamese", async () => {
+    useTranslationStore.setState({ language: "Vietnamese" });
+    renderWithProviders(<SignInPage />, { route: "/signin" });
+    fireEvent.submit(screen.getByRole("button", { name: "Đăng nhập" }));
+
+    expect(
+      await screen.findByText("Vui lòng nhập địa chỉ email hợp lệ"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Vui lòng nhập mật khẩu")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/valid email|Password is required/),
+    ).not.toBeInTheDocument();
+  });
 });
