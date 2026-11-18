@@ -44,12 +44,13 @@ sanitize_s3_env() {
 
 # True when the endpoint's host is r2.cloudflarestorage.com or a subdomain.
 # Only the host part of the URL counts: path, query, fragment, userinfo and
-# port are ignored.
+# port are ignored, and a final DNS root dot ("host.") is the same host.
 _s3_endpoint_is_r2() {
   local rest="${1#*://}" host
   rest="${rest%%[/?#]*}"
   rest="${rest##*@}"
   host="${rest%%:*}"
+  host="${host%.}"
   host="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
   [ "$host" = "r2.cloudflarestorage.com" ] || [[ "$host" == *.r2.cloudflarestorage.com ]]
 }
