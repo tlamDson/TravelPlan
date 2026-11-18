@@ -161,7 +161,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "pref.avoidCrowds": "Avoid crowds",
     "pref.foodAsMain": "Food as main activities",
     "pref.specialRequirements": "Special Requirements",
-    "pref.specialRequirementsPlaceholder": "Dietary, accessibility, health, kid-friendly needs...",
+    "pref.specialRequirementsPlaceholder":
+      "Dietary, accessibility, health, kid-friendly needs...",
     "pref.airportPlaceholder": "e.g., JFK, LHR, SFO",
     "pref.mealsPlaceholder": "e.g., Vegetarian, Halal, Gluten-Free",
     "pref.toastSaved": "Travel preferences saved",
@@ -551,6 +552,12 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.resetsInOther": "Resets in {count} days.",
     "common.close": "Close",
     "common.toggleTheme": "Toggle theme",
+    "notFound.title": "Page Not Found",
+    "notFound.message":
+      "Oops! The page you're looking for doesn't exist or has been moved.",
+    "notFound.backOnTrack": "Let's get you back on track.",
+    "notFound.goHome": "Go Home",
+    "notFound.dashboard": "Dashboard",
     "settings.autoLoadLabel": "Auto-load long trip days",
     "settings.autoLoadDesc":
       "If enabled, we load upcoming chunks automatically. This may take longer, and you can return later.",
@@ -778,7 +785,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "pref.avoidCrowds": "Éviter la foule",
     "pref.foodAsMain": "Restaurants comme activités principales",
     "pref.specialRequirements": "Besoins particuliers",
-    "pref.specialRequirementsPlaceholder": "Régime alimentaire, accessibilité, santé, besoins enfants...",
+    "pref.specialRequirementsPlaceholder":
+      "Régime alimentaire, accessibilité, santé, besoins enfants...",
     "pref.airportPlaceholder": "ex. : CDG, ORY, LYS",
     "pref.mealsPlaceholder": "ex. : Végétarien, Halal, Sans gluten",
     "pref.toastSaved": "Préférences de voyage enregistrées",
@@ -1178,6 +1186,12 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.resetsInOther": "Réinitialisation dans {count} jours.",
     "common.close": "Fermer",
     "common.toggleTheme": "Changer de thème",
+    "notFound.title": "Page introuvable",
+    "notFound.message":
+      "Oups ! La page que vous cherchez n'existe pas ou a été déplacée.",
+    "notFound.backOnTrack": "Reprenons la bonne route.",
+    "notFound.goHome": "Accueil",
+    "notFound.dashboard": "Tableau de bord",
     "settings.autoLoadLabel": "Chargement automatique des longs voyages",
     "settings.autoLoadDesc":
       "Si activé, nous chargeons automatiquement les jours suivants. Cela peut prendre plus de temps, et vous pourrez revenir plus tard.",
@@ -1408,7 +1422,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "pref.avoidCrowds": "Tránh nơi đông người",
     "pref.foodAsMain": "Quán ăn là hoạt động chính",
     "pref.specialRequirements": "Yêu cầu đặc biệt",
-    "pref.specialRequirementsPlaceholder": "Chế độ ăn, khả năng tiếp cận, sức khỏe, nhu cầu cho trẻ em...",
+    "pref.specialRequirementsPlaceholder":
+      "Chế độ ăn, khả năng tiếp cận, sức khỏe, nhu cầu cho trẻ em...",
     "pref.airportPlaceholder": "VD: SGN, HAN, DAD",
     "pref.mealsPlaceholder": "VD: ăn chay, halal, không gluten",
     "pref.toastSaved": "Đã lưu sở thích du lịch",
@@ -1801,6 +1816,12 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "sidebar.resetsInOther": "Đặt lại sau {count} ngày.",
     "common.close": "Đóng",
     "common.toggleTheme": "Chuyển đổi giao diện",
+    "notFound.title": "Không tìm thấy trang",
+    "notFound.message":
+      "Rất tiếc! Trang bạn đang tìm không tồn tại hoặc đã được chuyển đi.",
+    "notFound.backOnTrack": "Hãy cùng quay lại đúng hướng nhé.",
+    "notFound.goHome": "Về trang chủ",
+    "notFound.dashboard": "Bảng điều khiển",
     "settings.autoLoadLabel": "Tự động tải các ngày của chuyến đi dài",
     "settings.autoLoadDesc":
       "Nếu bật, chúng tôi sẽ tự động tải các ngày tiếp theo. Việc này có thể mất thêm thời gian, bạn có thể quay lại sau.",
