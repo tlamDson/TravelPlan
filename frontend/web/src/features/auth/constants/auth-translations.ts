@@ -46,6 +46,40 @@ const EN: Copy = {
   "auth.signUp.benefit.budget": "Real-time budget tracking",
   "auth.signUp.benefit.maps": "Interactive maps with route planning",
   "auth.signUp.benefit.share": "Export and share your plans",
+
+  "auth.validation.firstNameRequired": "First name is required",
+  "auth.validation.lastNameRequired": "Last name is required",
+  "auth.validation.emailInvalid": "Please enter a valid email",
+  "auth.validation.passwordRequired": "Password is required",
+  "auth.validation.passwordMin": "Password must be at least 8 characters",
+  "auth.validation.passwordMismatch": "Passwords don't match",
+  "auth.validation.passwordCommon":
+    "This password is too common. Choose a longer, more unique password.",
+  "auth.validation.passwordWeak":
+    "Password is too weak. Use upper & lowercase letters, a number, and a special character.",
+  "auth.strength.0": "Very Weak",
+  "auth.strength.1": "Weak",
+  "auth.strength.2": "Fair",
+  "auth.strength.3": "Good",
+  "auth.strength.4": "Strong",
+  "auth.strength.tipUppercase": "Add uppercase",
+  "auth.strength.tipNumber": "Add number",
+  "auth.strength.tipSymbol": "Add symbol",
+  "auth.clerkError.form_password_pwned":
+    "Password is too weak. Please choose a stronger password.",
+  "auth.clerkError.form_password_length_too_short":
+    "Password must be at least 8 characters.",
+  "auth.clerkError.form_password_no_uppercase":
+    "Password must contain at least one uppercase letter.",
+  "auth.clerkError.form_password_no_lowercase":
+    "Password must contain at least one lowercase letter.",
+  "auth.clerkError.form_password_no_number":
+    "Password must contain at least one number.",
+  "auth.clerkError.form_identifier_exists":
+    "An account with this email already exists. Try signing in instead.",
+  "auth.clerkError.form_param_format_invalid":
+    "Please enter a valid email address.",
+  "auth.clerkError.form_param_nil": "Please fill in all required fields.",
 };
 
 const FR: Copy = {
@@ -91,6 +125,41 @@ const FR: Copy = {
   "auth.signUp.benefit.maps":
     "Cartes interactives avec planification d'itinéraire",
   "auth.signUp.benefit.share": "Exportez et partagez vos plans",
+
+  "auth.validation.firstNameRequired": "Le prénom est obligatoire",
+  "auth.validation.lastNameRequired": "Le nom est obligatoire",
+  "auth.validation.emailInvalid": "Saisissez une adresse e-mail valide",
+  "auth.validation.passwordRequired": "Le mot de passe est obligatoire",
+  "auth.validation.passwordMin":
+    "Le mot de passe doit contenir au moins 8 caractères",
+  "auth.validation.passwordMismatch": "Les mots de passe ne correspondent pas",
+  "auth.validation.passwordCommon":
+    "Ce mot de passe est trop courant. Choisissez un mot de passe plus long et plus unique.",
+  "auth.validation.passwordWeak":
+    "Mot de passe trop faible. Utilisez des majuscules et des minuscules, un chiffre et un caractère spécial.",
+  "auth.strength.0": "Très faible",
+  "auth.strength.1": "Faible",
+  "auth.strength.2": "Moyen",
+  "auth.strength.3": "Bon",
+  "auth.strength.4": "Fort",
+  "auth.strength.tipUppercase": "Ajoutez une majuscule",
+  "auth.strength.tipNumber": "Ajoutez un chiffre",
+  "auth.strength.tipSymbol": "Ajoutez un symbole",
+  "auth.clerkError.form_password_pwned":
+    "Mot de passe trop faible. Choisissez un mot de passe plus robuste.",
+  "auth.clerkError.form_password_length_too_short":
+    "Le mot de passe doit contenir au moins 8 caractères.",
+  "auth.clerkError.form_password_no_uppercase":
+    "Le mot de passe doit contenir au moins une majuscule.",
+  "auth.clerkError.form_password_no_lowercase":
+    "Le mot de passe doit contenir au moins une minuscule.",
+  "auth.clerkError.form_password_no_number":
+    "Le mot de passe doit contenir au moins un chiffre.",
+  "auth.clerkError.form_identifier_exists":
+    "Un compte existe déjà avec cet e-mail. Essayez plutôt de vous connecter.",
+  "auth.clerkError.form_param_format_invalid":
+    "Saisissez une adresse e-mail valide.",
+  "auth.clerkError.form_param_nil": "Remplissez tous les champs obligatoires.",
 };
 
 const VI: Copy = {
@@ -135,6 +204,40 @@ const VI: Copy = {
   "auth.signUp.benefit.budget": "Theo dõi ngân sách theo thời gian thực",
   "auth.signUp.benefit.maps": "Bản đồ tương tác với lộ trình",
   "auth.signUp.benefit.share": "Xuất và chia sẻ kế hoạch",
+
+  "auth.validation.firstNameRequired": "Vui lòng nhập tên",
+  "auth.validation.lastNameRequired": "Vui lòng nhập họ",
+  "auth.validation.emailInvalid": "Vui lòng nhập địa chỉ email hợp lệ",
+  "auth.validation.passwordRequired": "Vui lòng nhập mật khẩu",
+  "auth.validation.passwordMin": "Mật khẩu phải có ít nhất 8 ký tự",
+  "auth.validation.passwordMismatch": "Mật khẩu không khớp",
+  "auth.validation.passwordCommon":
+    "Mật khẩu này quá phổ biến. Hãy chọn mật khẩu dài và độc đáo hơn.",
+  "auth.validation.passwordWeak":
+    "Mật khẩu quá yếu. Hãy dùng chữ hoa và chữ thường, một chữ số và một ký tự đặc biệt.",
+  "auth.strength.0": "Rất yếu",
+  "auth.strength.1": "Yếu",
+  "auth.strength.2": "Trung bình",
+  "auth.strength.3": "Khá",
+  "auth.strength.4": "Mạnh",
+  "auth.strength.tipUppercase": "Thêm chữ hoa",
+  "auth.strength.tipNumber": "Thêm chữ số",
+  "auth.strength.tipSymbol": "Thêm ký hiệu",
+  "auth.clerkError.form_password_pwned":
+    "Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn.",
+  "auth.clerkError.form_password_length_too_short":
+    "Mật khẩu phải có ít nhất 8 ký tự.",
+  "auth.clerkError.form_password_no_uppercase":
+    "Mật khẩu phải có ít nhất một chữ hoa.",
+  "auth.clerkError.form_password_no_lowercase":
+    "Mật khẩu phải có ít nhất một chữ thường.",
+  "auth.clerkError.form_password_no_number":
+    "Mật khẩu phải có ít nhất một chữ số.",
+  "auth.clerkError.form_identifier_exists":
+    "Email này đã có tài khoản. Hãy thử đăng nhập.",
+  "auth.clerkError.form_param_format_invalid":
+    "Vui lòng nhập địa chỉ email hợp lệ.",
+  "auth.clerkError.form_param_nil": "Vui lòng điền đầy đủ các trường bắt buộc.",
 };
 
 export const AUTH_TRANSLATIONS = { en: EN, fr: FR, vi: VI } as const;

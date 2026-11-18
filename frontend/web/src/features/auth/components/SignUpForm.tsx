@@ -54,8 +54,7 @@ export function SignUpForm({
 
   const watchedPassword = useWatch({ control, name: "password" });
   const passwordStrength = useMemo<PasswordStrength | null>(
-    () =>
-      watchedPassword ? checkPasswordStrength(watchedPassword) : null,
+    () => (watchedPassword ? checkPasswordStrength(watchedPassword) : null),
     [watchedPassword],
   );
 
@@ -81,7 +80,7 @@ export function SignUpForm({
           />
           {errors.firstName && (
             <p className="text-sm text-destructive" role="alert">
-              {errors.firstName.message}
+              {t(errors.firstName.message ?? "")}
             </p>
           )}
         </div>
@@ -98,7 +97,7 @@ export function SignUpForm({
           />
           {errors.lastName && (
             <p className="text-sm text-destructive" role="alert">
-              {errors.lastName.message}
+              {t(errors.lastName.message ?? "")}
             </p>
           )}
         </div>
@@ -125,12 +124,12 @@ export function SignUpForm({
         />
         {errors.email && (
           <p className="text-sm text-destructive" role="alert">
-            {errors.email.message}
+            {t(errors.email.message ?? "")}
           </p>
         )}
         {signUpError?.field === "email" && !errors.email && (
           <p className="text-sm text-destructive" role="alert">
-            {signUpError.message}
+            {t(signUpError.message)}
           </p>
         )}
       </div>
@@ -171,12 +170,12 @@ export function SignUpForm({
         </div>
         {errors.password && (
           <p className="text-sm text-destructive" role="alert">
-            {errors.password.message}
+            {t(errors.password.message ?? "")}
           </p>
         )}
         {signUpError?.field === "password" && !errors.password && (
           <p className="text-sm text-destructive" role="alert">
-            {signUpError.message}
+            {t(signUpError.message)}
           </p>
         )}
 
@@ -219,7 +218,7 @@ export function SignUpForm({
         </div>
         {errors.confirmPassword && (
           <p className="text-sm text-destructive" role="alert">
-            {errors.confirmPassword.message}
+            {t(errors.confirmPassword.message ?? "")}
           </p>
         )}
       </div>

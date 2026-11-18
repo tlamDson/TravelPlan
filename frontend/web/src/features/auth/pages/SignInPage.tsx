@@ -42,8 +42,8 @@ const GoogleIcon = () => (
 );
 
 const signInSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("auth.validation.emailInvalid"),
+  password: z.string().min(1, "auth.validation.passwordRequired"),
 });
 
 type SignInFormData = z.infer<typeof signInSchema>;
@@ -179,7 +179,7 @@ export default function SignInPage() {
               />
               {errors.email && (
                 <p className="text-sm text-destructive" role="alert">
-                  {errors.email.message}
+                  {t(errors.email.message ?? "")}
                 </p>
               )}
             </div>
@@ -225,7 +225,7 @@ export default function SignInPage() {
               </div>
               {errors.password && (
                 <p className="text-sm text-destructive" role="alert">
-                  {errors.password.message}
+                  {t(errors.password.message ?? "")}
                 </p>
               )}
             </div>

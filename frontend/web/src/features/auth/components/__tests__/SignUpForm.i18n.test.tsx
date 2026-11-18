@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useTranslationStore } from "@/stores/useTranslationStore";
 import { SignUpForm } from "../SignUpForm";
+import { PasswordStrengthIndicator } from "../PasswordStrengthIndicator";
+import { checkPasswordStrength } from "../../utils/password";
 
 const INITIAL_STATE = useTranslationStore.getState();
 
@@ -30,17 +32,29 @@ describe("SignUpForm i18n", () => {
   );
   afterEach(() => useTranslationStore.setState(INITIAL_STATE, true));
 
-  it("shows the password strength label and tips in French", async () => {
+  it("shows the password strength label in French", async () => {
     renderForm();
     fireEvent.change(screen.getByLabelText("Mot de passe"), {
-      target: { value: "abcdefg" },
+      target: { value: "Abcdefg1" },
     });
 
-    expect(await screen.findByText("Très faible")).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Very Weak|Weak|Add uppercase|Add number|Add symbol/),
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText("Bon")).toBeInTheDocument();
+    expect(screen.queryByText("Good")).not.toBeInTheDocument();
+  });
+
+  it("shows the password strength tips in French", () => {
+    render(
+      <PasswordStrengthIndicator
+        strength={checkPasswordStrength("abcdefg1")}
+      />,
+    );
+
+    expect(screen.getByText("Moyen")).toBeInTheDocument();
     expect(screen.getByText(/Ajoutez une majuscule/)).toBeInTheDocument();
+    expect(screen.getByText(/Ajoutez un symbole/)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Fair|Add uppercase|Add symbol/),
+    ).not.toBeInTheDocument();
   });
 
   it("shows validation errors in French", async () => {
