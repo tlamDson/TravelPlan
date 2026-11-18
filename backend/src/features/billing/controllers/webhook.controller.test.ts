@@ -226,7 +226,12 @@ describe("webhook.controller — handleStripeWebhook", () => {
       id: "evt_dup_1",
       type: "checkout.session.completed",
       data: {
-        object: { id: "cs_1", customer: "cus_9", metadata: { userId: "u1" } },
+        object: {
+          id: "cs_1",
+          customer: "cus_9",
+          payment_status: "paid",
+          metadata: { userId: "u1" },
+        },
       },
     };
 
