@@ -3,15 +3,15 @@ import type { Request, Response } from "express";
 import { handleStripeWebhook } from "./webhook.controller";
 import type Stripe from "stripe";
 import { getStripe } from "../services/stripe.service";
-import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
+import { syncSubscriptionTier } from "../services/subscription-sync.service";
 import { userRepository } from "../../user/repositories/user.repository";
 import { processedStripeEventRepository } from "../repositories/processed-stripe-event.repository";
 
 vi.mock("../services/stripe.service", () => ({
   getStripe: vi.fn(),
 }));
-vi.mock("../services/subscription-owner.service", () => ({
-  resolveSubscriptionOwner: vi.fn(),
+vi.mock("../services/subscription-sync.service", () => ({
+  syncSubscriptionTier: vi.fn(),
 }));
 vi.mock("../../user/repositories/user.repository", () => ({
   userRepository: { applyStripeEvent: vi.fn() },
@@ -192,54 +192,40 @@ describe("webhook.controller — handleStripeWebhook", () => {
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
-  it("downgrades the owner resolved by the fallback when the subscription has no metadata.userId", async () => {
-    const subscription = { id: "sub_1", customer: "cus_9", metadata: {} };
+  it.each(["customer.subscription.updated", "customer.subscription.deleted"])(
+    "syncs the tier from the subscription on %s and acks",
+    async (type) => {
+      const event = {
+        id: "evt_sub",
+        type,
+        created: 1_000,
+        data: { object: { id: "sub_1", customer: "cus_9", status: "paused" } },
+      };
+      mockStripeEvent(event);
+      const res = makeRes();
+
+      await handleStripeWebhook(signedReq(), res);
+
+      expect(syncSubscriptionTier).toHaveBeenCalledWith(event);
+      expect(processedStripeEventRepository.markProcessed).toHaveBeenCalledWith(
+        "evt_sub",
+      );
+      expect(res.json).toHaveBeenCalledWith({ received: true });
+    },
+  );
+
+  it("returns 500 (so Stripe retries) when the subscription sync throws", async () => {
     mockStripeEvent({
-      type: "customer.subscription.deleted",
-      data: { object: subscription },
+      type: "customer.subscription.updated",
+      data: { object: { id: "sub_3", customer: "cus_y", status: "active" } },
     });
-    vi.mocked(resolveSubscriptionOwner).mockResolvedValue("u1");
-    const res = makeRes();
-
-    await handleStripeWebhook(signedReq(), res);
-
-    expect(resolveSubscriptionOwner).toHaveBeenCalledWith(subscription);
-    expect(userRepository.applyStripeEvent).toHaveBeenCalledWith(
-      "u1",
-      "evt_default",
-      {
-        tier: "free",
-      },
-    );
-    expect(res.json).toHaveBeenCalledWith({ received: true });
-  });
-
-  it("acks without touching any user when the subscription owner cannot be resolved", async () => {
-    mockStripeEvent({
-      type: "customer.subscription.deleted",
-      data: { object: { id: "sub_2", customer: "cus_x", metadata: {} } },
-    });
-    vi.mocked(resolveSubscriptionOwner).mockResolvedValue(null);
-    const res = makeRes();
-
-    await handleStripeWebhook(signedReq(), res);
-
-    expect(userRepository.applyStripeEvent).not.toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({ received: true });
-  });
-
-  it("returns 500 (so Stripe retries) when the owner lookup throws", async () => {
-    mockStripeEvent({
-      type: "customer.subscription.deleted",
-      data: { object: { id: "sub_3", customer: "cus_y", metadata: {} } },
-    });
-    vi.mocked(resolveSubscriptionOwner).mockRejectedValue(new Error("boom"));
+    vi.mocked(syncSubscriptionTier).mockRejectedValue(new Error("boom"));
     const res = makeRes();
 
     await handleStripeWebhook(signedReq(), res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(userRepository.applyStripeEvent).not.toHaveBeenCalled();
+    expect(processedStripeEventRepository.markProcessed).not.toHaveBeenCalled();
   });
   describe("event.id de-duplication", () => {
     const checkoutEvent = {
