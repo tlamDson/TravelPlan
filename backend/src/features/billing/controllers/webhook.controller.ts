@@ -4,6 +4,7 @@ import { env } from "../../../config/env";
 import { userRepository } from "../../user/repositories/user.repository";
 import { logger } from "../../../lib/logger";
 import { getStripe } from "../services/stripe.service";
+import { processedStripeEventRepository } from "../repositories/processed-stripe-event.repository";
 import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
 
 const isPaymentSettled = (session: Stripe.Checkout.Session): boolean =>
@@ -48,6 +49,32 @@ export const handleStripeWebhook = async (
     return;
   }
 
+  let alreadyProcessed: boolean;
+  try {
+    alreadyProcessed = await processedStripeEventRepository.isProcessed(
+      event.id,
+    );
+  } catch (err: any) {
+    logger.error(
+      { err, eventId: event.id },
+      "Stripe webhook dedupe lookup failed",
+    );
+    res.status(500).send("Internal Server Error");
+    return;
+  }
+
+  if (alreadyProcessed) {
+    logger.info(
+      { eventId: event.id, type: event.type },
+      "Duplicate Stripe webhook event ignored",
+    );
+    res.json({ received: true });
+    return;
+  }
+
+  // An overlapping repeat may reach the handler too: every user write goes
+  // through applyStripeEvent, which applies an event id at most once
+  // atomically, so the repeat is a no-op and is acked with 200.
   try {
     switch (event.type) {
       case "checkout.session.completed":
@@ -75,7 +102,7 @@ export const handleStripeWebhook = async (
             typeof session.customer === "string"
               ? session.customer
               : session.customer?.id;
-          await userRepository.updateByClerkId(userId, {
+          await userRepository.applyStripeEvent(userId, event.id, {
             tier: "pro",
             ...(customerId ? { stripeCustomerId: customerId } : {}),
           });
@@ -104,7 +131,9 @@ export const handleStripeWebhook = async (
         const userId = await resolveSubscriptionOwner(subscription);
 
         if (userId) {
-          await userRepository.updateByClerkId(userId, { tier: "free" });
+          await userRepository.applyStripeEvent(userId, event.id, {
+            tier: "free",
+          });
           logger.info(
             { userId, subId: subscription.id },
             "User downgraded to FREE via Stripe webhook (subscription deleted)",
@@ -123,6 +152,10 @@ export const handleStripeWebhook = async (
           "Unhandled Stripe webhook event type",
         );
     }
+
+    // Record the id only after the handler succeeded, so a failed handler
+    // leaves nothing behind and Stripe's retry is processed again.
+    await processedStripeEventRepository.markProcessed(event.id);
 
     res.json({ received: true });
   } catch (err: any) {

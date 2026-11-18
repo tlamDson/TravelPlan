@@ -1,9 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import request from "supertest";
 import Stripe from "stripe";
 import { createApp } from "../../app";
 import { seedUser } from "../integration-fixtures";
 import User from "../../features/user/models/User";
+import ProcessedStripeEvent from "../../features/billing/models/ProcessedStripeEvent";
+import { processedStripeEventRepository } from "../../features/billing/repositories/processed-stripe-event.repository";
 
 const app = createApp();
 
@@ -85,6 +87,10 @@ function subscriptionDeletedEvent(userId: string) {
 }
 
 describe("POST /api/webhooks/stripe", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("rejects a request with no stripe-signature header", async () => {
     const res = await request(app)
       .post("/api/webhooks/stripe")
@@ -206,5 +212,87 @@ describe("POST /api/webhooks/stripe", () => {
       .send(payload);
 
     expect(res.status).toBe(200);
+  });
+
+  it("ignores a replayed event.id: the second delivery returns 200 and has no side effect", async () => {
+    await seedUser("user-stripe-5", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-5");
+    const post = () =>
+      request(app)
+        .post("/api/webhooks/stripe")
+        .set("Content-Type", "application/json")
+        .set("stripe-signature", sign(payload))
+        .send(payload);
+
+    expect((await post()).status).toBe(200);
+    // Simulate a later downgrade; a replay of the old upgrade must not undo it.
+    await User.updateOne({ clerkUserId: "user-stripe-5" }, { tier: "free" });
+
+    const replay = await post();
+
+    expect(replay.status).toBe(200);
+    expect(replay.body.received).toBe(true);
+    const user = await User.findOne({ clerkUserId: "user-stripe-5" });
+    expect(user?.tier).toBe("free");
+  });
+
+  const postEvent = (payload: string) =>
+    request(app)
+      .post("/api/webhooks/stripe")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", sign(payload))
+      .send(payload);
+
+  it("does not reapply an applied update when marking the event done failed and Stripe retries", async () => {
+    await seedUser("user-stripe-6", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-6");
+    vi.spyOn(
+      processedStripeEventRepository,
+      "markProcessed",
+    ).mockRejectedValueOnce(new Error("write lost"));
+
+    expect((await postEvent(payload)).status).toBe(500);
+    await User.updateOne({ clerkUserId: "user-stripe-6" }, { tier: "free" });
+
+    const retry = await postEvent(payload);
+
+    expect(retry.status).toBe(200);
+    const user = await User.findOne({ clerkUserId: "user-stripe-6" });
+    expect(user?.tier).toBe("free");
+  });
+
+  it("does not reapply an applied update when its processed record is gone", async () => {
+    await seedUser("user-stripe-7", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-7");
+    expect((await postEvent(payload)).status).toBe(200);
+    await ProcessedStripeEvent.deleteMany({ eventId: "evt_test_checkout" });
+    await User.updateOne({ clerkUserId: "user-stripe-7" }, { tier: "free" });
+
+    const replay = await postEvent(payload);
+
+    expect(replay.status).toBe(200);
+    const user = await User.findOne({ clerkUserId: "user-stripe-7" });
+    expect(user?.tier).toBe("free");
+  });
+
+  it("acks overlapping deliveries of one event with 200 and applies it once", async () => {
+    await seedUser("user-stripe-8", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-8");
+
+    const results = await Promise.all(
+      Array.from({ length: 4 }, () => postEvent(payload)),
+    );
+
+    expect(results.map((r) => r.status)).toEqual([200, 200, 200, 200]);
+    const user = await User.findOne({ clerkUserId: "user-stripe-8" })
+      .select("+appliedStripeEventIds")
+      .lean();
+    expect(user?.tier).toBe("pro");
+    expect(user?.appliedStripeEventIds).toEqual(["evt_test_checkout"]);
+    expect(
+      await ProcessedStripeEvent.countDocuments({
+        eventId: "evt_test_checkout",
+      }),
+    ).toBe(1);
   });
 });
