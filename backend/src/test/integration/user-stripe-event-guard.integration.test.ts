@@ -35,9 +35,11 @@ describe("userRepository.applyStripeEvent (real Mongo)", () => {
       });
     }
 
-    const user = await User.findOne({ clerkUserId: "user-guard-2" }).lean();
+    const user = await User.findOne({ clerkUserId: "user-guard-2" })
+      .select("+appliedStripeEventIds")
+      .lean();
     expect(user?.tier).toBe("pro");
     expect(user?.appliedStripeEventIds).toHaveLength(50);
-    expect(user?.appliedStripeEventIds?.at(-1)).toBe("evt_59");
+    expect(user?.appliedStripeEventIds?.[49]).toBe("evt_59");
   });
 });

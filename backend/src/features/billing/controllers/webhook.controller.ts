@@ -107,7 +107,7 @@ export const handleStripeWebhook = async (
             typeof session.customer === "string"
               ? session.customer
               : session.customer?.id;
-          await userRepository.updateByClerkId(userId, {
+          await userRepository.applyStripeEvent(userId, event.id, {
             tier: "pro",
             ...(customerId ? { stripeCustomerId: customerId } : {}),
           });
@@ -136,7 +136,9 @@ export const handleStripeWebhook = async (
         const userId = await resolveSubscriptionOwner(subscription);
 
         if (userId) {
-          await userRepository.updateByClerkId(userId, { tier: "free" });
+          await userRepository.applyStripeEvent(userId, event.id, {
+            tier: "free",
+          });
           logger.info(
             { userId, subId: subscription.id },
             "User downgraded to FREE via Stripe webhook (subscription deleted)",
@@ -157,6 +159,8 @@ export const handleStripeWebhook = async (
     }
 
     // Mark done only after the handler succeeded; a failure releases the claim.
+    // The user update itself is guarded by event id (applyStripeEvent), so a
+    // retry after a lost completion or an expired-claim takeover is a no-op.
     await processedStripeEventRepository.complete(event.id);
 
     res.json({ received: true });

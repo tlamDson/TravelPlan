@@ -2,6 +2,9 @@
 import { UpdateQuery } from "mongoose";
 import User, { IUser } from "../models/User";
 
+/** A user sees a handful of billing events; 50 covers any realistic replay window. */
+const APPLIED_STRIPE_EVENT_HISTORY = 50;
+
 export class UserRepository {
   //lok up a user by their email address
   async findByEmail(email: string): Promise<IUser | null> {
@@ -35,6 +38,32 @@ export class UserRepository {
     updateData: UpdateQuery<IUser>,
   ): Promise<IUser | null> {
     return User.findOneAndUpdate({ clerkUserId }, updateData, { new: true });
+  }
+
+  /**
+   * Apply a Stripe-driven update at most once per event id. The id is pushed
+   * in the same single-document update as the change, so replays, concurrent
+   * deliveries and lost completion records cannot apply it twice.
+   * Returns null when the user is missing or the event was already applied.
+   */
+  async applyStripeEvent(
+    clerkUserId: string,
+    eventId: string,
+    updateData: Partial<Pick<IUser, "tier" | "stripeCustomerId">>,
+  ): Promise<IUser | null> {
+    return User.findOneAndUpdate(
+      { clerkUserId, appliedStripeEventIds: { $ne: eventId } },
+      {
+        $set: updateData,
+        $push: {
+          appliedStripeEventIds: {
+            $each: [eventId],
+            $slice: -APPLIED_STRIPE_EVENT_HISTORY,
+          },
+        },
+      },
+      { new: true },
+    );
   }
 
   async decrementCredit(clerkUserId: string): Promise<IUser | null> {

@@ -10,6 +10,8 @@ export interface IUser extends Document {
   dateOfBirth: Date;
   tier: "free" | "pro";
   stripeCustomerId?: string;
+  /** Recent Stripe event ids already applied to this user (bounded). */
+  appliedStripeEventIds?: string[];
   credits: number;
   quotaResetsAt?: Date;
   preferences: {
@@ -85,6 +87,13 @@ const UserSchema = new Schema<IUser>(
       type: String,
       index: true,
       sparse: true,
+    },
+    // Written in the same atomic update as the billing change it guards, so a
+    // replayed Stripe event can never apply twice (see applyStripeEvent).
+    appliedStripeEventIds: {
+      type: [String],
+      default: undefined,
+      select: false,
     },
     quotaResetsAt: {
       type: Date,
