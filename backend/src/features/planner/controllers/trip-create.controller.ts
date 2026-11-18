@@ -58,7 +58,6 @@ export const generateTrip = async (
     const user = await userRepository.findByClerkId(userId);
 
     // Reserve the key first so a concurrent duplicate can never enqueue twice.
-    let reserved = false;
     if (idempotencyKey) {
       try {
         const reservation = await idempotencyLogRepository.reserve(
@@ -84,10 +83,15 @@ export const generateTrip = async (
           }
           return;
         }
-        reserved = true;
       } catch (err) {
-        // Non-fatal, like the middleware check: proceed without idempotency.
-        logger.warn({ err }, "Idempotency reservation failed � proceeding");
+        // Fail closed: without a reservation a concurrent duplicate could
+        // enqueue a second job, so never enqueue on an unknown outcome.
+        logger.error({ err }, "Idempotency reservation failed");
+        res.status(503).json({
+          success: false,
+          message: "Could not reserve the idempotency key, retry later",
+        });
+        return;
       }
     }
 
@@ -101,7 +105,7 @@ export const generateTrip = async (
         title,
       });
     } catch (error) {
-      if (reserved && idempotencyKey) {
+      if (idempotencyKey) {
         // A job that is already queued must keep the key: releasing it would
         // let a retry enqueue a second job.
         const settle =
@@ -120,7 +124,7 @@ export const generateTrip = async (
       throw error;
     }
 
-    if (reserved && idempotencyKey) {
+    if (idempotencyKey) {
       await idempotencyLogRepository
         .complete(idempotencyKey, userId, result.tripId, result.jobId)
         .catch((err) =>
