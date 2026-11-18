@@ -3,16 +3,20 @@
  */
 
 import { ChevronRight } from "lucide-react";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 import { STEPS } from "../constants";
 
 export function HowItWorksSection() {
+  const t = useTranslationStore((state) => state.t);
   return (
     <section id="how-it-works" className="py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">How it works</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            {t("landing.steps.title")}
+          </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Get started in minutes and plan your dream trip with ease.
+            {t("landing.steps.subtitle")}
           </p>
         </div>
         <div className="grid md:grid-cols-4 gap-6">
@@ -22,9 +26,11 @@ export function HowItWorksSection() {
                 <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg mb-4">
                   {item.step}
                 </div>
-                <h3 className="font-semibold mb-2">{item.title}</h3>
+                <h3 className="font-semibold mb-2">
+                  {t(`landing.steps.${item.key}.title`)}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  {item.description}
+                  {t(`landing.steps.${item.key}.description`)}
                 </p>
               </div>
               {index < STEPS.length - 1 && (

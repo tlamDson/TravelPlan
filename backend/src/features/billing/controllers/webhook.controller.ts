@@ -4,7 +4,12 @@ import { env } from "../../../config/env";
 import { userRepository } from "../../user/repositories/user.repository";
 import { logger } from "../../../lib/logger";
 import { getStripe } from "../services/stripe.service";
-import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
+import { processedStripeEventRepository } from "../repositories/processed-stripe-event.repository";
+import { syncSubscriptionTier } from "../services/subscription-sync.service";
+
+const isPaymentSettled = (session: Stripe.Checkout.Session): boolean =>
+  session.payment_status === "paid" ||
+  session.payment_status === "no_payment_required";
 
 export const handleStripeWebhook = async (
   req: Request,
@@ -44,10 +49,51 @@ export const handleStripeWebhook = async (
     return;
   }
 
+  let alreadyProcessed: boolean;
+  try {
+    alreadyProcessed = await processedStripeEventRepository.isProcessed(
+      event.id,
+    );
+  } catch (err: any) {
+    logger.error(
+      { err, eventId: event.id },
+      "Stripe webhook dedupe lookup failed",
+    );
+    res.status(500).send("Internal Server Error");
+    return;
+  }
+
+  if (alreadyProcessed) {
+    logger.info(
+      { eventId: event.id, type: event.type },
+      "Duplicate Stripe webhook event ignored",
+    );
+    res.json({ received: true });
+    return;
+  }
+
+  // An overlapping repeat may reach the handler too: every user write goes
+  // through applyStripeEvent, which applies an event id at most once
+  // atomically, so the repeat is a no-op and is acked with 200.
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
+        // `completed` also fires for delayed payment methods before the money
+        // has landed; only grant PRO once the payment is settled. Never
+        // downgrade here: an unsettled session just leaves the tier alone.
+        if (!isPaymentSettled(session)) {
+          logger.info(
+            {
+              sessionId: session.id,
+              type: event.type,
+              paymentStatus: session.payment_status,
+            },
+            "Checkout session not paid yet; PRO not granted",
+          );
+          break;
+        }
         // The ID of the user should be passed during checkout session creation
         const userId = session.metadata?.userId;
 
@@ -56,7 +102,7 @@ export const handleStripeWebhook = async (
             typeof session.customer === "string"
               ? session.customer
               : session.customer?.id;
-          await userRepository.updateByClerkId(userId, {
+          await userRepository.applyStripeEvent(userId, event.id, {
             tier: "pro",
             ...(customerId ? { stripeCustomerId: customerId } : {}),
           });
@@ -72,30 +118,28 @@ export const handleStripeWebhook = async (
         }
         break;
       }
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const userId = await resolveSubscriptionOwner(subscription);
-
-        if (userId) {
-          await userRepository.updateByClerkId(userId, { tier: "free" });
-          logger.info(
-            { userId, subId: subscription.id },
-            "User downgraded to FREE via Stripe webhook (subscription deleted)",
-          );
-        } else {
-          logger.warn(
-            { subId: subscription.id },
-            "Subscription deleted but no user matches its metadata or customer",
-          );
-        }
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        logger.warn(
+          { sessionId: session.id },
+          "Checkout async payment failed; PRO not granted",
+        );
         break;
       }
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        await syncSubscriptionTier(event);
+        break;
       default:
         logger.info(
           { type: event.type },
           "Unhandled Stripe webhook event type",
         );
     }
+
+    // Record the id only after the handler succeeded, so a failed handler
+    // leaves nothing behind and Stripe's retry is processed again.
+    await processedStripeEventRepository.markProcessed(event.id);
 
     res.json({ received: true });
   } catch (err: any) {

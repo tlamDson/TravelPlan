@@ -4,6 +4,7 @@
  * Real-time visual feedback for password strength
  */
 
+import { useTranslationStore } from "@/stores/useTranslationStore";
 import type { PasswordStrength } from "../utils/password";
 import { STATUS_TONE_STYLES } from "@/features/planner/lib/statusStyles";
 
@@ -14,6 +15,7 @@ interface PasswordStrengthIndicatorProps {
 export function PasswordStrengthIndicator({
   strength,
 }: PasswordStrengthIndicatorProps) {
+  const t = useTranslationStore((state) => state.t);
   return (
     <div className="space-y-2">
       {/* Strength Bar */}
@@ -39,15 +41,16 @@ export function PasswordStrengthIndicator({
                 : STATUS_TONE_STYLES.success.textClassName
           }`}
         >
-          {strength.label}
+          {t(`auth.strength.${strength.score}`)}
         </span>
 
         {/* Quick tips */}
         {strength.score < 3 && (
           <span className="text-muted-foreground">
-            {!strength.checks.hasUppercase && "Add uppercase • "}
-            {!strength.checks.hasNumber && "Add number • "}
-            {!strength.checks.hasSpecial && "Add symbol"}
+            {!strength.checks.hasUppercase &&
+              `${t("auth.strength.tipUppercase")} • `}
+            {!strength.checks.hasNumber && `${t("auth.strength.tipNumber")} • `}
+            {!strength.checks.hasSpecial && t("auth.strength.tipSymbol")}
           </span>
         )}
       </div>

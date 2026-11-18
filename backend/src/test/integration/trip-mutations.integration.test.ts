@@ -76,6 +76,33 @@ describe("PATCH /api/trips/:tripId", () => {
       .send({ title: "Hijacked" });
     expect(res.status).toBe(403);
   });
+
+  it("returns 400 (not 500) for a non-ObjectId tripId", async () => {
+    const res = await request(app)
+      .patch("/api/trips/not-an-id")
+      .set(asUser("owner"))
+      .send({ title: "x" });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 (not 500) when title is an object", async () => {
+    const trip = await seedTrip("owner");
+    const res = await request(app)
+      .patch(`/api/trips/${trip._id}`)
+      .set(asUser("owner"))
+      .send({ title: { a: 1 } });
+    expect(res.status).toBe(400);
+  });
+
+  it("strips HTML from the title before storing it", async () => {
+    const trip = await seedTrip("owner");
+    const res = await request(app)
+      .patch(`/api/trips/${trip._id}`)
+      .set(asUser("owner"))
+      .send({ title: "  Hello <script>alert(1)</script>World  " });
+    expect(res.status).toBe(200);
+    expect(res.body.data.title).toBe("Hello World");
+  });
 });
 
 describe("PATCH /api/trips/:tripId/lifecycle", () => {

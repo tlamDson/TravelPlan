@@ -5,6 +5,7 @@
  */
 
 import { Label } from "@/components/ui/label";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 import { INTERESTS, TRAVEL_STYLES } from "../../constants/onboarding";
 
 interface PreferencesStepProps {
@@ -20,20 +21,21 @@ export function PreferencesStep({
   onToggleInterest,
   onTravelStyleChange,
 }: PreferencesStepProps) {
+  const t = useTranslationStore((state) => state.t);
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-2">
-          What do you love about traveling?
+          {t("onboarding.prefs.title")}
         </h2>
         <p className="text-muted-foreground">
-          Select your interests to get personalized recommendations.
+          {t("onboarding.prefs.subtitle")}
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label>Your interests</Label>
+          <Label>{t("onboarding.prefs.interests")}</Label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {INTERESTS.map((interest) => (
               <button
@@ -48,14 +50,14 @@ export function PreferencesStep({
                 }`}
               >
                 <span className="text-2xl block mb-1">{interest.emoji}</span>
-                <span className="text-sm font-medium">{interest.label}</span>
+                <span className="text-sm font-medium">{t(`onboarding.interest.${interest.id}`)}</span>
               </button>
             ))}
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label>How do you usually travel?</Label>
+          <Label>{t("onboarding.prefs.travelStyle")}</Label>
           <div className="grid grid-cols-2 gap-2">
             {TRAVEL_STYLES.map((style) => (
               <button
@@ -69,9 +71,9 @@ export function PreferencesStep({
                     : "border-border hover:border-primary/50"
                 }`}
               >
-                <span className="font-medium block">{style.label}</span>
+                <span className="font-medium block">{t(`onboarding.style.${style.id}`)}</span>
                 <span className="text-xs text-muted-foreground">
-                  {style.description}
+                  {t(`onboarding.style.${style.id}.desc`)}
                 </span>
               </button>
             ))}

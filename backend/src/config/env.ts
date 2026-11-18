@@ -41,6 +41,10 @@ export const env = cleanEnv(process.env, {
   }),
   /** Comma-separated extra browser origins allowed by CORS (e.g. alternate domains). */
   CORS_ALLOWED_ORIGINS: str({ default: "" }),
+  /** Vercel project name (e.g. "travelplan-web"); with CORS_VERCEL_SCOPE allows its preview origins. */
+  CORS_VERCEL_PROJECT: str({ default: "" }),
+  /** Vercel team/account scope slug (e.g. "lam-phams-projects-44c4677b"). */
+  CORS_VERCEL_SCOPE: str({ default: "" }),
   STRIPE_SECRET_KEY: str({ desc: "Stripe Secret Key", default: "" }),
   STRIPE_WEBHOOK_SECRET: str({
     desc: "Stripe Webhook Secret for Local Dev",

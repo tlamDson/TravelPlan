@@ -6,6 +6,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 
 interface FirstTripStepProps {
   destination: string;
@@ -20,28 +21,29 @@ export function FirstTripStep({
   onDestinationChange,
   onTravelersChange,
 }: FirstTripStepProps) {
+  const t = useTranslationStore((state) => state.t);
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Plan your first trip</h2>
+        <h2 className="text-2xl font-bold mb-2">{t("onboarding.trip.title")}</h2>
         <p className="text-muted-foreground">
-          Where would you like to go? (optional)
+          {t("onboarding.trip.subtitle")}
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="destination">Destination</Label>
+          <Label htmlFor="destination">{t("onboarding.trip.destination")}</Label>
           <Input
             id="destination"
             value={destination}
             onChange={(e) => onDestinationChange(e.target.value)}
-            placeholder="e.g., Tokyo, Japan"
+            placeholder={t("onboarding.trip.destinationPlaceholder")}
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="travelers">Number of travelers</Label>
+          <Label htmlFor="travelers">{t("onboarding.trip.travelers")}</Label>
           <Input
             id="travelers"
             type="number"

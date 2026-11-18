@@ -89,3 +89,23 @@ To test that this actually works in the main application flow:
    INFO: 💰 Found Base Costs for destination {"cityId":"paris_fr","minFoodUSD":8,"minHotelUSD":150}
    ```
 5. Wait for the generated trip itinerary. The AI should generate its recommendations respecting the baseline costs passed in the prompt context.
+
+## 5. Idempotency index migration (`migrate-idempotency-index.ts`)
+
+`IdempotencyLog` used to be unique on `key` alone, so one user's `X-Idempotency-Key` could block another user's write. The model is now unique on `{userId, key}`. The new API revision builds that index on boot; the old key-only index (`key_1`) is **only** removed by this script.
+
+The script is idempotent: it creates `{userId, key}` (unique) if missing, then drops the key-only index if present. Uniqueness is never absent, so it is safe while old and new API revisions overlap. Re-running prints "nothing to do".
+
+Order of rollout — staging first, then production:
+
+1. Deploy the new API revision to the environment. Both indexes may exist while old and new revisions overlap; that is fine.
+2. Once the old revision is no longer serving traffic, run the script against that environment (PowerShell, from the repo root):
+   ```powershell
+   $env:MONGO_URI = "<that environment's connection string>"
+   npm run migrate:idempotency-index --workspace=backend
+   ```
+   Expected output: `Connected to database "<name>".`, then `Created unique index {userId, key}.` (or `already present`), then `Dropped legacy key-only unique index.` (or `nothing to do`).
+3. Verify: in `mongosh`, `db.idempotencylogs.getIndexes()` shows `userId_1_key_1` (unique) and no `key_1`.
+4. Production only after staging has run clean for a trip create with the same key from two accounts. Clear `MONGO_URI` from the shell afterwards.
+
+If an old revision boots after the script ran, Mongoose may recreate `key_1`; re-run the script once that revision is gone.

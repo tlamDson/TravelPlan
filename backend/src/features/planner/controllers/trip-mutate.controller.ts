@@ -2,6 +2,10 @@ import { Response } from "express";
 import { tripRepository } from "../repositories/trip.repository";
 import { ClerkRequest } from "../../../types/express";
 import { logger } from "../../../lib/logger";
+import {
+  tripIdParamSchema,
+  updateTripBodySchema,
+} from "../schemas/trip-update.schema";
 
 /**
  * DELETE /api/trips/:tripId - Delete a trip
@@ -59,9 +63,22 @@ export const updateTripById = async (
       return;
     }
 
-    const { tripId } = req.params;
-    if (!tripId) {
-      res.status(400).json({ message: "Trip ID is required" });
+    const params = tripIdParamSchema.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ message: "Invalid trip ID" });
+      return;
+    }
+    const { tripId } = params.data;
+
+    const body = updateTripBodySchema.safeParse(req.body ?? {});
+    if (!body.success) {
+      res.status(400).json({
+        message: "Invalid trip data",
+        errors: body.error.issues.map((i) => ({
+          path: i.path.join("."),
+          message: i.message,
+        })),
+      });
       return;
     }
 
@@ -76,14 +93,10 @@ export const updateTripById = async (
       return;
     }
 
-    // Only allow updating specific fields for safety
-    const allowedUpdates = ["title", "description"];
-    const updateData: any = {};
-    for (const key of allowedUpdates) {
-      if (req.body[key] !== undefined) {
-        updateData[key] = req.body[key];
-      }
-    }
+    // Schema keeps only title/description; drop keys the client left out.
+    const updateData = Object.fromEntries(
+      Object.entries(body.data).filter(([, v]) => v !== undefined),
+    );
 
     if (Object.keys(updateData).length === 0) {
       res.status(400).json({ message: "No valid fields to update" });

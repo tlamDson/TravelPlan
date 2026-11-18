@@ -11,6 +11,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslationStore } from "@/stores/useTranslationStore";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
 import {
   signUpFormSchema,
@@ -37,6 +38,7 @@ export function SignUpForm({
   onSubmit,
   onClearError,
 }: SignUpFormProps) {
+  const t = useTranslationStore((state) => state.t);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const {
@@ -52,8 +54,7 @@ export function SignUpForm({
 
   const watchedPassword = useWatch({ control, name: "password" });
   const passwordStrength = useMemo<PasswordStrength | null>(
-    () =>
-      watchedPassword ? checkPasswordStrength(watchedPassword) : null,
+    () => (watchedPassword ? checkPasswordStrength(watchedPassword) : null),
     [watchedPassword],
   );
 
@@ -68,7 +69,7 @@ export function SignUpForm({
       {/* Name Fields */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="firstName">First name</Label>
+          <Label htmlFor="firstName">{t("auth.signUp.firstName")}</Label>
           <Input
             id="firstName"
             type="text"
@@ -79,13 +80,13 @@ export function SignUpForm({
           />
           {errors.firstName && (
             <p className="text-sm text-destructive" role="alert">
-              {errors.firstName.message}
+              {t(errors.firstName.message ?? "")}
             </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="lastName">Last name</Label>
+          <Label htmlFor="lastName">{t("auth.signUp.lastName")}</Label>
           <Input
             id="lastName"
             type="text"
@@ -96,7 +97,7 @@ export function SignUpForm({
           />
           {errors.lastName && (
             <p className="text-sm text-destructive" role="alert">
-              {errors.lastName.message}
+              {t(errors.lastName.message ?? "")}
             </p>
           )}
         </div>
@@ -104,7 +105,7 @@ export function SignUpForm({
 
       {/* Email Field */}
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("auth.email")}</Label>
         <Input
           id="email"
           type="email"
@@ -123,19 +124,19 @@ export function SignUpForm({
         />
         {errors.email && (
           <p className="text-sm text-destructive" role="alert">
-            {errors.email.message}
+            {t(errors.email.message ?? "")}
           </p>
         )}
         {signUpError?.field === "email" && !errors.email && (
           <p className="text-sm text-destructive" role="alert">
-            {signUpError.message}
+            {t(signUpError.message)}
           </p>
         )}
       </div>
 
       {/* Password Field */}
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t("auth.password")}</Label>
         <div className="relative">
           <Input
             id="password"
@@ -156,7 +157,9 @@ export function SignUpForm({
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={
+              showPassword ? t("auth.hidePassword") : t("auth.showPassword")
+            }
           >
             {showPassword ? (
               <EyeOff className="h-4 w-4" />
@@ -167,12 +170,12 @@ export function SignUpForm({
         </div>
         {errors.password && (
           <p className="text-sm text-destructive" role="alert">
-            {errors.password.message}
+            {t(errors.password.message ?? "")}
           </p>
         )}
         {signUpError?.field === "password" && !errors.password && (
           <p className="text-sm text-destructive" role="alert">
-            {signUpError.message}
+            {t(signUpError.message)}
           </p>
         )}
 
@@ -184,7 +187,9 @@ export function SignUpForm({
 
       {/* Confirm Password Field */}
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <Label htmlFor="confirmPassword">
+          {t("auth.signUp.confirmPassword")}
+        </Label>
         <div className="relative">
           <Input
             id="confirmPassword"
@@ -198,7 +203,11 @@ export function SignUpForm({
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+            aria-label={
+              showConfirmPassword
+                ? t("auth.hidePassword")
+                : t("auth.showPassword")
+            }
           >
             {showConfirmPassword ? (
               <EyeOff className="h-4 w-4" />
@@ -209,7 +218,7 @@ export function SignUpForm({
         </div>
         {errors.confirmPassword && (
           <p className="text-sm text-destructive" role="alert">
-            {errors.confirmPassword.message}
+            {t(errors.confirmPassword.message ?? "")}
           </p>
         )}
       </div>
@@ -223,10 +232,10 @@ export function SignUpForm({
         {isSubmitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating account...
+            {t("auth.signUp.submitting")}
           </>
         ) : (
-          "Create account"
+          t("auth.signUp.submit")
         )}
       </Button>
 

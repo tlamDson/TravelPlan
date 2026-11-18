@@ -56,7 +56,9 @@ Python `analytics/abkit` and `analytics/simkit` (install abkit first): CI job `a
 
 - Every change goes through a PR into `develop`; never commit/push directly to `develop` or `main`.
 - A PR into `develop` may be self-merged when the 3 required checks are green **and** an independent review PASSes (squash).
-- Releasing `develop` → `main` follows the charter above; outside that charter `main` belongs to the repo owner — a broad phrase like "do it all" is not authorization to merge `main`. A `main` merge is a real merge commit, not a squash.
+- Releasing `develop` → `main`: the orchestrator releases on its own at milestones when CI on `main` is green (`python -m conductor release-main travelplan`). The version follows SemVer from the commit types since the last release (`feat:` minor, only `fix:` patch, breaking change major, minor while 0.x); the PR title is only `release: vX.Y.Z`. Before a release, run the app as a real user 2-3 times on staging (see the Conductor playbook) and file each problem as its own PR. A `main` merge is a real merge commit, not a squash. Outside these rules `main` belongs to the repo owner — a broad phrase like "do it all" is not authorization to merge `main`.
+- Approved work runs through to the end without "continue?" stops; by day report to Lam every 30 minutes, at night only on a blocker. Ask Lam for every permission a task needs once, before starting.
+- Labels produced by an LLM (abkit readouts, eval sets) are recorded as "LLM, owner-reviewed" in data and README, never as human labels.
 - **Maximum cost $0:** do not enable paid services, do not exceed the free tier/credits. If you are unsure whether something costs money, assume it does and do not do it.
 
 **Two kinds of session:**
@@ -84,7 +86,7 @@ Python `analytics/abkit` and `analytics/simkit` (install abkit first): CI job `a
 
 **Tech debt:** a bug found outside the scope of the current work is not fixed on the spot — write a test asserting the current behavior marked `[BUG]`, then record it in `.claude/reference/tech-debt.md` with all 3 parts: symptom, cause with `file:line`, trigger condition. When it is fixed, delete the entry in the same commit.
 
-**Keep the rules current:** work that changes a convention, tooling or process updates `CLAUDE.md`/`.claude/rules/*` (rules) or `.claude/reference/*` (knowledge) in the same PR. PR history does not go here — git already has it. Do not create new `.md` files in the root (only `README.md`, `CLAUDE.md`). The test `backend/src/config/claude-docs-parity.test.ts` keeps the auto-loaded part under 24 KB.
+**Keep the rules current:** work that changes a convention, tooling or process updates `CLAUDE.md`/`.claude/rules/*` (rules) or `.claude/reference/*` (knowledge) in the same PR. PR history does not go here — git already has it. Do not create new `.md` files in the root (only `README.md`, `CLAUDE.md`, `DEVELOPMENT.md`; setup and ops details go in `DEVELOPMENT.md`, the README stays a recruiter-facing overview; `test_readme_numbers.py` checks every number in its results table and charts against `runs.csv`). The test `backend/src/config/claude-docs-parity.test.ts` keeps the auto-loaded part under 24 KB.
 
 ## Reference on demand (`.claude/reference/`, not auto-loaded)
 

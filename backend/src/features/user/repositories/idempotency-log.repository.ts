@@ -1,0 +1,75 @@
+import IdempotencyLog from "../models/IdempotencyLog";
+
+export interface StoredIdempotency {
+  status?: "pending" | "completed";
+  tripId?: string;
+  jobId?: string;
+}
+
+export type Reservation =
+  { reserved: true } | { reserved: false; existing: StoredIdempotency | null };
+
+const DUPLICATE_KEY = 11000;
+
+export const idempotencyLogRepository = {
+  /**
+   * Atomically claim `key` (the unique index decides the winner). A duplicate
+   * returns the stored record instead of throwing.
+   */
+  async reserve(
+    key: string,
+    userId: string,
+    reservationToken: string,
+  ): Promise<Reservation> {
+    try {
+      await IdempotencyLog.create({
+        key,
+        userId,
+        status: "pending",
+        reservationToken,
+      });
+      return { reserved: true };
+    } catch (err) {
+      if ((err as { code?: number }).code !== DUPLICATE_KEY) throw err;
+      // The key is taken. If the lookup fails we still must not enqueue, so
+      // report "taken, contents unknown" rather than throwing.
+      try {
+        const existing = await IdempotencyLog.findOne({ key, userId })
+          .lean()
+          .exec();
+        return { reserved: false, existing };
+      } catch {
+        return { reserved: false, existing: null };
+      }
+    }
+  },
+
+  async complete(
+    key: string,
+    userId: string,
+    tripId: string,
+    jobId: string,
+  ): Promise<void> {
+    await IdempotencyLog.updateOne(
+      { key, userId },
+      { $set: { tripId, jobId, status: "completed" } },
+    );
+  },
+
+  /**
+   * Drop a still-pending reservation so a retry can enqueue. The token makes
+   * sure only the request that wrote the reservation can remove it.
+   */
+  async release(
+    key: string,
+    userId: string,
+    reservationToken: string,
+  ): Promise<void> {
+    await IdempotencyLog.deleteOne({
+      key,
+      userId,
+      status: "pending",
+      reservationToken,
+    });
+  },
+};

@@ -63,6 +63,10 @@ export function createApp(): Express {
 
   const app: Express = express();
 
+  // Railway puts exactly one proxy in front of the API. Without this, req.ip
+  // is the proxy's address and every client shares one rate-limit bucket.
+  app.set("trust proxy", 1);
+
   // ============================================
   // MIDDLEWARE ORDER MATTERS!
   // ============================================
@@ -205,7 +209,7 @@ export function createApp(): Express {
 
     res.status(500).json({
       success: false,
-      message: "An unexpected error occured",
+      message: "An unexpected error occurred",
       error: process.env.NODE_ENV === "production" ? {} : err.message,
     });
   });

@@ -20,6 +20,20 @@ describe("LandingFooter", () => {
     ).toHaveAttribute("href", "/about");
   });
 
+  it.each(["French", "Vietnamese"] as const)(
+    "translates the copyright line in %s",
+    (language) => {
+      useTranslationStore.setState({ language });
+      renderWithProviders(<LandingFooter />);
+      expect(screen.queryByText(/All rights reserved/)).not.toBeInTheDocument();
+      expect(
+        screen.getByText(
+          new RegExp(useTranslationStore.getState().t("landing.footer.rights")),
+        ),
+      ).toBeInTheDocument();
+    },
+  );
+
   it("links About, Privacy and Terms to real pages", () => {
     renderWithProviders(<LandingFooter />);
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute(

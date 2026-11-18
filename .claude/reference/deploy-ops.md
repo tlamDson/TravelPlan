@@ -11,7 +11,7 @@ Railway (API + worker + Redis), Vercel (web), MongoDB Atlas. `develop` → stagi
 | Redis            | Railway-hosted           | `Redis-hGhE` (Railway)                                                                                                                        |
 | Mongo            | Atlas (`mongodb+srv://`) | Atlas database `travelplan_staging`, a dedicated user scoped `readWrite @ travelplan_staging`                                                 |
 | Web              | Vercel Production        | Vercel Preview, `VITE_*` variables scoped to `git-branch=develop`                                                                             |
-| Webhook          | Clerk/Stripe live        | Clerk (Svix `user.created`) + Stripe test-mode (`checkout.session.completed`, `customer.subscription.deleted`) pointing at the staging domain |
+| Webhook          | Clerk/Stripe live        | Clerk (Svix `user.created`) + Stripe test-mode (`checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`) pointing at the staging domain |
 
 Staging deploys automatically on push to `develop`. `/health` = the process is alive, `/ready` = Mongo + Redis are connected — do not merge them.
 
@@ -57,5 +57,7 @@ BullBoard `/admin/queues` must have Basic Auth if enabled outside dev. The conta
 `frontend/web/src/config/env.ts` reads `VITE_MAPBOX_ACCESS_TOKEN` (preferred) or `VITE_MAPBOX_TOKEN`. `VITE_*` has no machine-readable schema like envalid — check by hand when adding a variable.
 
 ## Releasing abkit to PyPI
+
+Publishing abkit to PyPI is allowed (Lam, 2026-11-13), only through Trusted Publishing, never with a token.
 
 `.github/workflows/release-abkit.yml` runs on a push of the tag `abkit-v<version>` (must match `version` in `analytics/abkit/pyproject.toml` and `__version__`). The PyPI package is `abkit-experiments` (the name `abkit` on PyPI belongs to someone else; the import is still `abkit`). Published with Trusted Publishing, no token: the `publish` job runs in the GitHub environment `pypi` and is the only job with `id-token: write`. The repo owner's one-time job: add a pending trusted publisher on PyPI (project `abkit-experiments`, repo `tlamDson/TravelPlan`, workflow `release-abkit.yml`, environment `pypi`) and create the `pypi` environment. The results tables in the README and `analytics/abkit/docs/results.md` are generated from `runs.csv`: `python -m abkit.readme_results --write`.
