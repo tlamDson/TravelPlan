@@ -37,7 +37,8 @@ export function LandingFooter() {
             </Link>
           </div>
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} TravelPlan. All rights reserved.
+            © {new Date().getFullYear()} TravelPlan.{" "}
+            {t("landing.footer.rights")}
           </p>
         </div>
       </div>
