@@ -1,7 +1,13 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export type ProcessedStripeEventStatus = "processing" | "done";
+
 export interface IProcessedStripeEvent extends Document {
   eventId: string;
+  /** `processing` = a delivery holds the claim; `done` = side effect applied. */
+  status: ProcessedStripeEventStatus;
+  /** Lease end while `processing`; an expired lease may be taken over. */
+  lockedUntil: Date;
   createdAt: Date;
 }
 
@@ -11,6 +17,13 @@ export const PROCESSED_STRIPE_EVENT_TTL_SECONDS = 60 * 60 * 24 * 30;
 const ProcessedStripeEventSchema = new Schema<IProcessedStripeEvent>(
   {
     eventId: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["processing", "done"],
+      required: true,
+      default: "processing",
+    },
+    lockedUntil: { type: Date, required: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

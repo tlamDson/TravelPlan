@@ -4,7 +4,10 @@ import { env } from "../../../config/env";
 import { userRepository } from "../../user/repositories/user.repository";
 import { logger } from "../../../lib/logger";
 import { getStripe } from "../services/stripe.service";
-import { processedStripeEventRepository } from "../repositories/processed-stripe-event.repository";
+import {
+  processedStripeEventRepository,
+  type ClaimResult,
+} from "../repositories/processed-stripe-event.repository";
 import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
 
 const isPaymentSettled = (session: Stripe.Checkout.Session): boolean =>
@@ -49,16 +52,35 @@ export const handleStripeWebhook = async (
     return;
   }
 
+  let claim: ClaimResult;
   try {
-    if (await processedStripeEventRepository.has(event.id)) {
-      logger.info(
-        { eventId: event.id, type: event.type },
-        "Duplicate Stripe webhook event ignored",
-      );
-      res.json({ received: true });
-      return;
-    }
+    claim = await processedStripeEventRepository.claim(event.id);
+  } catch (err: any) {
+    logger.error({ err, eventId: event.id }, "Stripe webhook claim failed");
+    res.status(500).send("Internal Server Error");
+    return;
+  }
 
+  if (claim === "duplicate") {
+    logger.info(
+      { eventId: event.id, type: event.type },
+      "Duplicate Stripe webhook event ignored",
+    );
+    res.json({ received: true });
+    return;
+  }
+  if (claim === "in_flight") {
+    // Another delivery is processing this event. Not acked: Stripe retries
+    // later, by which time it is either done (acked as duplicate) or released.
+    logger.info(
+      { eventId: event.id, type: event.type },
+      "Stripe webhook event already in flight",
+    );
+    res.status(409).send("Event is being processed");
+    return;
+  }
+
+  try {
     switch (event.type) {
       case "checkout.session.completed":
       case "checkout.session.async_payment_succeeded": {
@@ -134,8 +156,8 @@ export const handleStripeWebhook = async (
         );
     }
 
-    // Record only after the handler succeeded, so a failed one is retried.
-    await processedStripeEventRepository.record(event.id);
+    // Mark done only after the handler succeeded; a failure releases the claim.
+    await processedStripeEventRepository.complete(event.id);
 
     res.json({ received: true });
   } catch (err: any) {
@@ -143,6 +165,14 @@ export const handleStripeWebhook = async (
       { err, type: event.type },
       "Error processing Stripe webhook event",
     );
+    await processedStripeEventRepository
+      .release(event.id)
+      .catch((relErr) =>
+        logger.error(
+          { err: relErr, eventId: event.id },
+          "Failed to release Stripe webhook claim; it expires on its own",
+        ),
+      );
     res.status(500).send("Internal Server Error");
   }
 };

@@ -269,7 +269,9 @@ describe("webhook.controller — handleStripeWebhook", () => {
           expect(processedStripeEventRepository.claim).toHaveBeenCalledWith(
             "evt_dup_1",
           );
-          expect(processedStripeEventRepository.complete).not.toHaveBeenCalled();
+          expect(
+            processedStripeEventRepository.complete,
+          ).not.toHaveBeenCalled();
           return null;
         },
       );
