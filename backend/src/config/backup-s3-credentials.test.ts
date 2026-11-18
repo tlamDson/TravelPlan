@@ -110,6 +110,38 @@ describe("sanitize_s3_env", () => {
   });
 });
 
+describe("sanitize_s3_env zero-length values", () => {
+  const sanitize = (env: Record<string, string>) =>
+    runSanitize(env, "sanitize_s3_env");
+
+  it.each([
+    ["empty double quotes", '""'],
+    ["empty single quotes", "''"],
+    ["whitespace only", "  \t "],
+    ["a bare CR/LF", "\r\n"],
+    ["quotes around whitespace", '" "'],
+  ])("fails naming the variable when it is configured as %s", (_n, raw) => {
+    for (const name of [
+      "AWS_ACCESS_KEY_ID",
+      "AWS_SECRET_ACCESS_KEY",
+      "BACKUP_S3_ENDPOINT",
+      "BACKUP_S3_BUCKET",
+    ]) {
+      const r = sanitize({ ...baseEnv, [name]: raw });
+      expect(r.status, name).not.toBe(0);
+      expect(r.stderr).toContain(name);
+      expect(r.stderr).toContain("length 0");
+    }
+  });
+
+  it("still treats a truly empty or unset variable as not configured", () => {
+    expect(
+      sanitize({ ...baseEnv, AWS_ACCESS_KEY_ID: "", BACKUP_S3_BUCKET: "" })
+        .status,
+    ).toBe(0);
+  });
+});
+
 describe("validate_s3_credentials", () => {
   const validate = (env: Record<string, string>) =>
     runSanitize(env, "sanitize_s3_env; validate_s3_credentials");
@@ -136,6 +168,38 @@ describe("validate_s3_credentials", () => {
     expect(r.stderr).not.toContain(bad);
   });
 
+  it.each([
+    "https://example.com/r2.cloudflarestorage.com",
+    "https://r2.cloudflarestorage.com.evil.test",
+    "https://evil.test/?x=r2.cloudflarestorage.com",
+    "https://evil.test/#r2.cloudflarestorage.com",
+    "https://notr2.cloudflarestorage.com",
+    "https://r2.cloudflarestorage.com@evil.test",
+    "https://evil-r2.cloudflarestorage.com",
+  ])("does not treat %s as an R2 endpoint", (endpoint) => {
+    const r = validate({
+      ...baseEnv,
+      BACKUP_S3_ENDPOINT: endpoint,
+      AWS_ACCESS_KEY_ID: "short",
+    });
+    expect(r.status).toBe(0);
+  });
+
+  it.each([
+    "https://acct.r2.cloudflarestorage.com:443/bucket",
+    "HTTPS://ACCT.R2.CLOUDFLARESTORAGE.COM",
+    "https://r2.cloudflarestorage.com",
+    "https://user:pw@acct.r2.cloudflarestorage.com/path?x=1",
+  ])("still enforces lengths for the R2 endpoint %s", (endpoint) => {
+    const r = validate({
+      ...baseEnv,
+      BACKUP_S3_ENDPOINT: endpoint,
+      AWS_ACCESS_KEY_ID: "short",
+    });
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("AWS_ACCESS_KEY_ID");
+  });
+
   it("does not enforce lengths for a non-R2 endpoint", () => {
     const r = validate({
       ...baseEnv,
@@ -150,27 +214,86 @@ describe("backup-mongo.sh wiring", () => {
   let dir: string;
   beforeEach(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "backup-creds-"));
-    const fake = path.join(dir, "mongodump");
-    fs.writeFileSync(fake, `#!/bin/sh\ntouch "${posix(dir)}/DUMPED"\nexit 0\n`);
-    fs.chmodSync(fake, 0o755);
+    const write = (name: string, body: string) => {
+      const file = path.join(dir, name);
+      fs.writeFileSync(file, body);
+      fs.chmodSync(file, 0o755);
+    };
+    // Fake mongodump: marks that it ran and writes the requested archive.
+    write(
+      "mongodump",
+      `#!/bin/sh
+touch "${posix(dir)}/DUMPED"
+` +
+        `for a in "$@"; do case "$a" in --archive=*) echo data > "\${a#--archive=}";; esac; done
+`,
+    );
+    // Fake aws: records the credentials and arguments it was called with.
+    write(
+      "aws",
+      `#!/bin/sh\nprintf '%s\n' "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" "$@" > "${posix(dir)}/AWS_CALL"\n`,
+    );
   });
   afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-  it("fails on a wrong-length key before dumping, without leaking it", () => {
-    const bad = `"${KEY_ID}"XX`;
-    const r = spawnSync(bash, [BACKUP], {
+  const runBackup = (env: Record<string, string>) =>
+    spawnSync(bash, [BACKUP], {
       env: {
         PATH: `${dir}${path.delimiter}${process.env.PATH ?? ""}`,
         MONGO_URI: "mongodb://localhost/x",
+        BACKUP_MIN_SIZE_BYTES: "1",
         ...baseEnv,
-        AWS_ACCESS_KEY_ID: bad,
+        ...env,
       },
       encoding: "utf8",
     });
+  const dumped = () => fs.existsSync(path.join(dir, "DUMPED"));
+
+  it("fails on a wrong-length key before dumping, without leaking it", () => {
+    const r = runBackup({ AWS_ACCESS_KEY_ID: `"${KEY_ID}"XX` });
     expect(r.status).toBe(1);
     expect(r.stderr).toContain("AWS_ACCESS_KEY_ID");
     expect(r.stderr).toContain("36");
     expect(r.stderr + r.stdout).not.toContain(KEY_ID);
-    expect(fs.existsSync(path.join(dir, "DUMPED"))).toBe(false);
+    expect(dumped()).toBe(false);
+  });
+
+  it("hands quote/CRLF-wrapped credentials to aws sanitized", () => {
+    const r = runBackup({
+      AWS_ACCESS_KEY_ID: `"${KEY_ID}"`,
+      AWS_SECRET_ACCESS_KEY: `'${SECRET}'\r\n`,
+      BACKUP_S3_ENDPOINT: ` ${R2}\r\n`,
+      BACKUP_S3_BUCKET: `"bucket"`,
+    });
+    expect(r.status, r.stderr).toBe(0);
+    const call = fs
+      .readFileSync(path.join(dir, "AWS_CALL"), "utf8")
+      .split("\n");
+    expect(call[0]).toBe(KEY_ID);
+    expect(call[1]).toBe(SECRET);
+    expect(call).toContain(R2);
+    expect(call.some((a) => a.startsWith("s3://bucket/mongo/"))).toBe(true);
+    expect(r.stdout + r.stderr).not.toContain(SECRET);
+  });
+
+  it("fails instead of skipping when a configured credential is zero-length", () => {
+    const r = runBackup({ AWS_SECRET_ACCESS_KEY: '""' });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("AWS_SECRET_ACCESS_KEY");
+    expect(r.stderr).toContain("length 0");
+    expect(r.stdout).not.toContain("skipping");
+    expect(dumped()).toBe(false);
+  });
+
+  it("still skips with exit 0 when storage is not configured at all", () => {
+    const r = runBackup({
+      AWS_ACCESS_KEY_ID: "",
+      AWS_SECRET_ACCESS_KEY: "",
+      BACKUP_S3_ENDPOINT: "",
+      BACKUP_S3_BUCKET: "",
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("skipping");
+    expect(dumped()).toBe(false);
   });
 });
