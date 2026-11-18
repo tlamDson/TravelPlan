@@ -86,7 +86,7 @@ Python `analytics/abkit` and `analytics/simkit` (install abkit first): CI job `a
 
 **Tech debt:** a bug found outside the scope of the current work is not fixed on the spot — write a test asserting the current behavior marked `[BUG]`, then record it in `.claude/reference/tech-debt.md` with all 3 parts: symptom, cause with `file:line`, trigger condition. When it is fixed, delete the entry in the same commit.
 
-**Keep the rules current:** work that changes a convention, tooling or process updates `CLAUDE.md`/`.claude/rules/*` (rules) or `.claude/reference/*` (knowledge) in the same PR. PR history does not go here — git already has it. Do not create new `.md` files in the root (only `README.md`, `CLAUDE.md`). The test `backend/src/config/claude-docs-parity.test.ts` keeps the auto-loaded part under 24 KB.
+**Keep the rules current:** work that changes a convention, tooling or process updates `CLAUDE.md`/`.claude/rules/*` (rules) or `.claude/reference/*` (knowledge) in the same PR. PR history does not go here — git already has it. Do not create new `.md` files in the root (only `README.md`, `CLAUDE.md`, `DEVELOPMENT.md`; setup and ops details go in `DEVELOPMENT.md`, the README stays a recruiter-facing overview; `test_readme_numbers.py` checks every number in its results table and charts against `runs.csv`). The test `backend/src/config/claude-docs-parity.test.ts` keeps the auto-loaded part under 24 KB.
 
 ## Reference on demand (`.claude/reference/`, not auto-loaded)
 
