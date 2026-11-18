@@ -205,4 +205,26 @@ describe("POST /api/webhooks/stripe", () => {
 
     expect(res.status).toBe(200);
   });
+
+  it("ignores a replayed event.id: the second delivery returns 200 and has no side effect", async () => {
+    await seedUser("user-stripe-5", { tier: "free" });
+    const payload = checkoutCompletedEvent("user-stripe-5");
+    const post = () =>
+      request(app)
+        .post("/api/webhooks/stripe")
+        .set("Content-Type", "application/json")
+        .set("stripe-signature", sign(payload))
+        .send(payload);
+
+    expect((await post()).status).toBe(200);
+    // Simulate a later downgrade; a replay of the old upgrade must not undo it.
+    await User.updateOne({ clerkUserId: "user-stripe-5" }, { tier: "free" });
+
+    const replay = await post();
+
+    expect(replay.status).toBe(200);
+    expect(replay.body.received).toBe(true);
+    const user = await User.findOne({ clerkUserId: "user-stripe-5" });
+    expect(user?.tier).toBe("free");
+  });
 });

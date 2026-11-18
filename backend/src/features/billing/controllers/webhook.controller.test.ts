@@ -5,6 +5,7 @@ import type Stripe from "stripe";
 import { getStripe } from "../services/stripe.service";
 import { resolveSubscriptionOwner } from "../services/subscription-owner.service";
 import { userRepository } from "../../user/repositories/user.repository";
+import { processedStripeEventRepository } from "../repositories/processed-stripe-event.repository";
 
 vi.mock("../services/stripe.service", () => ({
   getStripe: vi.fn(),
@@ -15,6 +16,19 @@ vi.mock("../services/subscription-owner.service", () => ({
 vi.mock("../../user/repositories/user.repository", () => ({
   userRepository: { updateByClerkId: vi.fn() },
 }));
+
+vi.mock("../repositories/processed-stripe-event.repository", () => {
+  const seen = new Set<string>();
+  return {
+    processedStripeEventRepository: {
+      has: vi.fn(async (id: string) => seen.has(id)),
+      record: vi.fn(async (id: string) => {
+        seen.add(id);
+      }),
+      __reset: () => seen.clear(),
+    },
+  };
+});
 
 function mockStripeEvent(event: unknown) {
   vi.mocked(getStripe).mockReturnValue({
@@ -40,6 +54,9 @@ function makeRes(): Response {
 describe("webhook.controller — handleStripeWebhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (
+      processedStripeEventRepository as unknown as { __reset: () => void }
+    ).__reset();
   });
 
   it("returns 503 (not a boot/request crash) when Stripe is not configured, before touching the signature header", async () => {
@@ -122,5 +139,74 @@ describe("webhook.controller — handleStripeWebhook", () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(userRepository.updateByClerkId).not.toHaveBeenCalled();
+  });
+  describe("event.id de-duplication", () => {
+    const checkoutEvent = {
+      id: "evt_dup_1",
+      type: "checkout.session.completed",
+      data: {
+        object: { id: "cs_1", customer: "cus_9", metadata: { userId: "u1" } },
+      },
+    };
+
+    it("applies the side effect once and acks 200 when the same event is delivered twice", async () => {
+      mockStripeEvent(checkoutEvent);
+      const first = makeRes();
+      const second = makeRes();
+
+      await handleStripeWebhook(signedReq(), first);
+      await handleStripeWebhook(signedReq(), second);
+
+      expect(userRepository.updateByClerkId).toHaveBeenCalledTimes(1);
+      expect(first.json).toHaveBeenCalledWith({ received: true });
+      expect(second.json).toHaveBeenCalledWith({ received: true });
+      expect(second.status).not.toHaveBeenCalled();
+    });
+
+    it("records the event id only after the handler succeeded", async () => {
+      mockStripeEvent(checkoutEvent);
+      vi.mocked(userRepository.updateByClerkId).mockImplementationOnce(
+        async () => {
+          expect(processedStripeEventRepository.record).not.toHaveBeenCalled();
+          return null;
+        },
+      );
+
+      await handleStripeWebhook(signedReq(), makeRes());
+
+      expect(processedStripeEventRepository.record).toHaveBeenCalledWith(
+        "evt_dup_1",
+      );
+    });
+
+    it("does not record a failed event, so Stripe's retry is processed again", async () => {
+      mockStripeEvent(checkoutEvent);
+      vi.mocked(userRepository.updateByClerkId).mockRejectedValueOnce(
+        new Error("db down"),
+      );
+      const failed = makeRes();
+      const retried = makeRes();
+
+      await handleStripeWebhook(signedReq(), failed);
+      expect(failed.status).toHaveBeenCalledWith(500);
+      expect(processedStripeEventRepository.record).not.toHaveBeenCalled();
+
+      await handleStripeWebhook(signedReq(), retried);
+
+      expect(userRepository.updateByClerkId).toHaveBeenCalledTimes(2);
+      expect(retried.json).toHaveBeenCalledWith({ received: true });
+      expect(processedStripeEventRepository.record).toHaveBeenCalledWith(
+        "evt_dup_1",
+      );
+    });
+
+    it("processes two different events with different ids", async () => {
+      mockStripeEvent(checkoutEvent);
+      await handleStripeWebhook(signedReq(), makeRes());
+      mockStripeEvent({ ...checkoutEvent, id: "evt_dup_2" });
+      await handleStripeWebhook(signedReq(), makeRes());
+
+      expect(userRepository.updateByClerkId).toHaveBeenCalledTimes(2);
+    });
   });
 });
