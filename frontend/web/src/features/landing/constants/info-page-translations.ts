@@ -6,6 +6,9 @@
 type Copy = Record<string, string>;
 
 const EN: Copy = {
+  "landing.nav.signIn": "Sign in",
+  "landing.nav.getStarted": "Get Started",
+  "landing.footer.rights": "All rights reserved.",
   "landing.footer.about": "About",
   "landing.footer.privacy": "Privacy",
   "landing.footer.terms": "Terms",
@@ -49,6 +52,9 @@ const EN: Copy = {
 };
 
 const FR: Copy = {
+  "landing.nav.signIn": "Se connecter",
+  "landing.nav.getStarted": "Commencer",
+  "landing.footer.rights": "Tous droits réservés.",
   "landing.footer.about": "À propos",
   "landing.footer.privacy": "Confidentialité",
   "landing.footer.terms": "Conditions",
@@ -92,6 +98,9 @@ const FR: Copy = {
 };
 
 const VI: Copy = {
+  "landing.nav.signIn": "Đăng nhập",
+  "landing.nav.getStarted": "Bắt đầu",
+  "landing.footer.rights": "Bảo lưu mọi quyền.",
   "landing.footer.about": "Giới thiệu",
   "landing.footer.privacy": "Quyền riêng tư",
   "landing.footer.terms": "Điều khoản",
