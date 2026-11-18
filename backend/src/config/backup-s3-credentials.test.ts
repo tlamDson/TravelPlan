@@ -290,6 +290,35 @@ touch "${posix(dir)}/DUMPED"
     expect(dumped()).toBe(false);
   });
 
+  it.each([
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "BACKUP_S3_ENDPOINT",
+    "BACKUP_S3_BUCKET",
+  ])("fails instead of skipping when only %s is empty or unset", (name) => {
+    for (const r of [
+      runBackup({ [name]: "" }),
+      spawnSync(bash, [BACKUP], {
+        env: {
+          PATH: `${dir}${path.delimiter}${process.env.PATH ?? ""}`,
+          MONGO_URI: "mongodb://localhost/x",
+          BACKUP_MIN_SIZE_BYTES: "1",
+          ...Object.fromEntries(
+            Object.entries(baseEnv).filter(([k]) => k !== name),
+          ),
+        },
+        encoding: "utf8",
+      }),
+    ]) {
+      expect(r.status, name).toBe(1);
+      expect(r.stderr).toContain(name);
+      expect(r.stdout).not.toContain("skipping");
+      expect(r.stderr + r.stdout).not.toContain(KEY_ID);
+      expect(r.stderr + r.stdout).not.toContain(SECRET);
+      expect(dumped()).toBe(false);
+    }
+  });
+
   it("still skips with exit 0 when storage is not configured at all", () => {
     const r = runBackup({
       AWS_ACCESS_KEY_ID: "",

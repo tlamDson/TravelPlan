@@ -42,6 +42,20 @@ sanitize_s3_env() {
   return "$bad"
 }
 
+# Returns 0 when all S3 variables are set, 2 when none is (storage not
+# configured: the caller skips), and 1 with a message naming each missing
+# variable when only some are set (a broken config must not skip silently).
+s3_config_state() {
+  local name missing=()
+  for name in "${S3_ENV_VARS[@]}"; do
+    [ -z "${!name:-}" ] && missing+=("$name")
+  done
+  [ "${#missing[@]}" -eq 0 ] && return 0
+  [ "${#missing[@]}" -eq "${#S3_ENV_VARS[@]}" ] && return 2
+  echo "❌ Backup storage is partly configured; empty or unset: ${missing[*]}." >&2
+  return 1
+}
+
 # True when the endpoint's host is r2.cloudflarestorage.com or a subdomain.
 # Only the host part of the URL counts: path, query, fragment, userinfo and
 # port are ignored, and a final DNS root dot ("host.") is the same host.
