@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { TOAST_TRANSLATIONS } from "@/stores/toast-translations";
+import { AUTH_TRANSLATIONS } from "@/features/auth/constants/auth-translations";
 import { LANDING_INFO_TRANSLATIONS } from "@/features/landing/constants/info-page-translations";
 import { LANDING_SECTION_TRANSLATIONS } from "@/features/landing/constants/landing-section-translations";
 import { getUserPreferences } from "@/features/settings/types/user-preferences.types";
@@ -631,6 +632,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     ...LANDING_INFO_TRANSLATIONS.en,
     ...LANDING_SECTION_TRANSLATIONS.en,
     ...TOAST_TRANSLATIONS.en,
+    ...AUTH_TRANSLATIONS.en,
   },
   French: {
     // Landing
@@ -1259,6 +1261,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     ...LANDING_INFO_TRANSLATIONS.fr,
     ...LANDING_SECTION_TRANSLATIONS.fr,
     ...TOAST_TRANSLATIONS.fr,
+    ...AUTH_TRANSLATIONS.fr,
   },
   Vietnamese: {
     // Landing
@@ -1876,6 +1879,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     ...LANDING_INFO_TRANSLATIONS.vi,
     ...LANDING_SECTION_TRANSLATIONS.vi,
     ...TOAST_TRANSLATIONS.vi,
+    ...AUTH_TRANSLATIONS.vi,
   },
 };
 

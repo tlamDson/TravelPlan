@@ -7,17 +7,18 @@
 import { z } from "zod";
 import { checkPasswordStrength } from "../utils/password";
 
+// Messages are translation keys; render them through t().
 // Sign Up Form Schema — align with Clerk + block submit before API (avoids 422 after CAPTCHA)
 export const signUpFormSchema = z
   .object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    email: z.string().email("Please enter a valid email"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    firstName: z.string().min(1, "auth.validation.firstNameRequired"),
+    lastName: z.string().min(1, "auth.validation.lastNameRequired"),
+    email: z.string().email("auth.validation.emailInvalid"),
+    password: z.string().min(8, "auth.validation.passwordMin"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
+    message: "auth.validation.passwordMismatch",
     path: ["confirmPassword"],
   })
   .superRefine((data, ctx) => {
@@ -25,8 +26,7 @@ export const signUpFormSchema = z
     if (!s.checks.notCommon) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "This password is too common. Choose a longer, more unique password.",
+        message: "auth.validation.passwordCommon",
         path: ["password"],
       });
       return;
@@ -34,8 +34,7 @@ export const signUpFormSchema = z
     if (s.score < 3) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "Password is too weak. Use upper & lowercase letters, a number, and a special character.",
+        message: "auth.validation.passwordWeak",
         path: ["password"],
       });
     }
@@ -45,8 +44,8 @@ export type SignUpFormData = z.infer<typeof signUpFormSchema>;
 
 // Sign In Form Schema
 export const signInFormSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("auth.validation.emailInvalid"),
+  password: z.string().min(1, "auth.validation.passwordRequired"),
 });
 
 export type SignInFormData = z.infer<typeof signInFormSchema>;
