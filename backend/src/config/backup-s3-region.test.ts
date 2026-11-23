@@ -23,11 +23,11 @@ const posix = (p: string) => p.split(path.sep).join("/");
 const BACKUP = posix(path.join(REPO_ROOT, "backend/scripts/backup-mongo.sh"));
 const FIXTURES = path.join(__dirname, "../test/fixtures/backup");
 const FAIL_LOG = fs.readFileSync(
-  path.join(FIXTURES, "r2-invalid-region-run-45092700561.log"),
+  path.join(FIXTURES, "r2-invalid-region-run-45092700561.txt"),
   "utf8",
 );
 const OK_LOG = fs.readFileSync(
-  path.join(FIXTURES, "r2-upload-ok-us-east-1-run-44651137315.log"),
+  path.join(FIXTURES, "r2-upload-ok-us-east-1-run-44651137315.txt"),
   "utf8",
 );
 const bash =

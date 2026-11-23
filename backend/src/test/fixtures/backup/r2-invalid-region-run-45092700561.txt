@@ -1,0 +1,13 @@
+2026-11-23T01:07:13.4243681Z Current runner version: '2.338.2'
+2026-11-23T01:07:13.4267441Z ##[group]Runner Image Provisioner
+2026-11-23T01:07:13.4268205Z Hosted Compute Agent
+2026-11-23T01:07:13.4268652Z Version: 20261111.635
+2026-11-23T01:07:13.4269216Z Commit: b8a594ea514ff44cadb5342986c68b1eac6e22ed
+2026-11-23T01:07:13.4269786Z Build Date: 2026-11-11T01:49:01Z
+2026-11-23T01:07:13.4270348Z Worker ID: {51285390-317a-4441-9411-919b4762fa42}
+2026-11-23T01:07:13.4270900Z Region: us-west-2
+2026-11-23T01:07:13.4271350Z Cloud: AWS
+2026-11-23T01:07:31.9299948Z 📏 Archive size: 87512088 bytes (minimum: 10240)
+2026-11-23T01:07:31.9301264Z ☁️  Uploading to s3://***/mongo/travelplan-20261123T010720Z.archive.gz...
+2026-11-23T01:07:35.4299770Z upload failed: ../../../../../../tmp/tmp.QFKtPEcNXk/travelplan-20261123T010720Z.archive.gz to s3://***/mongo/travelplan-20261123T010720Z.archive.gz An error occurred (InvalidRegionName) when calling the CreateMultipartUpload operation: The region name 'us-west-2' is not valid. Must be one of: wnam, enam, weur, eeur, apac, oc, auto
+2026-11-23T01:07:35.5208666Z ##[error]Process completed with exit code 1.

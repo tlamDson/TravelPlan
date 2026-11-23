@@ -1,0 +1,4 @@
+2026-11-20T01:06:46.4679465Z Region: us-east-1
+2026-11-20T01:06:46.4680143Z Cloud: AWS
+2026-11-20T01:07:12.6700364Z upload: ../../../../../../tmp/tmp.CBwskdXAir/travelplan-20261120T010655Z.archive.gz to s3://***/mongo/travelplan-20261120T010655Z.archive.gz
+2026-11-20T01:07:12.7799514Z ✅ Backup complete: s3://***/mongo/travelplan-20261120T010655Z.archive.gz (87511274 bytes)
