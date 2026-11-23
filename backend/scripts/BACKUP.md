@@ -30,7 +30,7 @@ AWS_SECRET_ACCESS_KEY="..." \
 bash scripts/backup-mongo.sh
 ```
 
-Requires `mongodump` (MongoDB Database Tools) and `aws` (AWS CLI v2, also works against R2 via `--endpoint-url`) on your PATH locally.
+Requires `mongodump` (MongoDB Database Tools) and `aws` (AWS CLI v2, also works against R2 via `--endpoint-url` plus `--region auto`; the script adds that for an R2 endpoint) on your PATH locally.
 
 To trigger a real run from CI without waiting for the daily cron: GitHub → Actions → "MongoDB Backup" → Run workflow.
 
@@ -41,7 +41,7 @@ To trigger a real run from CI without waiting for the daily cron: GitHub → Act
 ```bash
 # 1. Download the archive from the bucket (adjust endpoint/bucket/key)
 aws s3 cp s3://your-bucket/mongo/travelplan-<timestamp>.archive.gz ./restore-test.archive.gz \
-  --endpoint-url https://<account-id>.r2.cloudflarestorage.com
+  --endpoint-url https://<account-id>.r2.cloudflarestorage.com --region auto  # R2 rejects other regions
 
 # 2. Restore into a throwaway database — never the real one on the first pass
 mongorestore --uri "mongodb://localhost:27017" \

@@ -60,7 +60,11 @@ fi
 
 DEST="s3://${BACKUP_S3_BUCKET}/mongo/travelplan-${TIMESTAMP}.archive.gz"
 echo "☁️  Uploading to ${DEST}..."
-aws s3 cp "$ARCHIVE_PATH" "$DEST" --endpoint-url "$BACKUP_S3_ENDPOINT"
+# Without a region the AWS CLI takes the runner host's (e.g. us-west-2 on an
+# AWS-hosted runner), which R2 rejects with InvalidRegionName. R2 needs "auto".
+REGION=""
+_s3_endpoint_is_r2 "$BACKUP_S3_ENDPOINT" && REGION="auto"
+aws s3 cp "$ARCHIVE_PATH" "$DEST" --endpoint-url "$BACKUP_S3_ENDPOINT" ${REGION:+--region "$REGION"}
 
 rm -f "$ARCHIVE_PATH"
 echo "✅ Backup complete: ${DEST} (${ACTUAL_SIZE_BYTES} bytes)"
